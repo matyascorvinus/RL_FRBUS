@@ -1,0 +1,261 @@
+[
+    {
+        "name": "xgdpn",
+        "equation_type": "Identity",
+        "definition": "GDP, current $",
+        "description": "",
+        "python_equation": "xgdpn - xgdpn_aerr = xpn + ein - emn + egfln + egsln"
+    },
+    {
+        "name": "egfl",
+        "equation_type": "Behavioral",
+        "definition": "Federal government employee compensation, cw 2012$",
+        "description": "",
+        "python_equation": "( log(egfl) - ( log(egfl(-1)))) -  egfl_aerr =    y_egfl_1   + y_egfl_2 * log(egfl(-1)/egflt(-1))   + y_egfl_3 *  ( log(egfl(-1)) - ( log(egfl(-2))))   + y_egfl_4 *  ( log(egfl(-2)) - ( log(egfl(-3))))   + y_egfl_5 * ( log(egflt) - ( log(egflt(-1))))   + y_egfl_6 *  xgap2   + y_egfl_7 *  xgap2(-1)"
+    },
+    {
+        "name": "egfln",
+        "equation_type": "Identity",
+        "definition": "Federal government employee compensation, current $",
+        "description": "",
+        "python_equation": "egfln - egfln_aerr = .01 * pgfl * egfl"
+    },
+    {
+        "name": "egsl",
+        "equation_type": "Behavioral",
+        "definition": "S&amp;L government employee compensation, cw 2012$",
+        "description": "",
+        "python_equation": "( log(egsl) - ( log(egsl(-1)))) -  egsl_aerr =    y_egsl_1   + y_egsl_2 * log(egsl(-1)/egslt(-1))   + y_egsl_3 *  ( log(egsl(-1)) - ( log(egsl(-2))))   + y_egsl_4 *  ( log(egsl(-2)) - ( log(egsl(-3))))   + y_egsl_5 * ( log(egslt) - ( log(egslt(-1))))   + y_egsl_6 *  xgap2   + y_egsl_7 *  xgap2(-1)"
+    },
+    {
+        "name": "egsln",
+        "equation_type": "Identity",
+        "definition": "S&amp;L government employee compensation, current $",
+        "description": "",
+        "python_equation": "egsln - egsln_aerr = .01 * pgsl * egsl"
+    },
+    {
+        "name": "ei",
+        "equation_type": "Identity",
+        "definition": "Change in private inventories, cw 2012$",
+        "description": "",
+        "python_equation": "ei - ei_aerr = 4*( ki - ( ki(-1)))"
+    },
+    {
+        "name": "ein",
+        "equation_type": "Behavioral",
+        "definition": "Change in business inventories, current $",
+        "description": "",
+        "python_equation": "ein - ein_aerr = .01*pxp*pkir*ei"
+    },
+    {
+        "name": "emn",
+        "equation_type": "Identity",
+        "definition": "Imports of goods and services, current $",
+        "description": "",
+        "python_equation": "emn - emn_aerr = emon + empn"
+    },
+    {
+        "name": "emo",
+        "equation_type": "Behavioral",
+        "definition": "Imports of goods and services ex. petroleum, cw 2012$",
+        "description": "The equation for non-petroleum imports has an error-correction\nformat.  In the long run, the volume of imports depends on the level\nof real domestic absorption with an elasticity of one, the relative\nprice of non-oil imports with an elasticity of minus one, and an\nexogenous trend.  Historical values of the trend (UEMOT) are measured\nby applying the HP filter to the ratio of nominal imports to nominal\nabsorption.  In the short-run, imports respond strongly to the first\ndifference of the output gap.  The effect of large dock strikes in the\n1960s and 1970s is removed by including a dummy constructed by Peter\nIsard (IFDP No. 60, 1975).",
+        "python_equation": "(log(emo) - log(emo(-1)))  - emo_aerr =    y_emo_1   + y_emo_2 * log(emo(-1)*(pmo(-1)/100)/(uemot(-1)*xgdpn(-1)))   + y_emo_3 * (xgap2-xgap2(-1))/100   + y_emo_4 * (xgap2(-1)-xgap2(-2))/100   + y_emo_5* log(ddockm)   + y_emo_6 * (log(ddockm) - log(ddockm(-1)))"
+    },
+    {
+        "name": "emon",
+        "equation_type": "Identity",
+        "definition": "Imports of goods and services ex. petroleum",
+        "description": "",
+        "python_equation": "emon - emon_aerr = .01 * pmo * emo"
+    },
+    {
+        "name": "emp",
+        "equation_type": "Behavioral",
+        "definition": "Petroleum imports, cw 2012$",
+        "description": "The deviation of the ratio of EMP to GDP from a long-run component\n(EMPTRT) is a linear function of its price relative to the business output deflator and\nreal activity (as captured by XGAP2).",
+        "python_equation": "log(emp/xgdp) - emp_aerr = log(emptrt)  + y_emp_1*(log(pmp/pxb) - (log(pmp(-1)/pxb(-1))))  + y_emp_2*xgap2(-1)"
+    },
+    {
+        "name": "empn",
+        "equation_type": "Identity",
+        "definition": "Petroleum imports, current $",
+        "description": "",
+        "python_equation": "empn - empn_aerr = .01*pmp*emp"
+    },
+    {
+        "name": "fpc",
+        "equation_type": "Identity",
+        "definition": "Foreign aggregate consumer price (G39, import/export trade weights)",
+        "description": "",
+        "python_equation": "fpc - fpc_aerr = fpc(-1)*exp(fpic/400)"
+    },
+    {
+        "name": "fpx",
+        "equation_type": "Identity",
+        "definition": "Nominal exchange rate (G39, import/export trade weights)",
+        "description": "",
+        "python_equation": "fpx - fpx_aerr = fpxr*fpc/pcpi"
+    },
+    {
+        "name": "lprdt",
+        "equation_type": "Identity",
+        "definition": "Trend labor productivity",
+        "description": "Trend labor productivity in the adjusted business sector is\nthe ratio of potential output in that sector to trend total hours.\nThe latter is the product of potential employment (LEPPOT) and the trend\nin hours per worker (QLWW).",
+        "python_equation": "log(lprdt) - lprdt_aerr  = log(xbt) - log(leppot) - log(qlww)"
+    },
+    {
+        "name": "pcnia",
+        "equation_type": "Identity",
+        "definition": "Price index for personal consumption expenditures, cw (NIPA definition)",
+        "description": "",
+        "python_equation": "( log(pcnia) - ( log(pcnia(-1)))) - pcnia_aerr = picnia / 400"
+    },
+    {
+        "name": "pgdp",
+        "equation_type": "Identity",
+        "definition": "Price index for GDP, cw",
+        "description": "",
+        "python_equation": "pgdp - pgdp_aerr = 100*xgdpn/xgdp"
+    },
+    {
+        "name": "pgfl",
+        "equation_type": "Identity",
+        "definition": "Price index for federal government employee compensation, cw",
+        "description": "The price index for federal employee compensation (PGFL) is\nproportional to the economy-wide compensation rate (PL).  They are\nlinked by the exogenous conversion factor UPGFL.",
+        "python_equation": "log(pgfl) - pgfl_aerr = log(upgfl)+log(pl)-log(lprdt)"
+    },
+    {
+        "name": "pgsl",
+        "equation_type": "Identity",
+        "definition": "Price index for S&amp;L government employee compensation, cw",
+        "description": "The price index for federal employee compensation (PGSL) is\nproportional to the economy-wide compensation rate (PL).  They are\nlinked by the exogenous conversion factor UPGSL.",
+        "python_equation": "log(pgsl) - pgsl_aerr = log(upgsl)+log(pl)-log(lprdt)"
+    },
+    {
+        "name": "pipl",
+        "equation_type": "Behavioral",
+        "definition": "Rate of growth of PL",
+        "description": "",
+        "python_equation": "pipl - pipl_aerr = pieci"
+    },
+    {
+        "name": "pkir",
+        "equation_type": "Exogenous",
+        "definition": "Price index for stock of inventories, cw (relative to PXP)",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "pl",
+        "equation_type": "Identity",
+        "definition": "Compensation per hour,  business",
+        "description": "",
+        "python_equation": "log(pl) - pl_aerr = log(pl(-1)) + pipl/400"
+    },
+    {
+        "name": "pmo",
+        "equation_type": "Behavioral",
+        "definition": "Price index for imports ex. petroleum, cw",
+        "description": "The price index for non-petroleum imports (PMO) is modeled using a\nKalman filter specification in which the price level gradually\nconverges to a steady-state target.  The latter has two elements: a\nstochastic random walk (QPMO) and a weighted average of aggregate\nforeign and domestic prices.  Empirical work suggests that the\npass-through of changes in the exchange rate (FPX) or foreign prices\n(FPC) into dollar-denominated import prices is incomplete.  In\naccordance with this evidence, only 64 percent of any\nmovement in FPC or FPX is allowed to pass through to PMO in the long\nrun.  This pass-through relationship is defined in relative terms using\nthe price of US business output, which accounts for the presence of\nPXB in the equilibrium formula. The PMO equation also contains the\ncontemporaneous rates of foreign and domestic price inflation with the\ntwo coefficients restricted to sum to one.",
+        "python_equation": "(log(pmo) - log(pmo(-1)))  - pmo_aerr =    y_pmo_1   + y_pmo_2 * (log(qpmo) + .64*log(fpc(-1)/fpx(-1)) + .36*log(pxb(-1)) - log(pmo(-1)))   + y_pmo_3 * (log(fpc/fpx) - log(fpc(-1)/fpx(-1))) + (1 - y_pmo_3) * (log(pxb) - log(pxb(-1)))"
+    },
+    {
+        "name": "pmp",
+        "equation_type": "Identity",
+        "definition": "Price index for petroleum imports",
+        "description": "The chain-weight price index for imported petroleum products (PMP)\nis proportional to the per barrel price of imported crude oil (POIL).",
+        "python_equation": "pmp - pmp_aerr = upmp*poil"
+    },
+    {
+        "name": "poil",
+        "equation_type": "Identity",
+        "definition": "Price of imported oil ($ per barrel)",
+        "description": "",
+        "python_equation": "poil - poil_aerr = poilr*pxb"
+    },
+    {
+        "name": "poilr",
+        "equation_type": "Behavioral",
+        "definition": "Price of imported oil, relative to price index for bus. sector output",
+        "description": "Real oil prices error-correct to their long-run trend, POILRT.",
+        "python_equation": "(log(poilr) - log(poilr(-1)))  - poilr_aerr =    y_poilr_1 * log(poilr(-1)/poilrt(-1))   + y_poilr_2   + y_poilr_3 * ( log(poilr(-1)) - ( log(poilr(-2))))   + y_poilr_4 * ( log(poilrt) - ( log(poilrt(-1))))"
+    },
+    {
+        "name": "poilrt",
+        "equation_type": "Exogenous",
+        "definition": "Price of imported oil, relative to price index for bus. sector output, trend",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "pxb",
+        "equation_type": "Identity",
+        "definition": "Price index for business output",
+        "description": "",
+        "python_equation": "pxb - pxb_aerr = upxb*pgdp"
+    },
+    {
+        "name": "pxnc",
+        "equation_type": "Behavioral",
+        "definition": "Price of adjusted final sales excluding consumption",
+        "description": "",
+        "python_equation": "( log(pxnc) - ( log(pxnc(-1)))) - pxnc_aerr = pipxnc/400"
+    },
+    {
+        "name": "pxp",
+        "equation_type": "Behavioral",
+        "definition": "Price index for final sales plus imports less gov. labor",
+        "description": "",
+        "python_equation": "log(pxp) -  pxp_aerr = log(pxp(-1))   +y_pxp_1*log(pcnia/pcnia(-1))   +y_pxp_2*log(pxnc/pxnc(-1))"
+    },
+    {
+        "name": "qpmo",
+        "equation_type": "Behavioral",
+        "definition": "Random walk component of non-oil import prices",
+        "description": "In the long run, the level of non-oil import prices is determined\nby two factors -- a weighted average of foreign consumer prices\nexpressed in dollars and domestic output prices; and a stochastic\ntrend component that takes account of permanent movements in the\nrelative price of imported goods with respect to the prices of both\nforeign consumption and domestic output.  The stochastic trend\ncomponent, QPMO, is a random walk with drift and is derived from\nKalman filter estimation of the non-oil import price (PMO) equation.",
+        "python_equation": "log(qpmo) - qpmo_aerr = log(qpmo(-1)) + y_qpmo_1"
+    },
+    {
+        "name": "upgfl",
+        "equation_type": "Exogenous",
+        "definition": "Multiplicative factor in PGFL identity",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "upgsl",
+        "equation_type": "Exogenous",
+        "definition": "Multiplicative factor in PGSL identity",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "upmp",
+        "equation_type": "Exogenous",
+        "definition": "Multiplicative factor in PMP identity",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "upxb",
+        "equation_type": "Exogenous",
+        "definition": "Multiplicative factor in PXB   identity",
+        "description": "",
+        "python_equation": ""
+    },
+    {
+        "name": "xp",
+        "equation_type": "Behavioral",
+        "definition": "Final sales plus imports less government labor, cw 2012$",
+        "description": "Real domestic final purchases, excluding government compensation\nbut including exports, is approximated by a fixed-weighted aggregation of its components.",
+        "python_equation": "log(xp) - xp_aerr = log(xp(-1)) + y_xp_1*log(ecnia/ecnia(-1))+ y_xp_2*log(eh/eh(-1))+ (y_xp_3)*log(ebfi/ebfi(-1))+ (y_xp_4)*log(egfe/egfe(-1))+ (y_xp_5)*log(egse/egse(-1))+ y_xp_6*log(ex/ex(-1))"
+    },
+    {
+        "name": "xpn",
+        "equation_type": "Identity",
+        "definition": "Final sales plus imports less government labor, current $",
+        "description": "",
+        "python_equation": "xpn - xpn_aerr = .01 * pxp * xp"
+    }
+]

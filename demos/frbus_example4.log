@@ -1,0 +1,14 @@
+        adjlegrt     anngr  d79a  d8095  ...  picxfe_t  rff_t  rg10_t  xgdp_t
+1962Q1  0.139042       NaN   0.0    0.0  ...       NaN    NaN     NaN     NaN
+1962Q2  0.140115       NaN   0.0    0.0  ...       NaN    NaN     NaN     NaN
+1962Q3  0.141186       NaN   0.0    0.0  ...       NaN    NaN     NaN     NaN
+1962Q4  0.142254       NaN   0.0    0.0  ...       NaN    NaN     NaN     NaN
+1963Q1  0.143319  3.601110   0.0    0.0  ...       NaN    NaN     NaN     NaN
+...          ...       ...   ...    ...  ...       ...    ...     ...     ...
+2172Q4  0.156406  1.804056   1.0    0.0  ...       NaN    NaN     NaN     NaN
+2173Q1  0.156406  1.804056   1.0    0.0  ...       NaN    NaN     NaN     NaN
+2173Q2  0.156406  1.804056   1.0    0.0  ...       NaN    NaN     NaN     NaN
+2173Q3  0.156406  1.804056   1.0    0.0  ...       NaN    NaN     NaN     NaN
+2173Q4  0.156406  1.804056   1.0    0.0  ...       NaN    NaN     NaN     NaN
+
+[848 rows x 939 columns]
