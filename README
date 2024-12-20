@@ -1,6 +1,7 @@
 
 PyFRB/US is a Python-based simulation platform for the FRB/US model.
-
+Python version for PyFRB/US: Python 3.7.16
+Python version for Streamlit: Python 3.10.12
 The PyFRB/US package depends on SuiteSparse version <= 5.13.0 and `swig` to build UMFPACK at install.
 Before installing PyFRB/US, you must install SuiteSparse (`libsuitesparse-dev` on Linux,
 or `suite-sparse` on MacOS) and `swig` using your package manager (probably `apt` on
