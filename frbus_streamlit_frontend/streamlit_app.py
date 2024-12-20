@@ -1,4 +1,4 @@
-from streamer import EconomicStream
+# from streamer import EconomicStream
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -11,13 +11,25 @@ import queue
 import time
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-metrics_history = pd.DataFrame(columns=[
+metrics_history_rl_tariff = pd.DataFrame(columns=[
+    'quarter', 'gdp_growth', 'inflation', 'unemployment',
+    'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
+    'exports', 'imports'
+])
+
+metrics_history_without_tariff = pd.DataFrame(columns=[
+    'quarter', 'gdp_growth', 'inflation', 'unemployment',
+    'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
+    'exports', 'imports'
+])
+
+metrics_history_base_simulation = pd.DataFrame(columns=[
     'quarter', 'gdp_growth', 'inflation', 'unemployment',
     'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
     'exports', 'imports'
 ])
 # Add visualization functions
-def render_overview_charts(df):
+def render_overview_charts(df, title):
     """Render overview charts"""
     fig = go.Figure()
     
@@ -27,7 +39,7 @@ def render_overview_charts(df):
     fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment'))
     
     fig.update_layout(
-        title='Key Economic Indicators Over Time',
+        title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage',
         hovermode='x unified'
@@ -35,54 +47,232 @@ def render_overview_charts(df):
     
     return fig
 
-def render_gdp_charts(df):
+def render_gdp_charts(df, title):
     """Render GDP-related charts"""
     fig = go.Figure()
     
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width
+    
     # Add GDP components
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['real_gdp'], name='Real GDP'))
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['nominal_gdp'], name='Nominal GDP'))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['real_gdp'], name='Real GDP',
+                        width=bar_width,
+                        offset=-bar_width))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['nominal_gdp'], name='Nominal GDP',
+                        width=bar_width,
+                        offset=0))
     
     fig.update_layout(
-        title='GDP Components',
+        title=title,
         xaxis_title='Quarter',
         yaxis_title='Value',
-        barmode='group'
+        barmode='overlay'
     )
     
     return fig
 
-def render_tax_charts(df):
+def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render GDP-related charts"""
+    fig = go.Figure()
+    
+    
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width
+    # Add GDP components for RL Tariff
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['real_gdp'], 
+                        name='Real GDP (RL Tariff)', marker_color='blue',
+                        width=bar_width,
+                        offset=-bar_width)) 
+    # Add GDP components for Without Tariff
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['real_gdp'], 
+                        name='Real GDP (Without Tariff)', marker_color='red',
+                        width=bar_width,
+                        offset=0)) 
+    
+    # Add GDP components for Base Simulation
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['real_gdp'], 
+                        name='Real GDP (Base)', marker_color='orange',
+                        width=bar_width,
+                        offset=bar_width)) 
+    fig.update_layout(
+        title='Real GDP Components Comparison',
+        xaxis_title='Quarter',
+        yaxis_title='Value',
+        barmode='overlay',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
+
+def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render GDP-related charts"""
+    fig = go.Figure()
+    
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width
+    
+    # Add GDP components for RL Tariff
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['nominal_gdp'], 
+                        name='Nominal GDP (RL Tariff)', marker_color='blue',
+                        width=bar_width,
+                        offset=-bar_width)) 
+    
+    # Add GDP components for Without Tariff
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['nominal_gdp'], 
+                        name='Nominal GDP (Without Tariff)', marker_color='red',
+                        width=bar_width,
+                        offset=0)) 
+    
+    # Add GDP components for Base Simulation
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['nominal_gdp'], 
+                        name='Nominal GDP (Base)', marker_color='orange',
+                        width=bar_width,
+                        offset=bar_width)) 
+    
+    fig.update_layout(
+        title='Nominal GDP Components Comparison',
+        xaxis_title='Quarter',
+        yaxis_title='Value',
+        barmode='overlay',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
+
+def render_tax_charts(df, title):
     """Render tax-related charts"""
     fig = go.Figure()
     
     # Add tax components
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['personal_tax'], name='Personal Tax'))
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['corporate_tax'], name='Corporate Tax'))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax'], name='Personal Tax'))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax'], name='Corporate Tax'))
     
     fig.update_layout(
-        title='Tax Revenue Components',
+        title=title,
         xaxis_title='Quarter',
         yaxis_title='Value',
-        barmode='stack'
+        # barmode='stack'
     )
     
     return fig
 
-def render_trade_charts(df):
+def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render GDP-related charts"""
+    fig = go.Figure()
+    
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width
+    
+    # Add GDP components for RL Tariff
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'], 
+                        name='Personal Tax (RL Tariff)', marker_color='blue',
+                        width=bar_width,
+                        offset=-bar_width)) 
+    
+    # Add GDP components for Without Tariff
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['personal_tax'], 
+                        name='Personal Tax (Without Tariff)', marker_color='red',
+                        width=bar_width,
+                        offset=0)) 
+    
+    # Add GDP components for Base Simulation
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['personal_tax'], 
+                        name='Personal Tax (Base)', marker_color='orange',
+                        width=bar_width,
+                        offset=bar_width)) 
+    
+    fig.update_layout(
+        title='Personal Tax Components Comparison',
+        xaxis_title='Quarter',
+        yaxis_title='Value',
+        barmode='overlay',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
+
+def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render GDP-related charts"""
+    fig = go.Figure()
+    
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width
+    
+    # Add GDP components for RL Tariff
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'], 
+                        name='Corporate Tax (RL Tariff)', marker_color='blue',
+                        width=bar_width,
+                        offset=-bar_width)) 
+    
+    # Add GDP components for Without Tariff
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['corporate_tax'], 
+                        name='Corporate Tax (Without Tariff)', marker_color='red',
+                        width=bar_width,
+                        offset=0)) 
+    
+    # Add GDP components for Base Simulation
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['corporate_tax'], 
+                        name='Corporate Tax (Base)', marker_color='orange',
+                        width=bar_width,
+                        offset=bar_width))
+    
+    fig.update_layout(
+        title='Corporate Tax Components Comparison',
+        xaxis_title='Quarter',
+        yaxis_title='Value',
+        barmode='overlay',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
+def render_trade_charts(df, title):
     """Render trade balance charts"""
     fig = go.Figure()
+    
+    # Calculate bar positions
+    bar_width = 0.25  # Adjust this value to control bar width  
     
     # Calculate trade balance
     df['trade_balance'] = df['exports'] - df['imports']
     
     # Add trade components
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['trade_balance'], name='Trade Balance'))
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['exports'], name='Exports'))
-    fig.add_trace(go.Bar(x=df['quarter'], y=df['imports'], name='Imports'))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['trade_balance'], name='Trade Balance',
+                        width=bar_width,
+                        offset=-bar_width))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['exports'], name='Exports',
+                        width=bar_width,
+                        offset=0))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['imports'], name='Imports',
+                        width=bar_width,
+                        offset=bar_width))
     
     fig.update_layout(
-        title='Trade Balance and Components',
+        title=title,
+        barmode='overlay',
         xaxis_title='Quarter',
         yaxis_title='Value'
     )
@@ -124,11 +314,25 @@ class EconomicStream:
         self.placeholder = placeholder
         self.lock = threading.Lock()
         self.url = "ws://localhost:8000/ws/metrics"
-        self.metrics_history = pd.DataFrame(columns=[
+        self.metrics_history_rl_tariff = pd.DataFrame(columns=[
             'quarter', 'gdp_growth', 'inflation', 'unemployment',
             'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
             'exports', 'imports'
         ])
+
+        self.metrics_history_without_tariff = pd.DataFrame(columns=[
+            'quarter', 'gdp_growth', 'inflation', 'unemployment',
+            'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
+            'exports', 'imports'
+        ])
+
+        self.metrics_history_base_simulation = pd.DataFrame(columns=[
+            'quarter', 'gdp_growth', 'inflation', 'unemployment',
+            'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
+            'exports', 'imports'
+        ])
+
+        
         # Initialize metrics storage locally
         self.last_message = None
 
@@ -138,6 +342,8 @@ class EconomicStream:
         try:
             # Extract metrics from message
             metrics = message_data['rl_decision']
+            metrics_without_tariff = message_data['without_tariff']
+            metrics_base_simulation = message_data['base_simulation']
             
             # Create new row for DataFrame
             new_data = {
@@ -153,10 +359,46 @@ class EconomicStream:
                 'imports': metrics['metrics']['emn']
             }
             
+            new_data_without_tariff = {
+                'quarter': metrics_without_tariff['quarter'],
+                'gdp_growth': metrics_without_tariff['metrics']['hggdp'],
+                'inflation': metrics_without_tariff['metrics']['pcpi'],
+                'unemployment': metrics_without_tariff['metrics']['lur'],
+                'real_gdp': metrics_without_tariff['metrics']['xgdp'],
+                'nominal_gdp': metrics_without_tariff['metrics']['xgdpn'],
+                'personal_tax': metrics_without_tariff['metrics']['tpn'],
+                'corporate_tax': metrics_without_tariff['metrics']['tcin'],
+                'exports': metrics_without_tariff['metrics']['exn'],
+                'imports': metrics_without_tariff['metrics']['emn']
+            }
+            
+            new_data_base_simulation = {
+                'quarter': metrics_base_simulation['quarter'],
+                'gdp_growth': metrics_base_simulation['metrics']['hggdp'],
+                'inflation': metrics_base_simulation['metrics']['pcpi'],
+                'unemployment': metrics_base_simulation['metrics']['lur'],
+                'real_gdp': metrics_base_simulation['metrics']['xgdp'],
+                'nominal_gdp': metrics_base_simulation['metrics']['xgdpn'],
+                'personal_tax': metrics_base_simulation['metrics']['tpn'],
+                'corporate_tax': metrics_base_simulation['metrics']['tcin'],
+                'exports': metrics_base_simulation['metrics']['exn'],
+                'imports': metrics_base_simulation['metrics']['emn']
+            }
+            
             # Update metrics history
-            self.metrics_history = pd.concat([
-                self.metrics_history,
+            self.metrics_history_rl_tariff = pd.concat([
+                self.metrics_history_rl_tariff,
                 pd.DataFrame([new_data])
+            ]).reset_index(drop=True)
+            
+            self.metrics_history_without_tariff = pd.concat([
+                self.metrics_history_without_tariff,
+                pd.DataFrame([new_data_without_tariff])
+            ]).reset_index(drop=True)
+            
+            self.metrics_history_base_simulation = pd.concat([
+                self.metrics_history_base_simulation,
+                pd.DataFrame([new_data_base_simulation])
             ]).reset_index(drop=True)
             
             # Add sorting key
@@ -165,16 +407,32 @@ class EconomicStream:
                 return int(year) * 10 + int(quarter)
             
             # Sort by quarter using the custom sorting key
-            self.metrics_history['sort_key'] = self.metrics_history['quarter'].apply(quarter_to_sortable)
-            self.metrics_history = self.metrics_history.sort_values('sort_key')
-            self.metrics_history = self.metrics_history.drop('sort_key', axis=1)
+            self.metrics_history_rl_tariff['sort_key'] = self.metrics_history_rl_tariff['quarter'].apply(quarter_to_sortable)
+            self.metrics_history_rl_tariff = self.metrics_history_rl_tariff.sort_values('sort_key')
+            self.metrics_history_rl_tariff = self.metrics_history_rl_tariff.drop('sort_key', axis=1)
+            
+            self.metrics_history_without_tariff['sort_key'] = self.metrics_history_without_tariff['quarter'].apply(quarter_to_sortable)
+            self.metrics_history_without_tariff = self.metrics_history_without_tariff.sort_values('sort_key')
+            self.metrics_history_without_tariff = self.metrics_history_without_tariff.drop('sort_key', axis=1)
+            
+            self.metrics_history_base_simulation['sort_key'] = self.metrics_history_base_simulation['quarter'].apply(quarter_to_sortable)
+            self.metrics_history_base_simulation = self.metrics_history_base_simulation.sort_values('sort_key')
+            self.metrics_history_base_simulation = self.metrics_history_base_simulation.drop('sort_key', axis=1)
             
             # Keep only last 50 records
-            if len(self.metrics_history) > 50:
-                self.metrics_history = self.metrics_history.tail(50)
+            if len(self.metrics_history_rl_tariff) > 50:
+                self.metrics_history_rl_tariff = self.metrics_history_rl_tariff.tail(50)
             
+            if len(self.metrics_history_without_tariff) > 50:
+                self.metrics_history_without_tariff = self.metrics_history_without_tariff.tail(50)
+                
+            if len(self.metrics_history_base_simulation) > 50:
+                self.metrics_history_base_simulation = self.metrics_history_base_simulation.tail(50)
+
             # Reset index after all operations
-            self.metrics_history = self.metrics_history.reset_index(drop=True)
+            self.metrics_history_rl_tariff = self.metrics_history_rl_tariff.reset_index(drop=True)
+            self.metrics_history_without_tariff = self.metrics_history_without_tariff.reset_index(drop=True)
+            self.metrics_history_base_simulation = self.metrics_history_base_simulation.reset_index(drop=True)
                 
             # Store last message
             self.last_message = message_data
@@ -280,57 +538,108 @@ with col2:
             connection_status.warning("Disconnected")
 
 # Main dashboard area
-if hasattr(st.session_state.stream, 'metrics_history') and not st.session_state.stream.metrics_history.empty:
-    df = st.session_state.stream.metrics_history
-    
+if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.session_state.stream.metrics_history_rl_tariff.empty:
+    df = st.session_state.stream.metrics_history_rl_tariff
+    df_without_tariff = st.session_state.stream.metrics_history_without_tariff
+    df_base_simulation = st.session_state.stream.metrics_history_base_simulation
     # Display charts based on selected view
     if selected_view == "Overview":
-        st.plotly_chart(render_overview_charts(df), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df, "Key Economic Indicators Over Time - RL Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df_without_tariff, "Key Economic Indicators Over Time - RL Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df_base_simulation, "Key Economic Indicators Over Time - Base Simulation"), use_container_width=True)
         
     elif selected_view == "GDP Metrics":
-        st.plotly_chart(render_gdp_charts(df), use_container_width=True)
-        
+        st.plotly_chart(render_gdp_charts(df, "GDP Components - RL Tariff"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df_without_tariff, "GDP Components - RL Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df_base_simulation, "GDP Components - Base Simulation"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_gdp_charts_comparison_nominal(df, df_without_tariff, df_base_simulation), use_container_width=True)
         # Additional GDP metrics
         col1, col2 = st.columns(2)
         try:
             with col1:
                 st.metric(
-                    "Real GDP",
+                    "Real GDP - RL Tariff",
                     f"${df['real_gdp'].iloc[-1]:,.2f}B",
                     f"{(df['real_gdp'].iloc[-1] - df['real_gdp'].iloc[-2]):,.2f}B"
                 )
+                st.metric(
+                    "Real GDP - RL Without Tariff",
+                    f"${df_without_tariff['real_gdp'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['real_gdp'].iloc[-1] - df_without_tariff['real_gdp'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Real GDP - Base Simulation",
+                    f"${df_base_simulation['real_gdp'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['real_gdp'].iloc[-1] - df_base_simulation['real_gdp'].iloc[-2]):,.2f}B"
+                )
             with col2:
                 st.metric(
-                    "Nominal GDP",
+                    "Nominal GDP - RL Tariff",
                     f"${df['nominal_gdp'].iloc[-1]:,.2f}B",
                     f"{(df['nominal_gdp'].iloc[-1] - df['nominal_gdp'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Nominal GDP - RL Without Tariff",
+                    f"${df_without_tariff['nominal_gdp'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['nominal_gdp'].iloc[-1] - df_without_tariff['nominal_gdp'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Nominal GDP - Base Simulation",
+                    f"${df_base_simulation['nominal_gdp'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['nominal_gdp'].iloc[-1] - df_base_simulation['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying GDP metrics: {str(e)}")
             
     elif selected_view == "Tax Metrics":
-        st.plotly_chart(render_tax_charts(df), use_container_width=True)
-        
+        st.plotly_chart(render_tax_charts(df, "Tax Revenue Components - RL Tariff"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df_without_tariff, "Tax Revenue Components - RL Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df_base_simulation, "Tax Revenue Components - Base Simulation"), use_container_width=True)
+        st.plotly_chart(render_personal_tax_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_corporate_tax_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
         # Additional tax metrics
         col1, col2 = st.columns(2)
         try:
             with col1:
                 st.metric(
-                    "Personal Tax Revenue",
+                    "Personal Tax Revenue - RL Tariff",
                     f"${df['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df['personal_tax'].iloc[-1] - df['personal_tax'].iloc[-2]):,.2f}B"
                 )
+                st.metric(
+                    "Personal Tax Revenue - RL Without Tariff",
+                    f"${df_without_tariff['personal_tax'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['personal_tax'].iloc[-1] - df_without_tariff['personal_tax'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Personal Tax Revenue - Base Simulation",
+                    f"${df_base_simulation['personal_tax'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['personal_tax'].iloc[-1] - df_base_simulation['personal_tax'].iloc[-2]):,.2f}B"
+                )
             with col2:
                 st.metric(
-                    "Corporate Tax Revenue",
+                    "Corporate Tax Revenue - RL Tariff",
                     f"${df['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df['corporate_tax'].iloc[-1] - df['corporate_tax'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Corporate Tax Revenue - RL Without Tariff",
+                    f"${df_without_tariff['corporate_tax'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['corporate_tax'].iloc[-1] - df_without_tariff['corporate_tax'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Corporate Tax Revenue - Base Simulation",
+                    f"${df_base_simulation['corporate_tax'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['corporate_tax'].iloc[-1] - df_base_simulation['corporate_tax'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying tax metrics: {str(e)}")
             
     elif selected_view == "Trade Balance":
-        st.plotly_chart(render_trade_charts(df), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df, "Trade Balance and Components - RL Tariff"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df_without_tariff, "Trade Balance and Components - RL Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df_base_simulation, "Trade Balance and Components - Base Simulation"), use_container_width=True)
         
         # Additional trade metrics
         col1, col2, col3 = st.columns(3)
@@ -338,22 +647,56 @@ if hasattr(st.session_state.stream, 'metrics_history') and not st.session_state.
             with col1:
                 trade_balance = df['exports'].iloc[-1] - df['imports'].iloc[-1]
                 prev_trade_balance = df['exports'].iloc[-2] - df['imports'].iloc[-2]
+                trade_balance_without_tariff = df_without_tariff['exports'].iloc[-1] - df_without_tariff['imports'].iloc[-1]
+                prev_trade_balance_without_tariff = df_without_tariff['exports'].iloc[-2] - df_without_tariff['imports'].iloc[-2]
+                trade_balance_base_simulation = df_base_simulation['exports'].iloc[-1] - df_base_simulation['imports'].iloc[-1]
+                prev_trade_balance_base_simulation = df_base_simulation['exports'].iloc[-2] - df_base_simulation['imports'].iloc[-2]
                 st.metric(
-                    "Trade Balance",
+                    "Trade Balance - RL Tariff",
                     f"${trade_balance:,.2f}B",
                     f"{(trade_balance - prev_trade_balance):,.2f}B"
                 )
+                st.metric(
+                    "Trade Balance - RL Without Tariff",
+                    f"${trade_balance_without_tariff:,.2f}B",
+                    f"{(trade_balance_without_tariff - prev_trade_balance_without_tariff):,.2f}B"
+                )
+                st.metric(
+                    "Trade Balance - Base Simulation",
+                    f"${trade_balance_base_simulation:,.2f}B",
+                    f"{(trade_balance_base_simulation - prev_trade_balance_base_simulation):,.2f}B"
+                )
             with col2:
                 st.metric(
-                    "Exports",
+                    "Exports - RL Tariff",
                     f"${df['exports'].iloc[-1]:,.2f}B",
                     f"{(df['exports'].iloc[-1] - df['exports'].iloc[-2]):,.2f}B"
                 )
+                st.metric(
+                    "Exports - RL Without Tariff",
+                    f"${df_without_tariff['exports'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['exports'].iloc[-1] - df_without_tariff['exports'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Exports - Base Simulation",
+                    f"${df_base_simulation['exports'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['exports'].iloc[-1] - df_base_simulation['exports'].iloc[-2]):,.2f}B"
+                )
             with col3:
                 st.metric(
-                    "Imports",
+                    "Imports - RL Tariff",
                     f"${df['imports'].iloc[-1]:,.2f}B",
                     f"{(df['imports'].iloc[-1] - df['imports'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Imports - RL Without Tariff",
+                    f"${df_without_tariff['imports'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['imports'].iloc[-1] - df_without_tariff['imports'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Imports - Base Simulation",
+                    f"${df_base_simulation['imports'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['imports'].iloc[-1] - df_base_simulation['imports'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying trade metrics: {str(e)}")

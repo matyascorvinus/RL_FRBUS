@@ -380,9 +380,9 @@ async def main():
     # Your existing setup code - example values shown below
     ppo_agent = PPOAgent(state_dim=8, action_dim=5)  # Adjust dimensions as needed
     simulation_start = "2024q1"
-    simulation_end = "2045q4"
+    simulation_end = "2028q4"
     simulation_replications = 1000
-    key_checkpoint_path = "baseline"
+    key_checkpoint_path = "baseline_trump_2025"
     
     result = await run_simulation_function(
         ppo_agent, 
