@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict
 from datetime import datetime
 import json
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from models import EconomicMetrics, SimulationComparison
 
@@ -51,7 +55,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # Send latest metrics immediately upon connection
         if latest_metrics:
-            print(f"Sending latest metrics: {latest_metrics}")
+            logger.info(f"Sending latest metrics: {latest_metrics}")
             await websocket.send_json(latest_metrics)
         
         while True:

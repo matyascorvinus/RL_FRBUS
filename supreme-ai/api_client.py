@@ -1,6 +1,10 @@
 import aiohttp
 from typing import Dict, Optional
 import pandas as pd
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SimulationAPI:
     def __init__(self, api_url: str = "http://localhost:8000"):
@@ -81,8 +85,8 @@ class SimulationAPI:
                 if response.status == 200:
                     return await response.json()
                 else:
-                    print(f"Error sending metrics: {response.status}")
+                    logger.error(f"Error sending metrics: {response.status}")
                     return None
         except Exception as e:
-            print(f"Failed to send metrics: {str(e)}")
+            logger.error(f"Failed to send metrics: {str(e)}")
             return None

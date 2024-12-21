@@ -11,6 +11,10 @@ import queue
 import time
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from plotly.subplots import make_subplots  # Add this import
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 metrics_history_rl_tariff = pd.DataFrame(columns=[
     'quarter', 'gdp_growth', 'inflation', 'unemployment',
@@ -29,23 +33,35 @@ metrics_history_base_simulation = pd.DataFrame(columns=[
     'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
     'exports', 'imports'
 ])
+# Define muted red palette
+MUTED_REDS = {
+    'bright': '#c44f4f',  # Muted version of FF4B4B
+    'medium': '#9A1A3C',  # Muted version of B91D47
+    'dark': '#721726',    # Muted version of 871B2D
+    'darkest': '#3A1919'  # Muted version of 441D1D
+}
+
 # Add visualization functions
 def render_overview_charts(df, title):
     """Render overview charts"""
     fig = go.Figure()
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['gdp_growth'], name='GDP Growth'))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment'))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['interest_rate'], name='Federal Funds Rate'))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['gdp_growth'], name='GDP Growth', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment', line=dict(color=MUTED_REDS['medium'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['interest_rate'], name='Federal Funds Rate', line=dict(color=MUTED_REDS['dark'])))
     
     fig.update_layout(
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage',
-        hovermode='x unified'
+        hovermode='x unified',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0')
     )
-    
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
     return fig
 
 # Add visualization functions
@@ -54,16 +70,20 @@ def render_overview_tax_rates_charts(df, title):
     fig = go.Figure()
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Tax Rates'))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Tax Rates'))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Tax Rates', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Tax Rates', line=dict(color=MUTED_REDS['medium'])))
     
     fig.update_layout(
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage',
-        hovermode='x unified'
+        hovermode='x unified',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0')
     )
-    
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
     return fig
 
 def render_gdp_charts(df, title):
@@ -75,9 +95,11 @@ def render_gdp_charts(df, title):
     
     # Add GDP components
     fig.add_trace(go.Bar(x=df['quarter'], y=df['real_gdp'], name='Real GDP',
+                        marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=-bar_width))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['nominal_gdp'], name='Nominal GDP',
+                        marker_color=MUTED_REDS['medium'],
                         width=bar_width,
                         offset=0))
     
@@ -85,7 +107,10 @@ def render_gdp_charts(df, title):
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
-        barmode='overlay'
+        barmode='overlay',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0')
     )
     
     return fig
@@ -94,38 +119,50 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
     """Render GDP-related charts"""
     fig = go.Figure()
     
-    
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width
     # Add GDP components for AI Decision Makers with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['real_gdp'], 
-                        name='Real GDP (AI Decision Makers with Tariff - 50%)', marker_color='blue',
+                        name='Real GDP (AI Decision Makers with Tariff - 50%)', 
+                        marker_color=MUTED_REDS['bright'],  
                         width=bar_width,
                         offset=-bar_width)) 
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['real_gdp'], 
-                        name='Real GDP (Without Tariff)', marker_color='red',
+                        name='Real GDP (Without Tariff)', 
+                        marker_color=MUTED_REDS['medium'],  
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for Base Simulation
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['real_gdp'], 
-                        name='Real GDP (Base)', marker_color='orange',
+                        name='Real GDP (Base)', 
+                        marker_color=MUTED_REDS['dark'],  
                         width=bar_width,
-                        offset=bar_width)) 
+                        offset=bar_width))
+    
+    # Update layout with dark mode colors
     fig.update_layout(
         title='Real GDP Components Comparison',
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
         barmode='overlay',
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper
+        font=dict(color='#E0E0E0'),  # Light gray text
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1
+            x=1,
+            bgcolor='rgba(0,0,0,0.5)'  # Semi-transparent black background
         )
     )
+    
+    # Update axes for dark mode
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
     
     return fig
 
@@ -138,19 +175,19 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
     
     # Add GDP components for AI Decision Makers with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['nominal_gdp'], 
-                        name='Nominal GDP (AI Decision Makers with Tariff - 50%)', marker_color='blue',
+                        name='Nominal GDP (AI Decision Makers with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['nominal_gdp'], 
-                        name='Nominal GDP (Without Tariff)', marker_color='red',
+                        name='Nominal GDP (Without Tariff)', marker_color=MUTED_REDS['medium'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for Base Simulation
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['nominal_gdp'], 
-                        name='Nominal GDP (Base)', marker_color='orange',
+                        name='Nominal GDP (Base)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -159,12 +196,16 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
         barmode='overlay',
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper
+        font=dict(color='#E0E0E0'),  # Light gray text
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1
+            x=1,
+            bgcolor='rgba(0,0,0,0.5)'  # Semi-transparent black background
         )
     )
     
@@ -196,19 +237,19 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
     
     # Add GDP components for AI Decision Makers with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'], 
-                        name='Personal Tax (AI Decision Makers with Tariff - 50%)', marker_color='blue',
+                        name='Personal Tax (AI Decision Makers with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['personal_tax'], 
-                        name='Personal Tax (Without Tariff)', marker_color='red',
+                        name='Personal Tax (Without Tariff)', marker_color=MUTED_REDS['medium'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for Base Simulation
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['personal_tax'], 
-                        name='Personal Tax (Base)', marker_color='orange',
+                        name='Personal Tax (Base)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -237,19 +278,19 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
     
     # Add GDP components for AI Decision Makers with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'], 
-                        name='Corporate Tax (AI Decision Makers with Tariff - 50%)', marker_color='blue',
+                        name='Corporate Tax (AI Decision Makers with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['corporate_tax'], 
-                        name='Corporate Tax (Without Tariff)', marker_color='red',
+                        name='Corporate Tax (Without Tariff)', marker_color=MUTED_REDS['medium'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for Base Simulation
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['corporate_tax'], 
-                        name='Corporate Tax (Base)', marker_color='orange',
+                        name='Corporate Tax (Base)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -280,12 +321,15 @@ def render_trade_charts(df, title):
     
     # Add trade components
     fig.add_trace(go.Bar(x=df['quarter'], y=df['trade_balance'], name='Trade Balance',
+                        marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=-bar_width))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['exports'], name='Exports',
+                        marker_color=MUTED_REDS['medium'],
                         width=bar_width,
                         offset=0))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['imports'], name='Imports',
+                        marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -293,7 +337,11 @@ def render_trade_charts(df, title):
         title=title,
         barmode='overlay',
         xaxis_title='Quarter',
-        yaxis_title='Value'
+        yaxis_title='Value',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0'),
+        legend=dict(bgcolor='rgba(0,0,0,0.5)')
     )
     
     return fig
@@ -339,12 +387,12 @@ def render_tax_charts_for_all_simulations(df_rl_tariff, df_without_tariff, df_ba
     # Plot Tax Rates (top subplot)
     fig.add_trace(
         go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax_rates'], 
-                  name='Personal Tax Rate (RL)', line=dict(color='blue')),
+                  name='Personal Tax Rate (RL)', line=dict(color=MUTED_REDS['bright'])),
         row=1, col=1
     )
     fig.add_trace(
         go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax_rates'], 
-                  name='Corporate Tax Rate (RL)', line=dict(color='blue', dash='dash')),
+                  name='Corporate Tax Rate (RL)', line=dict(color=MUTED_REDS['dark'], dash='dash')),
         row=1, col=1
     )
     
@@ -353,12 +401,12 @@ def render_tax_charts_for_all_simulations(df_rl_tariff, df_without_tariff, df_ba
     # Plot Tax Amounts (bottom subplot)
     fig.add_trace(
         go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'],
-               name='Personal Tax Revenue (RL)', marker_color='blue'),
+               name='Personal Tax Revenue (RL)', marker_color=MUTED_REDS['bright']),
         row=2, col=1
     )
     fig.add_trace(
         go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'],
-               name='Corporate Tax Revenue (RL)', marker_color='lightblue'),
+               name='Corporate Tax Revenue (RL)', marker_color=MUTED_REDS['dark']),
         row=2, col=1
     )
     
@@ -554,7 +602,7 @@ class EconomicStream:
             # Force Streamlit to rerun
             st.rerun()
         except Exception as e:
-            print(f"Error handling message: {str(e)}")
+            logger.error(f"Error handling message: {str(e)}")
             st.error(f"Error handling message: {str(e)}")
         finally:
             self.lock.release()
@@ -563,7 +611,7 @@ class EconomicStream:
         """Handle incoming WebSocket messages"""
         try:
             message_data = json.loads(message)
-            print(f"Received message for quarter: {message_data['rl_decision']['quarter']}")
+            logger.info(f"Received message for quarter: {message_data['rl_decision']['quarter']}")
             
             # Process message
             self.handle_message(message_data)
@@ -579,19 +627,19 @@ class EconomicStream:
             thread.start()
             
         except Exception as e:
-            print(f"Error processing message: {str(e)}")
+            logger.error(f"Error processing message: {str(e)}")
             st.error(f"Error processing message: {str(e)}")
 
     def on_error(self, ws, error):
-        print(f"WebSocket error: {str(error)}")
+        logger.error(f"WebSocket error: {str(error)}")
         st.error(f"WebSocket error: {str(error)}")
 
     def on_close(self, ws, close_status_code, close_msg):
-        print("WebSocket connection closed")
+        logger.info("WebSocket connection closed")
         st.warning("WebSocket connection closed")
 
     def on_open(self, ws):
-        print("WebSocket connected")
+        logger.info("WebSocket connected")
         st.success("Connected to simulation")
 
     def connect(self):
@@ -612,10 +660,27 @@ class EconomicStream:
 # Main app setup
 st.set_page_config(
     page_title="Economic Simulation Dashboard",
-    page_icon="📈",
+    page_icon=":material/stacked_line_chart:",
     layout="wide"
 )
-
+# Add Material Icons CSS in the header
+st.markdown("""
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+    </style>
+""", unsafe_allow_html=True)
 st.title("Economic Simulation Dashboard")
 
 # Add view selector in sidebar
