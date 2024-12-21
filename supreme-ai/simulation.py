@@ -393,12 +393,12 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main():
     # Your existing setup code - example values shown below
-    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2032q1_replication_115.pt"
+    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2032q1_replication_115-first.pt.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
     # ppo_agent = PPOAgent(state_dim=8, action_dim=len(policy_vars))  # Adjust dimensions as needed
-    simulation_start = "2023q4"
+    simulation_start = "2024q1"
     simulation_end = "2034q4"
-    simulation_replications = 1
+    simulation_replications = 1000
     key_checkpoint_path = "baseline_trump_2025"
     
     result = await run_simulation_function(
