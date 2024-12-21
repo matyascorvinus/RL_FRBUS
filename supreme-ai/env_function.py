@@ -18,7 +18,7 @@ def calculate_reward(solution, quarter):
     targets = {
         'pcpi': quarterly_target,    # 2% inflation target
         'lur': 4.0,     # 4% unemployment target
-        'hggdp': 4.0,    # 4% GDP growth target
+        'hggdp': 1.0,    # 1% GDP growth target quarter over quarter
         'rff': 0.5,  # Limit on interest rate changes
         'gfdbtn': 80,  # Debt-to-GDP target
     }
@@ -37,11 +37,13 @@ def calculate_reward(solution, quarter):
     
     # 2. Employment (unemployment targeting)
     unemployment_dev = abs(solution.loc[quarter, 'lur'] - targets['lur'])
-    reward -= unemployment_dev * 1.5
+    reward -= unemployment_dev * 0.5
     
     # 3. Economic Growth
-    gdp_growth = solution.loc[quarter, 'hggdp']
-    reward += torch.clamp(torch.tensor(gdp_growth), min=-2.0, max=4.0) * 0.5  # Bounded GDP contribution
+    gdp_growth_rl = ((solution.loc[quarter, 'xgdp'] - solution.shift(1).loc[quarter, 'xgdp']) / 
+                     solution.shift(1).loc[quarter, 'xgdp'] * 400.0)  # *400 for annualized rate
+    gdp_growth = gdp_growth_rl - targets['hggdp']
+    reward += gdp_growth * 3  # Bounded GDP contribution
     
     # 4. Financial Stability
     rate_change = abs(solution.loc[quarter, 'rff'] - solution.shift(1).loc[quarter, 'rff'])

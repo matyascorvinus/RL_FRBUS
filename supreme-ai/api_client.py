@@ -50,7 +50,8 @@ class SimulationAPI:
                     'gfdbtn': float(current['gfdbtn']),
                     'emn': float(current['emn']),
                     'exn': float(current['exn']),
-                    'gtn': float(current['gtn'])
+                    'gtn': float(current['gtn']),
+                    'gfsrpn': float(current['gfsrpn'])
                 },
                 "previous_metrics": {
                     'hggdp': float(previous['hggdp']),
@@ -68,7 +69,8 @@ class SimulationAPI:
                     'gfdbtn': float(previous['gfdbtn']),
                     'emn': float(previous['emn']),
                     'exn': float(previous['exn']),
-                    'gtn': float(previous['gtn'])
+                    'gtn': float(previous['gtn']),
+                    'gfsrpn': float(previous['gfsrpn'])
                 },
                 "targets": targets
             }

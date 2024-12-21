@@ -36,11 +36,11 @@ class PPOAgent(nn.Module):
         
         # Action bounds for different policy tools
         self.action_bounds = {
-            'rff': (-0.5, 0.5),    # Quarterly interest rate change limits (percentage points)
-            'gtrt': (-0.1, 0.1),    # Trend ratio of transfer payments to GDP (percentage)
-            'egfen': (-0.1, 0.1),    # Trend level of federal government expenditures. (billions of dollars)
-            'trp': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
-            'trci': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
+            'rff': (0.125, 8.0),    # Quarterly interest rate change limits (percentage points)
+            'gtrt': (0.1, 0.3),    # Trend ratio of transfer payments to GDP (percentage)
+            'egfen': (0.1, 0.5),    # Trend level of federal government expenditures. (billions of dollars)
+            'trp': (0.1, 0.4),    # Personal tax revenues rates (percentage)
+            'trci': (0.1, 0.4),    # Corporate tax revenues rates (percentage)
         }
         
     def forward(self, state):

@@ -15,24 +15,17 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# columns = [
+#     'quarter', 'gdp_growth', 'inflation', 'unemployment',
+#     'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
+#     'exports', 'imports', 'government transfer payments', 'federal surplus'
+# ]
+# metrics_history_rl_tariff = pd.DataFrame(columns=columns)
 
-metrics_history_rl_tariff = pd.DataFrame(columns=[
-    'quarter', 'gdp_growth', 'inflation', 'unemployment',
-    'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-    'exports', 'imports', 'government transfer payments'
-])
+# metrics_history_without_tariff = pd.DataFrame(columns=columns)
 
-metrics_history_without_tariff = pd.DataFrame(columns=[
-    'quarter', 'gdp_growth', 'inflation', 'unemployment',
-    'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-    'exports', 'imports', 'government transfer payments'
-])
+# metrics_history_base_simulation = pd.DataFrame(columns=columns)
 
-metrics_history_base_simulation = pd.DataFrame(columns=[
-    'quarter', 'gdp_growth', 'inflation', 'unemployment',
-    'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-    'exports', 'imports', 'government transfer payments'
-])
 # Define muted red palette
 MUTED_REDS = {
     'bright': '#c44f4f',  # Muted version of FF4B4B
@@ -46,8 +39,11 @@ def render_overview_charts(df, title):
     """Render overview charts"""
     fig = go.Figure()
     
+    gdp_growth_rl = ((df['real_gdp'] - df['real_gdp'].shift(1)) / 
+                     df['real_gdp'].shift(1) * 400.0)  # *400 for annualized rate
+    
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['gdp_growth'], name='GDP Growth', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=gdp_growth_rl, name='Real GDP Growth', line=dict(color=MUTED_REDS['bright'])))
     fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment', line=dict(color=MUTED_REDS['medium'])))
     fig.add_trace(go.Scatter(x=df['quarter'], y=df['interest_rate'], name='Federal Funds Rate', line=dict(color=MUTED_REDS['dark'])))
     
@@ -501,6 +497,163 @@ def render_government_debt_to_gdp_charts_comparison(df_rl_tariff, df_without_tar
     )
     
     return fig
+def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render Real GDP growth rate comparison charts"""
+    fig = go.Figure()
+    
+    # Calculate GDP growth rates for each scenario (quarter-over-quarter, annualized)
+    gdp_growth_rl = ((df_rl_tariff['real_gdp'] - df_rl_tariff['real_gdp'].shift(1)) / 
+                     df_rl_tariff['real_gdp'].shift(1) * 400.0)  # *400 for annualized rate
+    
+    gdp_growth_without = ((df_without_tariff['real_gdp'] - df_without_tariff['real_gdp'].shift(1)) / 
+                         df_without_tariff['real_gdp'].shift(1) * 400.0)
+    
+    gdp_growth_base = ((df_base_simulation['real_gdp'] - df_base_simulation['real_gdp'].shift(1)) / 
+                       df_base_simulation['real_gdp'].shift(1) * 400.0)
+    
+    # Add traces for each scenario
+    fig.add_trace(go.Scatter(
+        x=df_rl_tariff['quarter'], 
+        y=gdp_growth_rl, 
+        name='Real GDP Growth - AI Decision Makers with Tariff - 50%', 
+        line=dict(color=MUTED_REDS['bright'])
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=df_without_tariff['quarter'], 
+        y=gdp_growth_without, 
+        name='Real GDP Growth - AI Decision Makers Without Tariff', 
+        line=dict(color=MUTED_REDS['medium'])
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=df_base_simulation['quarter'], 
+        y=gdp_growth_base, 
+        name='Real GDP Growth - Base Simulation', 
+        line=dict(color=MUTED_REDS['dark'])
+    ))
+
+    fig.update_layout(
+        title='Real GDP Growth Rate Comparison (Annualized %)',
+        xaxis_title='Quarter',
+        yaxis_title='Growth Rate (%)',
+        hovermode='x unified',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor='rgba(0,0,0,0.5)'
+        )
+    )
+    
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
+    
+    return fig
+
+def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render Nominal GDP growth rate comparison charts"""
+    fig = go.Figure()
+    
+    # Calculate GDP growth rates for each scenario (quarter-over-quarter, annualized)
+    gdp_growth_rl = ((df_rl_tariff['nominal_gdp'] - df_rl_tariff['nominal_gdp'].shift(1)) / 
+                     df_rl_tariff['nominal_gdp'].shift(1) * 400.0)  # *400 for annualized rate
+    
+    gdp_growth_without = ((df_without_tariff['nominal_gdp'] - df_without_tariff['nominal_gdp'].shift(1)) / 
+                         df_without_tariff['nominal_gdp'].shift(1) * 400.0)
+    
+    gdp_growth_base = ((df_base_simulation['nominal_gdp'] - df_base_simulation['nominal_gdp'].shift(1)) / 
+                       df_base_simulation['nominal_gdp'].shift(1) * 400.0)
+    
+    # Add traces for each scenario
+    fig.add_trace(go.Scatter(
+        x=df_rl_tariff['quarter'], 
+        y=gdp_growth_rl, 
+        name='Nominal GDP Growth - AI Decision Makers with Tariff - 50%', 
+        line=dict(color=MUTED_REDS['bright'])
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=df_without_tariff['quarter'], 
+        y=gdp_growth_without, 
+        name='Nominal GDP Growth - AI Decision Makers Without Tariff', 
+        line=dict(color=MUTED_REDS['medium'])
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=df_base_simulation['quarter'], 
+        y=gdp_growth_base, 
+        name='Nominal GDP Growth - Base Simulation', 
+        line=dict(color=MUTED_REDS['dark'])
+    ))
+
+    fig.update_layout(
+        title='Nominal GDP Growth Rate Comparison (Annualized %)',
+        xaxis_title='Quarter',
+        yaxis_title='Growth Rate (%)',
+        hovermode='x unified',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor='rgba(0,0,0,0.5)'
+        )
+    )
+    
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
+    
+    return fig
+
+
+def render_federal_surplus_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
+    """Render Federal Surplus comparison charts"""
+    fig = go.Figure()
+    
+    # Add GDP components for AI Decision Makers with Tariff - 50%
+    fig.add_trace(go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['federal_surplus'], 
+                        name='Federal Surplus (AI Decision Makers with Tariff - 50%)', marker_color=MUTED_REDS['bright'])) 
+    
+    # Add GDP components for Without Tariff
+    fig.add_trace(go.Scatter(x=df_without_tariff['quarter'], y=df_without_tariff['federal_surplus'], 
+                        name='Federal Surplus (Without Tariff)', marker_color=MUTED_REDS['medium'])) 
+    
+    # Add GDP components for Base Simulation
+    fig.add_trace(go.Scatter(x=df_base_simulation['quarter'], y=df_base_simulation['federal_surplus'], 
+                        name='Federal Surplus (Base)', marker_color=MUTED_REDS['dark'])) 
+    
+    fig.update_layout(
+        title='Federal Surplus Comparison',
+        xaxis_title='Quarter',
+        yaxis_title='Billions of $',
+        hovermode='x unified',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor='rgba(0,0,0,0.5)'
+        )
+    )
+    
+    fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
+    fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
+    
+    return fig
 
 def render_trade_charts(df, title):
     """Render trade balance charts"""
@@ -723,23 +876,15 @@ class EconomicStream:
         #     'emn': 0.0,    # Imports
         #     'exn': 0.0     # Exports
         # }
-        self.metrics_history_rl_tariff = pd.DataFrame(columns=[
-            'quarter', 'gdp_growth', 'inflation', 'unemployment',
+        columns = ['quarter', 'gdp_growth', 'inflation', 'unemployment',
             'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-            'exports', 'imports', 'debt_to_gdp', 'interest_rate', 'pcpi', 'transfer_payments_ratio', 'federal_expenditures', 'personal_tax_rates', 'corporate_tax_rates', 'government_transfer_payments'
-        ])
-
-        self.metrics_history_without_tariff = pd.DataFrame(columns=[
-            'quarter', 'gdp_growth', 'inflation', 'unemployment',
-            'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-            'exports', 'imports', 'debt_to_gdp', 'interest_rate', 'pcpi', 'transfer_payments_ratio', 'federal_expenditures', 'personal_tax_rates', 'corporate_tax_rates', 'government_transfer_payments'
-        ])
-
-        self.metrics_history_base_simulation = pd.DataFrame(columns=[
-            'quarter', 'gdp_growth', 'inflation', 'unemployment',
-            'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
-            'exports', 'imports', 'debt_to_gdp', 'interest_rate', 'pcpi', 'transfer_payments_ratio', 'federal_expenditures', 'personal_tax_rates', 'corporate_tax_rates', 'government_transfer_payments'
-        ])
+            'exports', 'imports', 'debt_to_gdp', 'interest_rate', 'pcpi', 'transfer_payments_ratio', 
+            'federal_expenditures', 'personal_tax_rates', 'corporate_tax_rates', 'government_transfer_payments',
+            'federal_surplus']
+        
+        self.metrics_history_rl_tariff = pd.DataFrame(columns=columns)
+        self.metrics_history_without_tariff = pd.DataFrame(columns=columns)
+        self.metrics_history_base_simulation = pd.DataFrame(columns=columns)
 
         
         # Initialize metrics storage locally
@@ -773,7 +918,8 @@ class EconomicStream:
                 'federal_expenditures': metrics['metrics']['egfen'],
                 'personal_tax_rates': metrics['metrics']['trp'],
                 'corporate_tax_rates': metrics['metrics']['trci'],
-                'government_transfer_payments': metrics['metrics']['gtn']
+                'government_transfer_payments': metrics['metrics']['gtn'],
+                'federal_surplus': metrics['metrics']['gfsrpn']
             }
             
             new_data_without_tariff = {
@@ -794,7 +940,8 @@ class EconomicStream:
                 'federal_expenditures': metrics_without_tariff['metrics']['egfen'],
                 'personal_tax_rates': metrics_without_tariff['metrics']['trp'],
                 'corporate_tax_rates': metrics_without_tariff['metrics']['trci'],
-                'government_transfer_payments': metrics_without_tariff['metrics']['gtn']
+                'government_transfer_payments': metrics_without_tariff['metrics']['gtn'],
+                'federal_surplus': metrics_without_tariff['metrics']['gfsrpn']
             }
             
             new_data_base_simulation = {
@@ -815,7 +962,8 @@ class EconomicStream:
                 'federal_expenditures': metrics_base_simulation['metrics']['egfen'],
                 'personal_tax_rates': metrics_base_simulation['metrics']['trp'],
                 'corporate_tax_rates': metrics_base_simulation['metrics']['trci'],
-                'government_transfer_payments': metrics_base_simulation['metrics']['gtn']
+                'government_transfer_payments': metrics_base_simulation['metrics']['gtn'],
+                'federal_surplus': metrics_base_simulation['metrics']['gfsrpn']
             }
             
             # Update metrics history
@@ -873,8 +1021,8 @@ class EconomicStream:
             # Force Streamlit to rerun
             st.rerun()
         except Exception as e:
-            logger.error(f"Error handling message: {str(e)}")
-            st.error(f"Error handling message: {str(e)}")
+            logger.error(f"EconomicStream: Error handling message: {str(e)}")
+            st.error(f"EconomicStream: Error handling message: {str(e)}")
         finally:
             self.lock.release()
 
@@ -982,7 +1130,8 @@ with col1:
         connection_status.success("Connecting...")
 
 with col2:
-    if st.button('Disconnect', use_container_width=True):
+    if st.button('Disconnect', use_container_width=True): 
+        st.cache_data.clear()
         if hasattr(st.session_state.stream, 'ws'):
             st.session_state.stream.ws.close()
             connection_status.warning("Disconnected")
@@ -1005,7 +1154,9 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_overview_inflation_charts(df_base_simulation, "Inflation - Base Simulation"), use_container_width=True)
         st.plotly_chart(render_inflation_rate_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_inflation_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
-        st.plotly_chart(render_unemployment_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_unemployment_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True) 
+        st.plotly_chart(render_real_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_nominal_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
     elif selected_view == "GDP Metrics":
         st.plotly_chart(render_gdp_charts(df, "GDP Components - AI Decision Makers with Tariff - 50%"), use_container_width=True)
         st.plotly_chart(render_gdp_charts(df_without_tariff, "GDP Components - AI Decision Makers Without Tariff"), use_container_width=True)
@@ -1061,7 +1212,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_government_transfers_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True) 
         st.plotly_chart(render_government_transfer_payments_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_government_debt_to_gdp_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
-        
+        st.plotly_chart(render_federal_surplus_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         # Additional Revenue and Expenditure Metrics
         col1, col2 = st.columns(2)
         try:

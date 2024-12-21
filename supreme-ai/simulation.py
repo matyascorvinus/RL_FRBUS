@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Import the SimulationAPI class
 from api_client import SimulationAPI
 
-policy_vars = ['rff', 'gtrt', 'egfen', 'trp', 'trci']
+policy_vars = ['rff', 'gtrt', 'egfen', 'trp', 'trci'] 
 
 async def run_simulation_function(ppo_agent, simulation_start, simulation_end, simulation_replications, key_checkpoint_path):
     # Initialize API client
@@ -50,8 +50,8 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
         # Policy settings
         data.loc[simstart:simend, "dfpdbt"] = 0
         data.loc[simstart:simend, "dfpsrp"] = 1
-        data.loc[simstart:simend, "eps_s"] = 0
-        data.loc[simstart:simend, "eps_i"] = 0
+        # data.loc[simstart:simend, "eps_s"] = 0
+        # data.loc[simstart:simend, "eps_i"] = 0
         def get_state(data, current_quarter):
             """Extract state variables from data"""  
             return np.array([
@@ -71,20 +71,20 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
             # Map actions to specific policy variables
             for var, action in zip(policy_vars, actions): 
                 logger.info(f"Quarter: {current_quarter} {var} with action {action}")
-                if var == 'egfen':
-                    data.loc[current_quarter, var] += action * 1000  # Convert to the magnitude of 1 trillion dollars
+                # if var == 'egfen':
+                #     data.loc[current_quarter, var] += action * 1000  # Convert to the magnitude of 1 trillion dollars
                 if var == 'rff':
-                    if data.loc[current_quarter, var] + action > 0.025:
-                        data.loc[current_quarter, var] += action
+                    # if data.loc[current_quarter, var] + action > 0.025:
+                    data.loc[current_quarter, var] = action
                 if var == 'trp':
                     # trp * (ypn - gtn)
-                    if data.loc[current_quarter, var] + action > 0.025:
-                        data.loc[current_quarter, var] += action                
+                    # if data.loc[current_quarter, var] + action > 0.025:
+                    data.loc[current_quarter, var] = action                
                 # gtn - gtn_aerr = .01*pgdp*gtr
                 elif var == 'gtr':
-                    data.loc[current_quarter, var] += action
+                    data.loc[current_quarter, var] = action
                 else:
-                    data.loc[current_quarter, var] += action 
+                    data.loc[current_quarter, var] = action 
             return data
 
         def apply_tariff(data, current_quarter, tariff_rate):
@@ -106,7 +106,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
             logger.info(f"Quarter: {current_quarter} with exports {exports}")
             # Calculate tariff revenue
             tariff_revenue = imports * tariff_rate
-            logger.info(f"Quarter: {current_quarter} with tariff revenue {tariff_revenue}")
+            # logger.info(f"Quarter: {current_quarter} with tariff revenue {tariff_revenue}")
             
             # Add tariff revenue to government receipts
             data.loc[current_quarter, 'gfrecn'] += tariff_revenue
@@ -128,8 +128,8 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
             current_exports = data.loc[current_quarter, 'exn']  # Current nominal exports
             prev_exports = data.shift(1).loc[current_quarter, 'exn']  # Previous quarter exports
             
-            logger.info(f"Quarter: {current_quarter} with imports: Current {current_imports:.3f}, Previous Quarter {prev_imports:.3f} (Change: {current_imports - prev_imports:.3f})")
-            logger.info(f"Quarter: {current_quarter} with exports: Current {current_exports:.3f}, Previous Quarter {prev_exports:.3f} (Change: {current_exports - prev_exports:.3f})")
+            # logger.info(f"Quarter: {current_quarter} with imports: Current {current_imports:.3f}, Previous Quarter {prev_imports:.3f} (Change: {current_imports - prev_imports:.3f})")
+            # logger.info(f"Quarter: {current_quarter} with exports: Current {current_exports:.3f}, Previous Quarter {prev_exports:.3f} (Change: {current_exports - prev_exports:.3f})")
             
             # Calculate current and previous tariff revenue
             current_tariff_revenue = current_imports * tariff_rate
@@ -144,6 +144,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
             sim_data = data.copy()
             sim_data_without_tariff = data.copy()
             sim_data_without_rl = data.copy()
+            initial_simulation = True
             # Quarterly policy decisions
             for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
                 q = (quarter.month - 1) // 3 + 1
@@ -191,36 +192,31 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                 sim_data = apply_tariff(sim_data, quarter_str, tariff_rate)
             
                 # Compute baseline tracking factors
-                with_adds = frbus.init_trac(residstart, simend, sim_data)
-                with_adds_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
-                with_adds_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
-
+                if initial_simulation:
+                    with_adds = frbus.init_trac(residstart, simend, sim_data)
+                    with_adds_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
+                    with_adds_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
+                logger.info(f"Quarter: {quarter_str} with GDP growth (2012$) (hggdp) {with_adds.loc[quarter_str, 'hggdp']} - previous {with_adds.shift(1).loc[quarter_str, 'hggdp']}")
+                logger.info(f"Quarter: {quarter_str} with Nominal GDP (xgdpn) {with_adds.loc[quarter_str, 'xgdpn']} - previous {with_adds.shift(1).loc[quarter_str, 'xgdpn']}")
+                logger.info(f"Quarter: {quarter_str} with Real GDP (xgdp) {with_adds.loc[quarter_str, 'xgdp']} - previous {with_adds.shift(1).loc[quarter_str, 'xgdp']}")
+                
                 # Apply actions to the data
                 with_adds = apply_actions(with_adds, quarter_str, actions)
                 with_adds_without_tariff = apply_actions(with_adds_without_tariff, quarter_str, actions_without_tariff)
-
-
+                
+                
                 # Run one quarter of simulation
-                try:
-                    # solution = frbus.stochsim(
-                    #     1, with_adds, quarter_str, quarter_str,
-                    #     residstart, residend, nextra=1
-                    # )[0]
-
-                    # solution_without_tariff = frbus.stochsim(
-                    #     1, with_adds_without_tariff, quarter_str, quarter_str,
-                    #     residstart, residend, nextra=1
-                    # )[0]
-
-                    # solution_without_rl = frbus.stochsim(
-                    #     1, with_adds_without_rl, quarter_str, quarter_str,
-                    #     residstart, residend, nextra=1
-                    # )[0]
+                try: 
 
                     solution = frbus.solve(quarter_str, quarter_str, with_adds)
                     solution_without_tariff = frbus.solve(quarter_str, quarter_str, with_adds_without_tariff)
                     solution_without_rl = frbus.solve(quarter_str, quarter_str, with_adds_without_rl)
-
+                    initial_simulation = False
+                    for element in solution:
+                        # repleace the solution to the with_adds 
+                        with_adds.loc[quarter_str, element] = solution.loc[quarter_str, element]
+                        with_adds_without_tariff.loc[quarter_str, element] = solution_without_tariff.loc[quarter_str, element]
+                        with_adds_without_rl.loc[quarter_str, element] = solution_without_rl.loc[quarter_str, element]
                     # Send metrics update to API
                     await api_client.send_metrics_update(
                         solution=solution,
@@ -272,60 +268,60 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                         logger.info(f"Base Simulation without RL and Tariff: Current {current_base:.3f}, Previous Quarter {prev_base:.3f} (Change: {current_base - prev_base:.3f})")
                         logger.info(f"  Diff from RL Decision Maker: Current {current_base - current_rl:.3f}, Previous Quarter {prev_base - prev_rl:.3f}")
 
-                    logger.info("\nPolicy Action Variables Comparison:")
-                    for var in ['trp', 'trci', 'gtrt', 'egfen', 'rff', 'pcpi']:
-                        logger.info(f"\n{variable_descriptions[var]} ({var}) in {quarter_str} {quarter}:")
-                        # RL Decision Maker
-                        current_rl = solution.loc[quarter_str, var]
-                        prev_rl = solution.shift(1).loc[quarter_str, var]
-                        logger.info(f"RL Decision Maker: Current {current_rl:.3f}, Previous Quarter {prev_rl:.3f} (Change: {current_rl - prev_rl:.3f})")
+                    # logger.info(f"\nPolicy Action Variables Comparison {quarter_str}:")
+                    # for var in ['trp', 'trci', 'gtrt', 'egfen', 'rff', 'pcpi']:
+                    #     logger.info(f"\n{variable_descriptions[var]} ({var}) in {quarter_str} {quarter}:")
+                    #     # RL Decision Maker
+                    #     current_rl = solution.loc[quarter_str, var]
+                    #     prev_rl = solution.shift(1).loc[quarter_str, var]
+                    #     logger.info(f"RL Decision Maker: Current {current_rl:.3f}, Previous Quarter {prev_rl:.3f} (Change: {current_rl - prev_rl:.3f})")
                         
-                        # RL without tariff
-                        current_notariff = solution_without_tariff.loc[quarter_str, var]
-                        prev_notariff = solution_without_tariff.shift(1).loc[quarter_str, var]
-                        logger.info(f"RL Decision Maker without tariff: Current {current_notariff:.3f}, Previous Quarter {prev_notariff:.3f} (Change: {current_notariff - prev_notariff:.3f})")
-                        logger.info(f"  Diff from RL Decision Maker: Current {current_notariff - current_rl:.3f}, Previous Quarter {prev_notariff - prev_rl:.3f}")
+                    #     # RL without tariff
+                    #     current_notariff = solution_without_tariff.loc[quarter_str, var]
+                    #     prev_notariff = solution_without_tariff.shift(1).loc[quarter_str, var]
+                    #     logger.info(f"RL Decision Maker without tariff: Current {current_notariff:.3f}, Previous Quarter {prev_notariff:.3f} (Change: {current_notariff - prev_notariff:.3f})")
+                    #     logger.info(f"  Diff from RL Decision Maker: Current {current_notariff - current_rl:.3f}, Previous Quarter {prev_notariff - prev_rl:.3f}")
                         
-                        # Base without RL and tariff
-                        current_base = solution_without_rl.loc[quarter_str, var]
-                        prev_base = solution_without_rl.shift(1).loc[quarter_str, var]
-                        logger.info(f"Base Simulation without RL and Tariff: Current {current_base:.3f}, Previous Quarter {prev_base:.3f} (Change: {current_base - prev_base:.3f})")
-                        logger.info(f"  Diff from RL Decision Maker: Current {current_base - current_rl:.3f}, Previous Quarter {prev_base - prev_rl:.3f}")
+                    #     # Base without RL and tariff
+                    #     current_base = solution_without_rl.loc[quarter_str, var]
+                    #     prev_base = solution_without_rl.shift(1).loc[quarter_str, var]
+                    #     logger.info(f"Base Simulation without RL and Tariff: Current {current_base:.3f}, Previous Quarter {prev_base:.3f} (Change: {current_base - prev_base:.3f})")
+                    #     logger.info(f"  Diff from RL Decision Maker: Current {current_base - current_rl:.3f}, Previous Quarter {prev_base - prev_rl:.3f}")
 
-                    logger.info("\n--------------------------------")
-                    logger.info("USA Economic Targets Comparison")
+                    # logger.info("\n--------------------------------")
+                    # logger.info(f"USA Economic Targets Comparison {quarter_str}")
                     
-                    # Compare targets across solutions
-                    logger.info(f"\nPCI Inflation Rate:")
-                    for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current = sol.loc[quarter_str, 'pcpi']
-                        prev = sol.shift(1).loc[quarter_str, 'pcpi']
-                        pct_change = ((current - prev) / prev) * 100
-                        logger.info(f"{name}: Current {current:.3f}, Previous {prev:.3f} (Change: {pct_change:.2f}%) (Target: {targets['pcpi']}%)")
+                    # # Compare targets across solutions
+                    # logger.info(f"\nPCI Inflation Rate {quarter_str}:")
+                    # for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
+                    #     current = sol.loc[quarter_str, 'pcpi']
+                    #     prev = sol.shift(1).loc[quarter_str, 'pcpi']
+                    #     pct_change = ((current - prev) / prev) * 100
+                    #     logger.info(f"{name}: Current {current:.3f}, Previous {prev:.3f} (Change: {pct_change:.2f}%) (Target: {targets['pcpi']}%)")
 
-                    logger.info(f"\nUnemployment Rate:")
-                    for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current = sol.loc[quarter_str, 'lur']
-                        prev = sol.shift(1).loc[quarter_str, 'lur']
-                        logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['lur']}%)")
+                    # logger.info(f"\nUnemployment Rate {quarter_str}:")
+                    # for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
+                    #     current = sol.loc[quarter_str, 'lur']
+                    #     prev = sol.shift(1).loc[quarter_str, 'lur']
+                    #     logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['lur']}%)")
 
-                    logger.info(f"\nGDP Growth:")
-                    for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current = sol.loc[quarter_str, 'hggdp']
-                        prev = sol.shift(1).loc[quarter_str, 'hggdp']
-                        logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['hggdp']}%)")
+                    # logger.info(f"\nGDP Growth {quarter_str}:")
+                    # for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
+                    #     current = sol.loc[quarter_str, 'hggdp']
+                    #     prev = sol.shift(1).loc[quarter_str, 'hggdp']
+                    #     logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['hggdp']}%)")
 
-                    logger.info(f"\nInterest Rate:")
-                    for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current = sol.loc[quarter_str, 'rff']
-                        prev = sol.shift(1).loc[quarter_str, 'rff']
-                        logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['rff']}%)")
+                    # logger.info(f"\nInterest Rate {quarter_str}:")
+                    # for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
+                    #     current = sol.loc[quarter_str, 'rff']
+                    #     prev = sol.shift(1).loc[quarter_str, 'rff']
+                    #     logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['rff']}%)")
 
-                    logger.info(f"\nDebt-to-GDP Ratio:")
-                    for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current_debt_gdp = sol.loc[quarter_str, 'gfdbtn'] / sol.loc[quarter_str, 'xgdpn'] * 100
-                        prev_debt_gdp = sol.shift(1).loc[quarter_str, 'gfdbtn'] / sol.shift(1).loc[quarter_str, 'xgdpn'] * 100
-                        logger.info(f"{name}: Current {current_debt_gdp:.2f}%, Previous {prev_debt_gdp:.2f}% (Change: {current_debt_gdp - prev_debt_gdp:.2f}%) (Target: {targets['gfdbtn']}%)")
+                    # logger.info(f"\nDebt-to-GDP Ratio {quarter_str}:")
+                    # for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
+                    #     current_debt_gdp = sol.loc[quarter_str, 'gfdbtn'] / sol.loc[quarter_str, 'xgdpn'] * 100
+                    #     prev_debt_gdp = sol.shift(1).loc[quarter_str, 'gfdbtn'] / sol.shift(1).loc[quarter_str, 'xgdpn'] * 100
+                    #     logger.info(f"{name}: Current {current_debt_gdp:.2f}%, Previous {prev_debt_gdp:.2f}% (Change: {current_debt_gdp - prev_debt_gdp:.2f}%) (Target: {targets['gfdbtn']}%)")
 
                     # Calculate reward based on economic outcomes 
                     reward = calculate_reward(solution, quarter_str)
@@ -380,7 +376,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                 except Exception as e:
                     logger.error(f"Simulation checkpoint failed for quarter {quarter_str}: {e}")
                     raise
-        
+    
         return "Simulation completed successfully"
 
 def load_checkpoint(path, ppo_agent):
@@ -397,10 +393,10 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main():
     # Your existing setup code - example values shown below
-    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2032q1_replication_114.pt"
-    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=5))
-    # ppo_agent = PPOAgent(state_dim=8, action_dim=5)  # Adjust dimensions as needed
-    simulation_start = "2024q1"
+    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2032q1_replication_115.pt"
+    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
+    # ppo_agent = PPOAgent(state_dim=8, action_dim=len(policy_vars))  # Adjust dimensions as needed
+    simulation_start = "2023q4"
     simulation_end = "2034q4"
     simulation_replications = 1
     key_checkpoint_path = "baseline_trump_2025"
