@@ -19,7 +19,7 @@ def calculate_reward(solution, quarter):
         'pcpi': quarterly_target,    # 2% inflation target
         'lur': 4.0,     # 4% unemployment target
         'hggdp': 4.0,    # 4% GDP growth target
-        'frs10': 0.5,  # Limit on interest rate changes
+        'rff': 0.5,  # Limit on interest rate changes
         'gfdbtn': 80,  # Debt-to-GDP target
     }
     
@@ -44,7 +44,7 @@ def calculate_reward(solution, quarter):
     reward += torch.clamp(torch.tensor(gdp_growth), min=-2.0, max=4.0) * 0.5  # Bounded GDP contribution
     
     # 4. Financial Stability
-    rate_change = abs(solution.loc[quarter, 'frs10'] - solution.shift(1).loc[quarter, 'frs10'])
+    rate_change = abs(solution.loc[quarter, 'rff'] - solution.shift(1).loc[quarter, 'rff'])
     reward -= rate_change * 1.0  # Penalty for large rate changes
     
     # 5. Fiscal Sustainability

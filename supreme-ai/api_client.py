@@ -33,7 +33,7 @@ class SimulationAPI:
             previous = df.shift(1).loc[quarter_str]
             
             return {
-                "quarter": quarter_str,
+                "quarter": quarter_str.upper(),
                 "metrics": {
                     'hggdp': float(current['hggdp']),
                     'xgdpn': float(current['xgdpn']),
@@ -43,13 +43,14 @@ class SimulationAPI:
                     'trp': float(current['trp']),
                     'trci': float(current['trci']),
                     'gtrt': float(current['gtrt']),
-                    'egfet': float(current['egfet']),
-                    'frs10': float(current['frs10']),
+                    'egfen': float(current['egfen']),
+                    'rff': float(current['rff']),
                     'pcpi': float(current['pcpi']),
                     'lur': float(current['lur']),
                     'gfdbtn': float(current['gfdbtn']),
                     'emn': float(current['emn']),
-                    'exn': float(current['exn'])
+                    'exn': float(current['exn']),
+                    'gtn': float(current['gtn'])
                 },
                 "previous_metrics": {
                     'hggdp': float(previous['hggdp']),
@@ -60,13 +61,14 @@ class SimulationAPI:
                     'trp': float(previous['trp']),
                     'trci': float(previous['trci']),
                     'gtrt': float(previous['gtrt']),
-                    'egfet': float(previous['egfet']),
-                    'frs10': float(previous['frs10']),
+                    'egfen': float(previous['egfen']),
+                    'rff': float(previous['rff']),
                     'pcpi': float(previous['pcpi']),
                     'lur': float(previous['lur']),
                     'gfdbtn': float(previous['gfdbtn']),
                     'emn': float(previous['emn']),
-                    'exn': float(previous['exn'])
+                    'exn': float(previous['exn']),
+                    'gtn': float(previous['gtn'])
                 },
                 "targets": targets
             }

@@ -36,9 +36,9 @@ class PPOAgent(nn.Module):
         
         # Action bounds for different policy tools
         self.action_bounds = {
-            'frs10': (-0.5, 0.5),    # Quarterly interest rate change limits (percentage points)
+            'rff': (-0.5, 0.5),    # Quarterly interest rate change limits (percentage points)
             'gtrt': (-0.1, 0.1),    # Trend ratio of transfer payments to GDP (percentage)
-            'egfet': (-0.1, 0.1),    # Trend level of federal government expenditures. (billions of dollars)
+            'egfen': (-0.1, 0.1),    # Trend level of federal government expenditures. (billions of dollars)
             'trp': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
             'trci': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
         }

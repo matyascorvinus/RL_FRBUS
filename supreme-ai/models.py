@@ -13,8 +13,8 @@ class EconomicMetrics(BaseModel):
         'trp': 0.0,    # Personal tax rates
         'trci': 0.0,   # Corporate tax rates
         'gtrt': 0.0,   # Transfer payments ratio
-        'egfet': 0.0,  # Federal expenditures
-        'frs10': 0.0,  # Interest rate
+        'egfen': 0.0,  # Federal expenditures
+        'rff': 0.0,  # Interest rate
         'pcpi': 0.0,   # PCI value
         'lur': 0.0,    # Unemployment rate
         'gfdbtn': 0.0, # Debt-to-GDP ratio

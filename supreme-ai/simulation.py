@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Import the SimulationAPI class
 from api_client import SimulationAPI
 
-policy_vars = ['frs10', 'gtrt', 'egfet', 'trp', 'trci']
+policy_vars = ['rff', 'gtrt', 'egfen', 'trp', 'trci']
 
 async def run_simulation_function(ppo_agent, simulation_start, simulation_end, simulation_replications, key_checkpoint_path):
     # Initialize API client
@@ -43,7 +43,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
         simend = simulation_end 
 
         # Number of replications
-        nrepl = 1000
+        nrepl = simulation_replications
         # Run up to 5 extra replications, in case of failures
         nextra = 1
         experiences = []
@@ -58,9 +58,9 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                 data.loc[current_quarter, 'hggdp'],  # Growth rate of GDP, cw 2012$ (annual rate)
                 data.loc[current_quarter, 'pcpi'],   # Inflation
                 data.loc[current_quarter, 'lur'],    # Unemployment
-                data.loc[current_quarter, 'frs10'],  # Interest rate
+                data.loc[current_quarter, 'rff'],  # Interest rate
                 data.loc[current_quarter, 'gtrt'],  # Trend ratio of transfer payments to GDP.
-                data.loc[current_quarter, 'egfet'],  # Trend level of federal government expenditures.
+                data.loc[current_quarter, 'egfen'],  # Trend level of federal government expenditures.
                 data.loc[current_quarter, 'trp'],  # Personal tax revenues rates
                 data.loc[current_quarter, 'trci'],  # Corporate tax revenues rates
                 # Add other relevant state variables
@@ -71,9 +71,9 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
             # Map actions to specific policy variables
             for var, action in zip(policy_vars, actions): 
                 logger.info(f"Quarter: {current_quarter} {var} with action {action}")
-                if var == 'egfet':
+                if var == 'egfen':
                     data.loc[current_quarter, var] += action * 1000  # Convert to the magnitude of 1 trillion dollars
-                if var == 'frs10':
+                if var == 'rff':
                     if data.loc[current_quarter, var] + action > 0.025:
                         data.loc[current_quarter, var] += action
                 if var == 'trp':
@@ -158,8 +158,8 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                     'trp': sim_data.loc[quarter_str, 'trp'],
                     'trci': sim_data.loc[quarter_str, 'trci'],
                     'gtrt': sim_data.loc[quarter_str, 'gtrt'],
-                    'egfet': sim_data.loc[quarter_str, 'egfet'],
-                    'frs10': sim_data.loc[quarter_str, 'frs10'],
+                    'egfen': sim_data.loc[quarter_str, 'egfen'],
+                    'rff': sim_data.loc[quarter_str, 'rff'],
                     'pcpi': sim_data.loc[quarter_str, 'pcpi'],
                     'emn': sim_data.loc[quarter_str, 'emn'],
                     'exn': sim_data.loc[quarter_str, 'exn']
@@ -172,7 +172,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                     'pcpi': quarterly_target,    # 2% inflation target
                     'lur': 4.0,     # 4% unemployment target
                     'hggdp': 4.0,    # 4% GDP growth target
-                    'frs10': 0.5,  # Limit on interest rate changes
+                    'rff': 0.5,  # Limit on interest rate changes
                     'gfdbtn': 80,  # Debt-to-GDP target
                 }
 
@@ -226,7 +226,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                         solution=solution,
                         solution_without_tariff=solution_without_tariff,
                         solution_without_rl=solution_without_rl,
-                        quarter_str=quarter_str,
+                        quarter_str=quarter_str.upper(),
                         targets=targets
                     )
                     logger.info("--------------------------------")
@@ -242,8 +242,8 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                         'trp': 'Personal tax revenues rates',
                         'trci': 'Corporate tax revenues rates',
                         'gtrt': 'Trend ratio of transfer payments to GDP',
-                        'egfet': 'Trend level of federal government expenditures',
-                        'frs10': 'Federal Reserve Short-term Interest rate',
+                        'egfen': 'Trend level of federal government expenditures',
+                        'rff': 'Federal Reserve Short-term Interest rate',
                         'pcpi': 'Current PCI value',
                         'lur': 'Unemployment rate',
                         'gfdbtn': 'Debt-to-GDP ratio',
@@ -273,7 +273,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                         logger.info(f"  Diff from RL Decision Maker: Current {current_base - current_rl:.3f}, Previous Quarter {prev_base - prev_rl:.3f}")
 
                     logger.info("\nPolicy Action Variables Comparison:")
-                    for var in ['trp', 'trci', 'gtrt', 'egfet', 'frs10', 'pcpi']:
+                    for var in ['trp', 'trci', 'gtrt', 'egfen', 'rff', 'pcpi']:
                         logger.info(f"\n{variable_descriptions[var]} ({var}) in {quarter_str} {quarter}:")
                         # RL Decision Maker
                         current_rl = solution.loc[quarter_str, var]
@@ -317,9 +317,9 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
 
                     logger.info(f"\nInterest Rate:")
                     for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
-                        current = sol.loc[quarter_str, 'frs10']
-                        prev = sol.shift(1).loc[quarter_str, 'frs10']
-                        logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['frs10']}%)")
+                        current = sol.loc[quarter_str, 'rff']
+                        prev = sol.shift(1).loc[quarter_str, 'rff']
+                        logger.info(f"{name}: Current {current:.2f}%, Previous {prev:.2f}% (Change: {current - prev:.2f}%) (Target: {targets['rff']}%)")
 
                     logger.info(f"\nDebt-to-GDP Ratio:")
                     for sol, name in [(solution, "RL Decision Maker"), (solution_without_tariff, "RL Decision Maker without tariff"), (solution_without_rl, "Base Simulation without RL and Tariff")]:
@@ -397,12 +397,12 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main():
     # Your existing setup code - example values shown below
-    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2024q1_replication_0.pt"
+    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2032q1_replication_114.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=5))
     # ppo_agent = PPOAgent(state_dim=8, action_dim=5)  # Adjust dimensions as needed
     simulation_start = "2024q1"
     simulation_end = "2034q4"
-    simulation_replications = 1000
+    simulation_replications = 1
     key_checkpoint_path = "baseline_trump_2025"
     
     result = await run_simulation_function(
