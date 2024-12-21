@@ -72,6 +72,13 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                 if var == 'frs10':
                     if data.loc[current_quarter, var] + action > 0.025:
                         data.loc[current_quarter, var] += action
+                if var == 'trp':
+                    # trp * (ypn - gtn)
+                    if data.loc[current_quarter, var] + action > 0.025:
+                        data.loc[current_quarter, var] += action                
+                # gtn - gtn_aerr = .01*pgdp*gtr
+                elif var == 'gtr':
+                    data.loc[current_quarter, var] += action
                 else:
                     data.loc[current_quarter, var] += action 
             return data
@@ -174,9 +181,6 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
 
                 actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent.forward(state_without_tariff)
                 
-                # Apply actions to the data
-                sim_data = apply_actions(sim_data, quarter_str, actions)
-                sim_data_without_tariff = apply_actions(sim_data_without_tariff, quarter_str, actions_without_tariff)
 
                 # Apply tariff (if active)
                 tariff_rate = 0.5  # 50% tariff
@@ -187,24 +191,31 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                 with_adds_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
                 with_adds_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
 
+                # Apply actions to the data
+                with_adds = apply_actions(with_adds, quarter_str, actions)
+                with_adds_without_tariff = apply_actions(with_adds_without_tariff, quarter_str, actions_without_tariff)
+
 
                 # Run one quarter of simulation
                 try:
-                    solution = frbus.stochsim(
-                        1, with_adds, quarter_str, quarter_str,
-                        residstart, residend, nextra=1
-                    )[0]
+                    # solution = frbus.stochsim(
+                    #     1, with_adds, quarter_str, quarter_str,
+                    #     residstart, residend, nextra=1
+                    # )[0]
 
-                    solution_without_tariff = frbus.stochsim(
-                        1, with_adds_without_tariff, quarter_str, quarter_str,
-                        residstart, residend, nextra=1
-                    )[0]
+                    # solution_without_tariff = frbus.stochsim(
+                    #     1, with_adds_without_tariff, quarter_str, quarter_str,
+                    #     residstart, residend, nextra=1
+                    # )[0]
 
-                    solution_without_rl = frbus.stochsim(
-                        1, with_adds_without_rl, quarter_str, quarter_str,
-                        residstart, residend, nextra=1
-                    )[0]
+                    # solution_without_rl = frbus.stochsim(
+                    #     1, with_adds_without_rl, quarter_str, quarter_str,
+                    #     residstart, residend, nextra=1
+                    # )[0]
 
+                    solution = frbus.solve(quarter_str, quarter_str, with_adds)
+                    solution_without_tariff = frbus.solve(quarter_str, quarter_str, with_adds_without_tariff)
+                    solution_without_rl = frbus.solve(quarter_str, quarter_str, with_adds_without_rl)
 
                     # Send metrics update to API
                     await api_client.send_metrics_update(
@@ -347,7 +358,7 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                     raise
                 
                 try:
-                    if quarters_since_start >= 4 and quarters_since_start % 4 == 0: 
+                    if quarters_since_start >= 2 and quarters_since_start % 2 == 0: 
                         checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent_year_{quarter_str}_replication_{rep}.pt'
                         os.makedirs(f'checkpoints_{key_checkpoint_path}', exist_ok=True)
                         
@@ -355,12 +366,12 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
                         checkpoint = {
                             'actor_state_dict': ppo_agent.actor.state_dict(),
                             'critic_state_dict': ppo_agent.critic.state_dict(),
-                            'year': int(quarters_since_start/4),
+                            'year': int(quarters_since_start/2),
                             'quarter': quarter_str,
                             'action_bounds': ppo_agent.action_bounds
                         }
                         torch.save(checkpoint, checkpoint_path)
-                        print(f"Saved checkpoint at year {int(quarters_since_start/4)} ({quarter_str})")
+                        print(f"Saved checkpoint at year {int(quarters_since_start/2)} ({quarter_str})")
                         
                 except Exception as e:
                     print(f"Simulation checkpoint failed for quarter {quarter_str}: {e}")
@@ -369,18 +380,24 @@ async def run_simulation_function(ppo_agent, simulation_start, simulation_end, s
         return "Simulation completed successfully"
 
 def load_checkpoint(path, ppo_agent):
-    checkpoint = torch.load(path)
-    ppo_agent.actor.load_state_dict(checkpoint['actor_state_dict'])
-    ppo_agent.critic.load_state_dict(checkpoint['critic_state_dict'])
-    print(f"Loaded checkpoint from year {checkpoint['year']} ({checkpoint['quarter']})")
-    return ppo_agent
+    try:
+        checkpoint = torch.load(path)
+        ppo_agent.actor.load_state_dict(checkpoint['actor_state_dict'])
+        ppo_agent.critic.load_state_dict(checkpoint['critic_state_dict'])
+        print(f"Loaded checkpoint from year {checkpoint['year']} ({checkpoint['quarter']})")
+        return ppo_agent
+    except Exception as e:
+        print(f"Error loading checkpoint: {e}") 
+        return ppo_agent
 
 # Add the main execution block
 async def main():
     # Your existing setup code - example values shown below
-    ppo_agent = PPOAgent(state_dim=8, action_dim=5)  # Adjust dimensions as needed
+    checkpoint_path = "checkpoints_baseline_trump_2025/ppo_agent_year_2024q1_replication_0.pt"
+    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=5))
+    # ppo_agent = PPOAgent(state_dim=8, action_dim=5)  # Adjust dimensions as needed
     simulation_start = "2024q1"
-    simulation_end = "2028q4"
+    simulation_end = "2034q4"
     simulation_replications = 1000
     key_checkpoint_path = "baseline_trump_2025"
     
