@@ -5,7 +5,7 @@ from pyfrbus.load_data import load_data
 from ppo_agent import PPOAgent
 import numpy as np
 import torch
-from env_function import calculate_reward, update_ppo
+from env_function import calculate_reward, update_ppo, calculate_reward_policy
 import pandas as pd
 import time
 
@@ -68,16 +68,16 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
         # data.loc[simstart:simend, "eps_s"] = 0
         # data.loc[simstart:simend, "eps_i"] = 0
         def get_state(data, current_quarter):
-            """Extract state variables from data"""  
+            """Extract state variables from data from the previous quarter"""  
             return np.array([
-                data.loc[current_quarter, 'hggdp'],  # Growth rate of GDP, cw 2012$ (annual rate)
-                data.loc[current_quarter, 'pcpi'],   # Inflation
-                data.loc[current_quarter, 'lur'],    # Unemployment
-                data.loc[current_quarter, 'rff'],  # Interest rate
-                data.loc[current_quarter, 'gtrt'],  # Trend ratio of transfer payments to GDP.
-                data.loc[current_quarter, 'egfen'],  # Trend level of federal government expenditures.
-                data.loc[current_quarter, 'trp'],  # Personal tax revenues rates
-                data.loc[current_quarter, 'trci'],  # Corporate tax revenues rates
+                data.shift(1).loc[current_quarter, 'hggdp'],  # Growth rate of GDP, cw 2012$ (annual rate)
+                data.shift(1).loc[current_quarter, 'pcpi'],   # Inflation
+                data.shift(1).loc[current_quarter, 'lur'],    # Unemployment
+                data.shift(1).loc[current_quarter, 'rff'],  # Interest rate
+                data.shift(1).loc[current_quarter, 'gtrt'],  # Trend ratio of transfer payments to GDP.
+                data.shift(1).loc[current_quarter, 'egfen'],  # Trend level of federal government expenditures.
+                data.shift(1).loc[current_quarter, 'trp'],  # Personal tax revenues rates
+                data.shift(1).loc[current_quarter, 'trci'],  # Corporate tax revenues rates
                 # Add other relevant state variables
             ])
 
@@ -151,23 +151,7 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
             # Quarterly policy decisions
             for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
                 q = (quarter.month - 1) // 3 + 1
-                quarter_str = f"{quarter.year}q{q}".lower() 
-                # Store pre-policy values
-                old_variables = {
-                    'hggdp': sim_data.loc[quarter_str, 'hggdp'],
-                    'xgdpn': sim_data.loc[quarter_str, 'xgdpn'],
-                    'xgdp': sim_data.loc[quarter_str, 'xgdp'],
-                    'tpn': sim_data.loc[quarter_str, 'tpn'],
-                    'tcin': sim_data.loc[quarter_str, 'tcin'],
-                    'trp': sim_data.loc[quarter_str, 'trp'],
-                    'trci': sim_data.loc[quarter_str, 'trci'],
-                    'gtrt': sim_data.loc[quarter_str, 'gtrt'],
-                    'egfen': sim_data.loc[quarter_str, 'egfen'],
-                    'rff': sim_data.loc[quarter_str, 'rff'],
-                    'pcpi': sim_data.loc[quarter_str, 'pcpi'],
-                    'emn': sim_data.loc[quarter_str, 'emn'],
-                    'exn': sim_data.loc[quarter_str, 'exn']
-                }
+                quarter_str = f"{quarter.year}q{q}".lower()  
                 annual_target = 2.0  # 2% annual inflation target
                 quarterly_target = ((1 + annual_target/100)**(1/4) - 1) * 100
                 # This gives approximately 0.495% per quarter
@@ -179,17 +163,6 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                     'rff': 0.5,  # Limit on interest rate changes
                     'gfdbtn': 80,  # Debt-to-GDP target
                 }
-
-                # Get current state
-                state = get_state(sim_data, quarter_str)
-                state_without_tariff = get_state(sim_data_without_tariff, quarter_str) 
-                
-                # Get PPO action
-                actions, log_probs, state_value = ppo_agent.forward(state)
-
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
-                
-
                 # Apply tariff (if active)
                 tariff_rate = 0.5  # 50% tariff
                 sim_data = apply_tariff(sim_data, quarter_str, tariff_rate)
@@ -199,24 +172,48 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                     with_adds = frbus.init_trac(residstart, simend, sim_data)
                     with_adds_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
                     with_adds_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
+                    with_adds.loc[simstart:simend, "rfftay_trac"] = 0
+                    with_adds.loc[simstart:simend, "rffrule_trac"] = 0
+                    with_adds.loc[simstart:simend, "rff_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptpi_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptlur_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptmax_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptr_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rfftay_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rffrule_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rff_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptpi_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptlur_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptmax_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptr_trac"] = 0 
                 
+
+                # Get current state
+                state = get_state(with_adds, quarter_str)
+                state_without_tariff = get_state(with_adds_without_tariff, quarter_str) 
+                
+                # Get PPO action
+                actions, log_probs, state_value = ppo_agent.forward(state)
+
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
+                
+
                 # Apply actions to the data
                 with_adds = apply_actions(with_adds, quarter_str, actions)
                 with_adds_without_tariff = apply_actions(with_adds_without_tariff, quarter_str, actions_without_tariff)
-                
                 
                 # Run one quarter of simulation
                 try: 
 
                     solution = frbus.solve(quarter_str, quarter_str, with_adds)
                     solution_without_tariff = frbus.solve(quarter_str, quarter_str, with_adds_without_tariff)
-                    solution_without_rl = frbus.solve(quarter_str, quarter_str, with_adds_without_rl)
+                    if initial_simulation:
+                        solution_without_rl = frbus.solve(simstart, simend, with_adds_without_rl)
                     initial_simulation = False
                     for element in solution:
                         # repleace the solution to the with_adds 
                         with_adds.loc[quarter_str, element] = solution.loc[quarter_str, element]
-                        with_adds_without_tariff.loc[quarter_str, element] = solution_without_tariff.loc[quarter_str, element]
-                        with_adds_without_rl.loc[quarter_str, element] = solution_without_rl.loc[quarter_str, element]
+                        with_adds_without_tariff.loc[quarter_str, element] = solution_without_tariff.loc[quarter_str, element] 
                     # Send metrics update to API
                     await api_client.send_metrics_update(
                         solution=solution,
@@ -228,8 +225,8 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                     
                     
                     # Calculate reward based on economic outcomes 
-                    reward = calculate_reward(solution, solution_without_rl, quarter_str, simend)
-                    reward_without_tariff = calculate_reward(solution_without_tariff, solution_without_rl, quarter_str, simend)
+                    reward = calculate_reward_policy(solution, solution_without_rl, quarter_str, simend)
+                    reward_without_tariff = calculate_reward_policy(solution_without_tariff, solution_without_rl, quarter_str, simend)
                     total_reward += reward
                     total_reward_without_tariff += reward_without_tariff
                     # Store experience for PPO update
@@ -256,7 +253,7 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                 try:
                     experiences.append(experience)
                     experiences_without_tariff.append(experience_without_tariff)
-                    logger.info(f"Experience added for quarter {quarter_str} with experience {experience}") 
+                    # logger.info(f"Experience added for quarter {quarter_str} with experience {experience}") 
                     
                     # Update PPO agent after every 8 quarters (2 years)
                     if len(experiences) >= 8:
@@ -311,6 +308,17 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                 raise
         logger.info(f"The best replication is {the_best_replication} with score {highest_score}")
         logger.info(f"The best replication without tariff is {the_best_replication_without_tariff} with score {highest_score_without_tariff}")
+        # Save the score replications to a text file
+        with open(f'checkpoints_{key_checkpoint_path}/score_replications.txt', 'w') as f:
+            f.write(str(score_replications))
+        with open(f'checkpoints_{key_checkpoint_path}/score_replications_without_tariff.txt', 'w') as f:
+            f.write(str(score_replications_without_tariff))
+        with open(f'checkpoints_{key_checkpoint_path}/the_best_replication.txt', 'w') as f:
+            f.write(str(the_best_replication))
+        with open(f'checkpoints_{key_checkpoint_path}/the_best_replication_without_tariff.txt', 'w') as f:
+            f.write(str(the_best_replication_without_tariff))
+        
+
         return "Simulation completed successfully"
 
 
@@ -338,6 +346,7 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
         data.loc[simstart:simend, "dfpsrp"] = 1
         # data.loc[simstart:simend, "eps_s"] = 0
         # data.loc[simstart:simend, "eps_i"] = 0
+
         def get_state(data, current_quarter):
             """Extract state variables from data"""  
             return np.array([
@@ -412,23 +421,7 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
             # Quarterly policy decisions
             for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
                 q = (quarter.month - 1) // 3 + 1
-                quarter_str = f"{quarter.year}q{q}".lower() 
-                # Store pre-policy values
-                old_variables = {
-                    'hggdp': sim_data.loc[quarter_str, 'hggdp'],
-                    'xgdpn': sim_data.loc[quarter_str, 'xgdpn'],
-                    'xgdp': sim_data.loc[quarter_str, 'xgdp'],
-                    'tpn': sim_data.loc[quarter_str, 'tpn'],
-                    'tcin': sim_data.loc[quarter_str, 'tcin'],
-                    'trp': sim_data.loc[quarter_str, 'trp'],
-                    'trci': sim_data.loc[quarter_str, 'trci'],
-                    'gtrt': sim_data.loc[quarter_str, 'gtrt'],
-                    'egfen': sim_data.loc[quarter_str, 'egfen'],
-                    'rff': sim_data.loc[quarter_str, 'rff'],
-                    'pcpi': sim_data.loc[quarter_str, 'pcpi'],
-                    'emn': sim_data.loc[quarter_str, 'emn'],
-                    'exn': sim_data.loc[quarter_str, 'exn']
-                }
+                quarter_str = f"{quarter.year}q{q}".lower()  
                 annual_target = 2.0  # 2% annual inflation target
                 quarterly_target = ((1 + annual_target/100)**(1/4) - 1) * 100
                 # This gives approximately 0.495% per quarter
@@ -441,16 +434,6 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
                     'gfdbtn': 80,  # Debt-to-GDP target
                 }
 
-                # Get current state
-                state = get_state(sim_data, quarter_str)
-                state_without_tariff = get_state(sim_data_without_tariff, quarter_str) 
-                
-                # Get PPO action
-                actions, log_probs, state_value = ppo_agent.forward(state)
-
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent.forward(state_without_tariff)
-                
-
                 # Apply tariff (if active)
                 tariff_rate = 0.5  # 50% tariff
                 sim_data = apply_tariff(sim_data, quarter_str, tariff_rate)
@@ -460,6 +443,30 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
                     with_adds = frbus.init_trac(residstart, simend, sim_data)
                     with_adds_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
                     with_adds_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
+                    with_adds.loc[simstart:simend, "rfftay_trac"] = 0
+                    with_adds.loc[simstart:simend, "rffrule_trac"] = 0
+                    with_adds.loc[simstart:simend, "rff_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptpi_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptlur_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptmax_trac"] = 0
+                    with_adds.loc[simstart:simend, "dmptr_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rfftay_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rffrule_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "rff_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptpi_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptlur_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptmax_trac"] = 0
+                    with_adds_without_tariff.loc[simstart:simend, "dmptr_trac"] = 0 
+                
+
+                # Get current state
+                state = get_state(with_adds, quarter_str)
+                state_without_tariff = get_state(with_adds_without_tariff, quarter_str) 
+                
+                # Get PPO action
+                actions, log_probs, state_value = ppo_agent.forward(state)
+
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent.forward(state_without_tariff)
                 
                 # Apply actions to the data
                 with_adds = apply_actions(with_adds, quarter_str, actions)
@@ -471,13 +478,13 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
 
                     solution = frbus.solve(quarter_str, quarter_str, with_adds)
                     solution_without_tariff = frbus.solve(quarter_str, quarter_str, with_adds_without_tariff)
-                    solution_without_rl = frbus.solve(quarter_str, quarter_str, with_adds_without_rl)
+                    if initial_simulation:
+                        solution_without_rl = frbus.solve(simstart, simend, with_adds_without_rl)
                     initial_simulation = False
                     for element in solution:
                         # repleace the solution to the with_adds 
                         with_adds.loc[quarter_str, element] = solution.loc[quarter_str, element]
-                        with_adds_without_tariff.loc[quarter_str, element] = solution_without_tariff.loc[quarter_str, element]
-                        with_adds_without_rl.loc[quarter_str, element] = solution_without_rl.loc[quarter_str, element]
+                        with_adds_without_tariff.loc[quarter_str, element] = solution_without_tariff.loc[quarter_str, element] 
                     # Send metrics update to API
                     await api_client.send_metrics_update(
                         solution=solution,
@@ -487,7 +494,8 @@ async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_t
                         targets=targets
                     )
                     # Calculate reward based on economic outcomes 
-                    reward = calculate_reward(solution, solution_without_rl, quarter_str, simend)
+                    reward = calculate_reward_policy(solution, solution_without_rl, quarter_str, simend)
+                    reward_without_tariff = calculate_reward_policy(solution_without_tariff, solution_without_rl, quarter_str, simend)
                      
                 except Exception as e:
                     logger.error(f"Simulation stochsim failed for quarter {quarter_str}: {e}")
@@ -511,15 +519,15 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
+    key_checkpoint_path = "trump_v5"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_10.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_10.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=8, action_dim=len(policy_vars))) 
     # ppo_agent = PPOAgent(state_dim=8, action_dim=len(policy_vars))  # Adjust dimensions as needed
     simulation_start = "2024q1"
     simulation_end = "2044q1"
-    simulation_replications = 30
+    simulation_replications = 11
     
     result = await run_the_training_for_simulation_function(
         ppo_agent, 
@@ -534,13 +542,15 @@ async def main_training():
 # Add the main execution block
 async def main_simulation():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
+    # The best replication is 4 with score 44 - trump_v5
+    # The best replication without tariff is 1 with score 60 - trump_v5
+    key_checkpoint_path = "trump_v5"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_4.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_1.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=8, action_dim=len(policy_vars))) 
     simulation_start = "2024q1"
-    simulation_end = "2039q4" 
+    simulation_end = "2044q1" 
     
     result = await run_the_simulation_with_one_replication(
         ppo_agent, 

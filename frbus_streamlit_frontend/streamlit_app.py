@@ -32,7 +32,8 @@ MUTED_REDS = {
     'bright': '#c44f4f',  # Muted version of FF4B4B
     'medium': '#9A1A3C',  # Muted version of B91D47
     'dark': '#721726',    # Muted version of 871B2D
-    'darkest': '#3A1919'  # Muted version of 441D1D
+    'darkest': '#3A1919',  # Muted version of 441D1D
+    'light': '#F5AE98', # light yellow
 }
 
 # Add visualization functions
@@ -44,9 +45,9 @@ def render_overview_charts(df, title):
                      df['real_gdp'].shift(1) * 400.0)  # *400 for annualized rate
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=gdp_growth_rl, name='Real GDP Growth', line=dict(color=MUTED_REDS['bright'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment', line=dict(color=MUTED_REDS['medium'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['interest_rate'], name='Federal Funds Rate', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=gdp_growth_rl, name='Real GDP Growth', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['unemployment'], name='Unemployment', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['interest_rate'], name='Federal Funds Rate', line=dict(color=MUTED_REDS['light'])))
     
     fig.update_layout(
         title=title,
@@ -67,8 +68,8 @@ def render_overview_tax_rates_charts(df, title):
     fig = go.Figure()
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Tax Rates', line=dict(color=MUTED_REDS['bright'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Tax Rates', line=dict(color=MUTED_REDS['medium'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Tax Rates', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Tax Rates', line=dict(color=MUTED_REDS['bright'])))
     
     fig.update_layout(
         title=title,
@@ -89,7 +90,7 @@ def render_overview_inflation_charts(df, title):
     fig = go.Figure()
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=((df['pcpi'] - df['pcpi'].shift(1)) / df['pcpi'].shift(1)) * 100.0, name='Inflation', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=((df['pcpi'] - df['pcpi'].shift(1)) / df['pcpi'].shift(1)) * 100.0, name='Inflation', line=dict(color=MUTED_REDS['dark'])))
     
     fig.update_layout(
         title=title,
@@ -118,21 +119,21 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
         x=df_rl_tariff['quarter'], 
         y=inflation_rl, 
         name='Inflation - AI Decision Makers/FRBUS with Tariff - 50%', 
-        line=dict(color=MUTED_REDS['bright'])
+        line=dict(color=MUTED_REDS['dark'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=inflation_without, 
         name='Inflation - AI Decision Makers/FRBUS Without Tariff', 
-        line=dict(color=MUTED_REDS['medium'])
+        line=dict(color=MUTED_REDS['bright'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=inflation_base, 
         name='Inflation - FRBUS-Based Simulation - Without Tariff', 
-        line=dict(color=MUTED_REDS['dark'])
+        line=dict(color=MUTED_REDS['light'])
     ))
 
     fig.update_layout(
@@ -160,9 +161,9 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
 def render_inflation_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
     """Render inflation comparison charts"""
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS with Tariff - 50%', marker_color=MUTED_REDS['bright']))
-    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['medium']))
-    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['pcpi'], name='Inflation - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['dark']))
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS with Tariff - 50%', marker_color=MUTED_REDS['dark']))
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['bright']))
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['pcpi'], name='Inflation - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
 
     fig.update_layout(
         title='Inflation Comparison',
@@ -178,9 +179,9 @@ def render_inflation_comparison_charts(df_rl_tariff, df_without_tariff, df_base_
 def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
     """Render unemployment comparison charts"""
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS with Tariff - 50%', marker_color=MUTED_REDS['bright']))
-    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['medium']))
-    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['unemployment'], name='Unemployment - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['dark']))
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS with Tariff - 50%', marker_color=MUTED_REDS['dark']))
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['bright']))
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['unemployment'], name='Unemployment - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
 
     fig.update_layout(
         title='Unemployment Comparison',
@@ -202,11 +203,11 @@ def render_gdp_charts(df, title):
     
     # Add GDP components
     fig.add_trace(go.Bar(x=df['quarter'], y=df['real_gdp'], name='Real GDP',
-                        marker_color=MUTED_REDS['bright'],
+                        marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['nominal_gdp'], name='Nominal GDP',
-                        marker_color=MUTED_REDS['medium'],
+                        marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0))
     
@@ -231,20 +232,20 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['real_gdp'], 
                         name='Real GDP (AI Decision Makers/FRBUS with Tariff - 50%)', 
-                        marker_color=MUTED_REDS['bright'],  
+                        marker_color=MUTED_REDS['dark'],  
                         width=bar_width,
                         offset=-bar_width)) 
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['real_gdp'], 
                         name='Real GDP (AI Decision Makers/FRBUS Without Tariff)', 
-                        marker_color=MUTED_REDS['medium'],  
+                        marker_color=MUTED_REDS['bright'],  
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['real_gdp'], 
                         name='Real GDP (FRBUS-Based Simulation - Without Tariff)', 
-                        marker_color=MUTED_REDS['dark'],  
+                        marker_color=MUTED_REDS['light'],  
                         width=bar_width,
                         offset=bar_width))
     
@@ -282,19 +283,19 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['nominal_gdp'], 
-                        name='Nominal GDP (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Nominal GDP (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['nominal_gdp'], 
-                        name='Nominal GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Nominal GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['nominal_gdp'], 
-                        name='Nominal GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Nominal GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -323,8 +324,8 @@ def render_tax_charts(df, title):
     fig = go.Figure()
     
     # Add tax components
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax'], name='Personal Tax', line=dict(color=MUTED_REDS['bright'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax'], name='Corporate Tax', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax'], name='Personal Tax', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax'], name='Corporate Tax', line=dict(color=MUTED_REDS['light'])))
     
     fig.update_layout(
         title=title,
@@ -344,19 +345,19 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'], 
-                        name='Personal Tax (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Personal Tax (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['personal_tax'], 
-                        name='Personal Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Personal Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['personal_tax'], 
-                        name='Personal Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Personal Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -385,19 +386,19 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'], 
-                        name='Corporate Tax (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Corporate Tax (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['corporate_tax'], 
-                        name='Corporate Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Corporate Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['corporate_tax'], 
-                        name='Corporate Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Corporate Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -426,19 +427,19 @@ def render_government_transfer_payments_charts_comparison(df_rl_tariff, df_witho
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['government_transfer_payments'], 
-                        name='Government Transfer Payments (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Government Transfer Payments (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['government_transfer_payments'], 
-                        name='Government Transfer Payments (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Government Transfer Payments (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['government_transfer_payments'], 
-                        name='Government Transfer Payments (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Government Transfer Payments (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -467,19 +468,19 @@ def render_government_debt_to_gdp_charts_comparison(df_rl_tariff, df_without_tar
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['debt_to_gdp'], 
-                        name='Government Debt to GDP (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Government Debt to GDP (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['debt_to_gdp'], 
-                        name='Government Debt to GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Government Debt to GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['debt_to_gdp'], 
-                        name='Government Debt to GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Government Debt to GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -517,21 +518,21 @@ def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df
         x=df_rl_tariff['quarter'], 
         y=gdp_growth_rl, 
         name='Real GDP Growth - AI Decision Makers/FRBUS with Tariff - 50%', 
-        line=dict(color=MUTED_REDS['bright'])
+        line=dict(color=MUTED_REDS['dark'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=gdp_growth_without, 
         name='Real GDP Growth - AI Decision Makers/FRBUS Without Tariff', 
-        line=dict(color=MUTED_REDS['medium'])
+        line=dict(color=MUTED_REDS['bright'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=gdp_growth_base, 
         name='Real GDP Growth - FRBUS-Based Simulation - Without Tariff', 
-        line=dict(color=MUTED_REDS['dark'])
+        line=dict(color=MUTED_REDS['light'])
     ))
 
     fig.update_layout(
@@ -576,21 +577,21 @@ def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff,
         x=df_rl_tariff['quarter'], 
         y=gdp_growth_rl, 
         name='Nominal GDP Growth - AI Decision Makers/FRBUS with Tariff - 50%', 
-        line=dict(color=MUTED_REDS['bright'])
+        line=dict(color=MUTED_REDS['dark'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=gdp_growth_without, 
         name='Nominal GDP Growth - AI Decision Makers/FRBUS Without Tariff', 
-        line=dict(color=MUTED_REDS['medium'])
+        line=dict(color=MUTED_REDS['bright'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=gdp_growth_base, 
         name='Nominal GDP Growth - FRBUS-Based Simulation - Without Tariff', 
-        line=dict(color=MUTED_REDS['dark'])
+        line=dict(color=MUTED_REDS['light'])
     ))
 
     fig.update_layout(
@@ -623,15 +624,15 @@ def render_federal_surplus_comparison_charts(df_rl_tariff, df_without_tariff, df
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['federal_surplus'], 
-                        name='Federal Surplus (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'])) 
+                        name='Federal Surplus (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'])) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Scatter(x=df_without_tariff['quarter'], y=df_without_tariff['federal_surplus'], 
-                        name='Federal Surplus (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'])) 
+                        name='Federal Surplus (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'])) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Scatter(x=df_base_simulation['quarter'], y=df_base_simulation['federal_surplus'], 
-                        name='Federal Surplus (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'])) 
+                        name='Federal Surplus (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'])) 
     
     fig.update_layout(
         title='Federal Surplus Comparison',
@@ -668,15 +669,15 @@ def render_trade_charts(df, title):
     
     # Add trade components
     fig.add_trace(go.Bar(x=df['quarter'], y=df['trade_balance'], name='Trade Balance',
-                        marker_color=MUTED_REDS['bright'],
+                        marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['exports'], name='Exports',
-                        marker_color=MUTED_REDS['medium'],
+                        marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['imports'], name='Imports',
-                        marker_color=MUTED_REDS['dark'],
+                        marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -731,12 +732,12 @@ def render_tax_charts_for_all_simulations(df_rl_tariff, df_without_tariff, df_ba
     # Plot Tax Rates (top subplot)
     fig.add_trace(
         go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax_rates'], 
-                  name='Personal Tax Rate (RL)', line=dict(color=MUTED_REDS['bright'])),
+                  name='Personal Tax Rate (RL)', line=dict(color=MUTED_REDS['dark'])),
         row=1, col=1
     )
     fig.add_trace(
         go.Scatter(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax_rates'], 
-                  name='Corporate Tax Rate (RL)', line=dict(color=MUTED_REDS['dark'], dash='dash')),
+                  name='Corporate Tax Rate (RL)', line=dict(color=MUTED_REDS['light'], dash='dash')),
         row=1, col=1
     )
     
@@ -745,12 +746,12 @@ def render_tax_charts_for_all_simulations(df_rl_tariff, df_without_tariff, df_ba
     # Plot Tax Amounts (bottom subplot)
     fig.add_trace(
         go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'],
-               name='Personal Tax Revenue (RL)', marker_color=MUTED_REDS['bright']),
+               name='Personal Tax Revenue (RL)', marker_color=MUTED_REDS['dark']),
         row=2, col=1
     )
     fig.add_trace(
         go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'],
-               name='Corporate Tax Revenue (RL)', marker_color=MUTED_REDS['dark']),
+               name='Corporate Tax Revenue (RL)', marker_color=MUTED_REDS['light']),
         row=2, col=1
     )
     
@@ -784,19 +785,19 @@ def render_government_expenditure_comparison(df_rl_tariff, df_without_tariff, df
     
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['federal_expenditures'], 
-                        name='Federal Expenditures (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Federal Expenditures (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['federal_expenditures'], 
-                        name='Federal Expenditures (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Federal Expenditures (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['federal_expenditures'], 
-                        name='Federal Expenditures (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Federal Expenditures (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -822,19 +823,19 @@ def render_government_transfers_comparison(df_rl_tariff, df_without_tariff, df_b
     bar_width = 0.25  # Adjust this value to control bar width
     # Add GDP components for AI Decision Makers/FRBUS with Tariff - 50%
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['transfer_payments_ratio'], 
-                        name='Transfer Payments Ratio (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['bright'],
+                        name='Transfer Payments Ratio (AI Decision Makers/FRBUS with Tariff - 50%)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['transfer_payments_ratio'], 
-                        name='Transfer Payments Ratio (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['medium'],
+                        name='Transfer Payments Ratio (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0))          
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['transfer_payments_ratio'], 
-                        name='Transfer Payments Ratio (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['dark'],
+                        name='Transfer Payments Ratio (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -1163,6 +1164,18 @@ if st.sidebar.button('Start Simulation After Training', use_container_width=True
         simulation_status.success("Simulation started")
     else:
         simulation_status.error("Failed to start simulation")
+
+if st.sidebar.button('Save Simulation', use_container_width=True):
+    # Save the simulation data to a CSV file
+    df = st.session_state.stream.metrics_history_rl_tariff
+    df_without_tariff = st.session_state.stream.metrics_history_without_tariff
+    df_base_simulation = st.session_state.stream.metrics_history_base_simulation
+    df.to_csv('simulation_data.csv', index=False)
+    df_without_tariff.to_csv('simulation_data_without_tariff.csv', index=False)
+    df_base_simulation.to_csv('simulation_data_base_simulation.csv', index=False)
+    simulation_status.success("Simulation data saved to CSV files")
+
+
 
 
 # Main dashboard area

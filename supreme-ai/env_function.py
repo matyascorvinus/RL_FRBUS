@@ -64,9 +64,7 @@ def calculate_reward(solution, solution_without_rl, quarter, end_quarter):
     # Push the AI to make better decisions in the long run
     if int(end_quarter.split('q')[0]) >= 2030:
         if real_gdp_comparison > 0:
-            reward += real_gdp_comparison * 50  # Bounded real GDP contribution
-        else:
-            reward += real_gdp_comparison * 50  # Bounded real GDP contribution
+            reward += real_gdp_comparison * 100  # Bounded real GDP contribution
     else:
         reward += real_gdp_comparison * 20  # Bounded real GDP contribution
     
@@ -75,8 +73,12 @@ def calculate_reward(solution, solution_without_rl, quarter, end_quarter):
         reward -= 10.0
     
     # Additional penalties for extreme outcomes
-    if real_gdp_comparison < -2.0:
-        reward -= 100.0
+    if real_gdp_comparison < -1.0:
+        reward -= 1000.0
+    
+    
+    logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
+                f"Unemployment: {unemployment_dev:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
     return reward
 def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter):
@@ -133,15 +135,46 @@ def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter)
     unemployment_dev = abs(unemployment - targets['lur'])
     gdp_growth_dev = gdp_growth_rl - targets['hggdp']
     
-    normalized_inflation_dev = torch.clamp(inflation_dev / max_expected_deviation, -1, 1)
-    normalized_unemployment_dev = torch.clamp(unemployment_dev / max_expected_deviation, -1, 1)
-    normalized_gdp_dev = torch.clamp(gdp_growth_dev / max_expected_deviation, -1, 1)
+    # Fix 1: Convert numpy/float values to torch tensors
+    normalized_inflation_dev = torch.clamp(
+        torch.tensor(float(inflation_dev) / max_expected_deviation, dtype=torch.float32), 
+        -1, 
+        1
+    )
     
-    # 5. Smoothness incentives
-    gdp_volatility = torch.std(solution.loc[:quarter, 'xgdp'].pct_change().dropna())
-    inflation_volatility = torch.std(solution.loc[:quarter, 'pcpi'].pct_change().dropna())
-    rate_volatility = torch.std(solution.loc[:quarter, 'rff'].diff().dropna())
+    normalized_unemployment_dev = torch.clamp(
+        torch.tensor(float(unemployment_dev) / max_expected_deviation, dtype=torch.float32), 
+        -1, 
+        1
+    )
     
+    normalized_gdp_dev = torch.clamp(
+        torch.tensor(float(gdp_growth_dev) / max_expected_deviation, dtype=torch.float32), 
+        -1, 
+        1
+    )
+    # 5. Smoothness incentives    
+    # Convert pandas Series to torch tensor before calculating std
+    gdp_volatility = torch.std(
+        torch.tensor(
+            solution.loc[:quarter, 'xgdp'].pct_change().dropna().values,
+            dtype=torch.float32
+        )
+    )
+    
+    inflation_volatility = torch.std(
+        torch.tensor(
+            solution.loc[:quarter, 'pcpi'].pct_change().dropna().values,
+            dtype=torch.float32
+        )
+    )
+    
+    rate_volatility = torch.std(
+        torch.tensor(
+            solution.loc[:quarter, 'rff'].diff().dropna().values,
+            dtype=torch.float32
+        )
+    )
     normalized_volatility = torch.clamp((gdp_volatility + inflation_volatility + rate_volatility) / 3, 0, 1)
     
     # 6. Forward-looking components
@@ -163,11 +196,11 @@ def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter)
                          solution_without_rl.loc[quarter, 'xgdp'] * 100
     
     # 8. Composite health indicators
-    misery_index = unemployment + quarterly_inflation
+    misery_index = torch.tensor(unemployment + quarterly_inflation)
     normalized_misery = torch.clamp(misery_index / 20.0, 0, 1)  # Normalize assuming max misery of 20
     
     debt_gdp = solution.loc[quarter, 'gfdbtn'] / solution.loc[quarter, 'xgdpn'] * 100
-    normalized_debt = torch.clamp((debt_gdp - targets['gfdbtn']) / 100, 0, 1)
+    normalized_debt = torch.clamp(torch.tensor((debt_gdp - targets['gfdbtn']) / 100), 0, 1)
     
     # 9. Combine all components with balanced weights
     reward += -normalized_inflation_dev * 3.0          # Price stability
@@ -175,13 +208,13 @@ def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter)
     reward += normalized_gdp_dev * 3.0                # Growth
     reward += -normalized_volatility * 2.0            # Smoothness
     reward += forward_bonus                          # Forward-looking
-    reward += growth_vs_history                      # Historical comparison
+    reward += growth_vs_history * 5.0                      # Historical comparison
     reward += -normalized_misery * 2.0               # Economic health
     reward += -normalized_debt * 2.0                 # Fiscal sustainability
     
     # 10. Long-term incentives
     if int(end_quarter.split('q')[0]) >= 2030:
-        reward += torch.clamp(torch.tensor(real_gdp_comparison), -5, 5) * 2.0
+        reward += torch.clamp(torch.tensor(real_gdp_comparison), -5, 5) * 5.0
     
     # 11. Extreme outcome penalties
     if inflation_dev > 5.0 or unemployment_dev > 8.0:
@@ -191,7 +224,7 @@ def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter)
         reward -= 5.0
     
     logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
-                f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}")
+                f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
     return reward
 
