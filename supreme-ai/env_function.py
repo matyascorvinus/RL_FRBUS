@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-def calculate_reward(solution, quarter):
+def calculate_reward(solution, solution_without_rl, quarter, end_quarter):
     """
     Calculate reward based on economic outcomes.
     
@@ -18,7 +18,7 @@ def calculate_reward(solution, quarter):
     targets = {
         'pcpi': quarterly_target,    # 2% inflation target
         'lur': 4.0,     # 4% unemployment target
-        'hggdp': 1.0,    # 1% GDP growth target quarter over quarter
+        'hggdp': 4.0,    # 4% GDP growth target annualized
         'rff': 0.5,  # Limit on interest rate changes
         'gfdbtn': 80,  # Debt-to-GDP target
     }
@@ -52,6 +52,15 @@ def calculate_reward(solution, quarter):
     # 5. Fiscal Sustainability
     debt_gdp = solution.loc[quarter, 'gfdbtn'] / solution.loc[quarter, 'xgdpn'] * 100
     reward -= torch.clamp(torch.tensor((debt_gdp - targets['gfdbtn'])/100), min=0) * 0.5
+
+    # 6. Real GDP Comparison
+    real_gdp_comparison = (solution.loc[quarter, 'xgdp'] - solution_without_rl.loc[quarter, 'xgdp']) / solution_without_rl.loc[quarter, 'xgdp'] * 100
+    
+    # Push the AI to make better decisions in the long run
+    if int(end_quarter.split('q')[0]) >= 2028:
+        reward += real_gdp_comparison * 30  # Bounded real GDP contribution
+    else:
+        reward += real_gdp_comparison * 10  # Bounded real GDP contribution
     
     # Additional penalties for extreme outcomes
     if inflation_dev > 5.0 or unemployment_dev > 8.0 or gdp_growth < -4.0:
