@@ -42,7 +42,7 @@ app.add_middleware(
 
 policy_vars = ['rff', 'gtrt', 'egfen', 'trp', 'trci'] 
 
-async def run_the_training_for_simulation_function(ppo_agent, simulation_start, simulation_end, simulation_replications, key_checkpoint_path):
+async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_tariff, simulation_start, simulation_end, simulation_replications, key_checkpoint_path):
     # Initialize API client
     async with SimulationAPI() as api_client:
 
@@ -61,6 +61,7 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
         # Run up to 5 extra replications, in case of failures
         nextra = 1
         experiences = []
+        experiences_without_tariff = []
         # Policy settings
         data.loc[simstart:simend, "dfpdbt"] = 0
         data.loc[simstart:simend, "dfpsrp"] = 1
@@ -130,13 +131,23 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
             data.loc[current_quarter, 'exn'] = export_reduction
             
             return data
-    
+        
+        # Initialize variables for tracking best replication
+        score_replications = {}
+        the_best_replication = 0
+        highest_score = -999999
+
+        score_replications_without_tariff = {}
+        the_best_replication_without_tariff = 0
+        highest_score_without_tariff = -999999
         # Modified simulation loop
         for rep in range(nrepl):
             sim_data = data.copy()
             sim_data_without_tariff = data.copy()
             sim_data_without_rl = data.copy()
             initial_simulation = True
+            total_reward = 0
+            total_reward_without_tariff = 0
             # Quarterly policy decisions
             for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
                 q = (quarter.month - 1) // 3 + 1
@@ -176,7 +187,7 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
                 # Get PPO action
                 actions, log_probs, state_value = ppo_agent.forward(state)
 
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent.forward(state_without_tariff)
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
                 
 
                 # Apply tariff (if active)
@@ -214,13 +225,13 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
                         quarter_str=quarter_str.upper(),
                         targets=targets
                     )
-                    logger.info("--------------------------------")
-                    logger.info("USA Economic Macro Indicators After Policy Actions and Simulation") 
                     
                     
                     # Calculate reward based on economic outcomes 
                     reward = calculate_reward(solution, solution_without_rl, quarter_str, simend)
-                    
+                    reward_without_tariff = calculate_reward(solution_without_tariff, solution_without_rl, quarter_str, simend)
+                    total_reward += reward
+                    total_reward_without_tariff += reward_without_tariff
                     # Store experience for PPO update
                     experience = {
                         'state': state,
@@ -230,20 +241,31 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
                         'value': state_value,
                         'done': quarter_str == simend
                     }   
+                    experience_without_tariff = {
+                        'state': state_without_tariff,
+                        'actions': torch.tensor(actions_without_tariff).float(),
+                        'log_probs': log_probs_without_tariff,
+                        'reward': torch.tensor(reward_without_tariff).float(),
+                        'value': state_value_without_tariff,
+                        'done': quarter_str == simend
+                    }
                 except Exception as e:
                     logger.error(f"Simulation stochsim failed for quarter {quarter_str}: {e}")
                     raise
                 
                 try:
                     experiences.append(experience)
+                    experiences_without_tariff.append(experience_without_tariff)
                     logger.info(f"Experience added for quarter {quarter_str} with experience {experience}") 
                     
                     # Update PPO agent after every 8 quarters (2 years)
                     if len(experiences) >= 8:
                         logger.info(f"Updating PPO agent after collecting {len(experiences)} quarters of experience")
                         ppo_agent = update_ppo(ppo_agent, experiences)
+                        ppo_agent_without_tariff = update_ppo(ppo_agent_without_tariff, experiences_without_tariff)
                         experiences = []  # Clear experiences after update
-                
+                        experiences_without_tariff = []  # Clear experiences after update
+
                     # Save checkpoint every 5 years (after every 20 quarters)
                     current_quarter = pd.to_datetime(quarter_str)
                     quarters_since_start = (current_quarter - pd.to_datetime(simstart)).days / 365.25 * 4
@@ -253,9 +275,20 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
                     raise
                 
             try: 
-                checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent_replication_{rep}.pt'
-                os.makedirs(f'checkpoints_{key_checkpoint_path}', exist_ok=True)
-                
+                checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep}.pt'
+                checkpoint_path_without_tariff = f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{rep}.pt'
+                os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
+                os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff', exist_ok=True)
+                logger.info(f"Total reward for replication {rep}: {total_reward}")
+                logger.info(f"Total reward for replication {rep} without tariff: {total_reward_without_tariff}")
+                if total_reward > highest_score:
+                    highest_score = total_reward
+                    the_best_replication = rep
+                if total_reward_without_tariff > highest_score_without_tariff:
+                    highest_score_without_tariff = total_reward_without_tariff
+                    the_best_replication_without_tariff = rep
+                score_replications[rep] = total_reward
+                score_replications_without_tariff[rep] = total_reward_without_tariff
                 # Save the model state
                 checkpoint = {
                     'actor_state_dict': ppo_agent.actor.state_dict(),
@@ -263,17 +296,25 @@ async def run_the_training_for_simulation_function(ppo_agent, simulation_start, 
                     'replication': rep,
                     'action_bounds': ppo_agent.action_bounds
                 }
+                checkpoint_without_tariff = {   
+                    'actor_state_dict': ppo_agent_without_tariff.actor.state_dict(),
+                    'critic_state_dict': ppo_agent_without_tariff.critic.state_dict(),
+                    'replication': rep,
+                    'action_bounds': ppo_agent_without_tariff.action_bounds
+                } 
                 torch.save(checkpoint, checkpoint_path)
+                torch.save(checkpoint_without_tariff, checkpoint_path_without_tariff)
                 logger.info(f"Saved checkpoint at replication {rep}")
                     
             except Exception as e:
                 logger.error(f"Simulation checkpoint failed for replication {rep}: {e}")
                 raise
-    
+        logger.info(f"The best replication is {the_best_replication} with score {highest_score}")
+        logger.info(f"The best replication without tariff is {the_best_replication_without_tariff} with score {highest_score_without_tariff}")
         return "Simulation completed successfully"
 
 
-async def run_the_simulation_with_one_replication(ppo_agent, simulation_start, simulation_end, key_checkpoint_path):
+async def run_the_simulation_with_one_replication(ppo_agent, ppo_agent_without_tariff, simulation_start, simulation_end, key_checkpoint_path):
     # Initialize API client
     async with SimulationAPI() as api_client:
 
@@ -445,10 +486,6 @@ async def run_the_simulation_with_one_replication(ppo_agent, simulation_start, s
                         quarter_str=quarter_str.upper(),
                         targets=targets
                     )
-                    logger.info("--------------------------------")
-                    logger.info("USA Economic Macro Indicators After Policy Actions and Simulation") 
-                    
-                    
                     # Calculate reward based on economic outcomes 
                     reward = calculate_reward(solution, solution_without_rl, quarter_str, simend)
                      
@@ -465,7 +502,7 @@ def load_checkpoint(path, ppo_agent):
         checkpoint = torch.load(path)
         ppo_agent.actor.load_state_dict(checkpoint['actor_state_dict'])
         ppo_agent.critic.load_state_dict(checkpoint['critic_state_dict'])
-        logger.info(f"Loaded checkpoint from year {checkpoint['year']} ({checkpoint['quarter']})")
+        logger.info(f"Loaded checkpoint from {path}")
         return ppo_agent
     except Exception as e:
         logger.error(f"Error loading checkpoint: {e}") 
@@ -475,15 +512,18 @@ def load_checkpoint(path, ppo_agent):
 async def main_training():
     # Your existing setup code - example values shown below
     key_checkpoint_path = "trump"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent_replication_53.pt"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=8, action_dim=len(policy_vars))) 
     # ppo_agent = PPOAgent(state_dim=8, action_dim=len(policy_vars))  # Adjust dimensions as needed
     simulation_start = "2024q1"
     simulation_end = "2044q1"
-    simulation_replications = 1000
+    simulation_replications = 30
     
     result = await run_the_training_for_simulation_function(
         ppo_agent, 
+        ppo_agent_without_tariff,
         simulation_start, 
         simulation_end, 
         simulation_replications, 
@@ -495,14 +535,16 @@ async def main_training():
 async def main_simulation():
     # Your existing setup code - example values shown below
     key_checkpoint_path = "trump"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent_replication_53.pt"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
-    # ppo_agent = PPOAgent(state_dim=8, action_dim=len(policy_vars))  # Adjust dimensions as needed
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=8, action_dim=len(policy_vars))) 
     simulation_start = "2024q1"
-    simulation_end = "2044q1" 
+    simulation_end = "2039q4" 
     
     result = await run_the_simulation_with_one_replication(
         ppo_agent, 
+        ppo_agent_without_tariff,
         simulation_start, 
         simulation_end, 
         key_checkpoint_path

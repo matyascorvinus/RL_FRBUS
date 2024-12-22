@@ -1140,19 +1140,29 @@ with col2:
         connection_status.success("Connecting...")
 
 with col3:
-    if st.button('Disconnect', use_container_width=True): 
+    if st.button('Refresh', use_container_width=True): 
         st.cache_data.clear()
+        if hasattr(st.session_state.stream, 'metrics_history_rl_tariff'):
+            st.session_state.stream.metrics_history_rl_tariff = pd.DataFrame()
+        if hasattr(st.session_state.stream, 'metrics_history_without_tariff'):
+            st.session_state.stream.metrics_history_without_tariff = pd.DataFrame()
+        if hasattr(st.session_state.stream, 'metrics_history_base_simulation'):
+            st.session_state.stream.metrics_history_base_simulation = pd.DataFrame()
         if hasattr(st.session_state.stream, 'ws'):
             st.session_state.stream.ws.close()
             connection_status.warning("Disconnected")
 
 if st.sidebar.button('Start Simulation After Training', use_container_width=True):
-        # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8001/run_simulation_with_one_replication')
-        if response.status_code == 200:
-            simulation_status.success("Simulation started")
-        else:
-            simulation_status.error("Failed to start simulation")
+    thread = threading.Thread(target=st.session_state.stream.connect)
+    thread.daemon = True
+    add_script_run_ctx(thread)
+    thread.start()
+    # Run simulation by calling the API endpoint
+    response = requests.get('http://localhost:8001/run_simulation_with_one_replication')
+    if response.status_code == 200:
+        simulation_status.success("Simulation started")
+    else:
+        simulation_status.error("Failed to start simulation")
 
 
 # Main dashboard area

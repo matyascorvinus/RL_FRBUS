@@ -161,3 +161,106 @@ class PPOAgent(nn.Module):
             # Clip gradients for stability
             torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
             self.optimizer.step()
+
+    def implement_qe_effects(self, qe_amount):
+        """
+        Implement QE effects through existing FRB/US variables
+        
+        Args:
+            qe_amount (float): Amount of QE in billions of dollars
+        
+        Returns:
+            dict: Adjustments to existing variables
+        """
+        adjustments = {}
+        
+        # 1. Term Premium Effects
+        # QE reduces term premiums on longer-term securities
+        adjustments['reqp'] = {
+            'value': -0.15 * (qe_amount / 500),  # Reduce equity premium
+            'description': 'Equity risk premium reduction from QE'
+        }
+        
+        # 2. Treasury Yield Effects
+        # QE typically has larger effects on longer-term rates
+        adjustments['rg30'] = {
+            'value': -0.20 * (qe_amount / 500),  # 30-year yield reduction
+            'description': '30-year Treasury yield reduction'
+        }
+        
+        adjustments['rg10'] = {
+            'value': -0.15 * (qe_amount / 500),  # 10-year yield reduction
+            'description': '10-year Treasury yield reduction'
+        }
+        
+        adjustments['rg5'] = {
+            'value': -0.10 * (qe_amount / 500),  # 5-year yield reduction
+            'description': '5-year Treasury yield reduction'
+        }
+        
+        # 3. Financial Conditions Effects
+        adjustments['rbbbp'] = {
+            'value': -0.10 * (qe_amount / 500),  # Corporate bond premium reduction
+            'description': 'Corporate bond premium reduction'
+        }
+        
+        # 4. Balance Sheet Effects
+        adjustments['fcbn'] = {
+            'value': qe_amount,  # Direct balance sheet expansion
+            'description': 'Net claims adjustment for QE'
+        }
+        
+        return adjustments
+
+    def apply_qe_policy(self, state, qe_amount):
+        """
+        Apply QE policy by modifying multiple channels
+        """
+        # Get QE effects
+        qe_adjustments = self.implement_qe_effects(qe_amount)
+        
+        # Modify action space to include QE effects
+        actions = {
+            'rff': self.action_bounds['rff'][0],  # Keep rates low during QE
+            'reqp': qe_adjustments['reqp']['value'],
+            'rg30': qe_adjustments['rg30']['value'],
+            'rg10': qe_adjustments['rg10']['value'],
+            'rg5': qe_adjustments['rg5']['value'],
+            'rbbbp': qe_adjustments['rbbbp']['value'],
+            'fcbn': qe_adjustments['fcbn']['value']
+        }
+        
+        return actions
+
+    def qe_policy_rule(self, state):
+        """
+        QE policy rule based on economic conditions
+        """
+        # Economic thresholds for QE
+        severe_conditions = (
+            state['lur'] > 6.5 or  # High unemployment
+            state['picnia'] < 0.5 or  # Very low inflation
+            state['hggdp'] < -2.0  # Negative growth
+        )
+        
+        # Determine QE amount based on conditions
+        if severe_conditions:
+            if state['rff'] <= 0.25:  # If at zero lower bound
+                # QE amount based on severity of conditions
+                unemployment_gap = max(0, state['lur'] - 6.5)
+                inflation_gap = max(0, 2.0 - state['picnia'])
+                growth_gap = max(0, -state['hggdp'])
+                
+                qe_amount = min(500, 100 * (unemployment_gap + inflation_gap + growth_gap))
+                return self.apply_qe_policy(state, qe_amount)
+        # Modified action bounds to include QE-related variables
+        self.action_bounds.update({
+            'reqp': (-0.5, 0.5),    # Equity premium adjustments
+            'rg30': (-0.5, 0.5),    # Long-term rate adjustments
+            'rg10': (-0.5, 0.5),    # Medium-term rate adjustments
+            'rg5': (-0.5, 0.5),     # Shorter-term rate adjustments
+            'rbbbp': (-0.3, 0.3),   # Corporate premium adjustments
+            'fcbn': (-500, 500)     # Balance sheet adjustments
+        })
+        
+        return None  # No QE needed
