@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 MUTED_REDS = {
     'bright': '#c44f4f',  # Muted version of FF4B4B
     'medium': '#9A1A3C',  # Muted version of B91D47
-    'dark': '#721726',    # Muted version of 871B2D
+    'dark': '#d62728',    # Muted version of 871B2D
     'darkest': '#3A1919',  # Muted version of 441D1D
     'light': '#F5AE98', # light yellow
 }
@@ -1113,7 +1113,8 @@ selected_view = st.sidebar.radio(
 
 # Create placeholder for real-time updates
 placeholder = st.empty()
-
+if 'simulation_run' not in st.session_state:
+    st.session_state.simulation_run = False
 # Create connection controls
 connection_status = st.sidebar.empty()
 simulation_status = st.sidebar.empty()
@@ -1160,21 +1161,38 @@ if st.sidebar.button('Start Simulation After Training', use_container_width=True
     thread.start()
     # Run simulation by calling the API endpoint
     response = requests.get('http://localhost:8001/run_simulation_with_one_replication')
-    if response.status_code == 200:
-        simulation_status.success("Simulation started")
+    if response.status_code == 200 or response.status_code == 204:
+        simulation_status.success("Simulation started")     
     else:
         simulation_status.error("Failed to start simulation")
 
-if st.sidebar.button('Save Simulation', use_container_width=True):
+if st.sidebar.button('Save Simulation', use_container_width=True, disabled=(not (hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.session_state.stream.metrics_history_rl_tariff.empty))):
     # Save the simulation data to a CSV file
-    df = st.session_state.stream.metrics_history_rl_tariff
+    df_rl_tariff = st.session_state.stream.metrics_history_rl_tariff
+    df_rl_tariff['simulation_type'] = 'AI Decision Makers/FRBUS with Tariff - 50%'
     df_without_tariff = st.session_state.stream.metrics_history_without_tariff
+    df_without_tariff['simulation_type'] = 'AI Decision Makers/FRBUS Without Tariff'
     df_base_simulation = st.session_state.stream.metrics_history_base_simulation
-    df.to_csv('simulation_data.csv', index=False)
+    df_base_simulation['simulation_type'] = 'FRBUS-Based Simulation - Without Tariff'
+    df_rl_tariff.to_csv('simulation_data_rl_tariff.csv', index=False)
     df_without_tariff.to_csv('simulation_data_without_tariff.csv', index=False)
     df_base_simulation.to_csv('simulation_data_base_simulation.csv', index=False)
-    simulation_status.success("Simulation data saved to CSV files")
+    # Combine all dataframes
+    combined_df = pd.concat([df_rl_tariff, df_without_tariff, df_base_simulation], 
+                          ignore_index=True)
+    
+    # Save combined data to a single CSV
+    combined_df.to_csv('combined_simulation_data.csv', index=False)
+    simulation_status.success("Simulation data saved to CSV files") 
 
+    st.sidebar.download_button(
+        label="Download Combined Simulation Data",
+        data=combined_df.to_csv(index=False),
+        file_name="combined_simulation_data.csv",
+        mime="text/csv",
+        key=f"download_combined_simulation_data",
+        use_container_width=True
+    )
 
 
 

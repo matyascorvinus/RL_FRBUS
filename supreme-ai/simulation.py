@@ -5,7 +5,7 @@ from pyfrbus.load_data import load_data
 from ppo_agent import PPOAgent
 import numpy as np
 import torch
-from env_function import calculate_reward, update_ppo, calculate_reward_policy
+from env_function import calculate_reward, update_ppo, calculate_reward_policy, calculate_reward_policy_v1
 import pandas as pd
 import time
 
@@ -225,8 +225,8 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                     
                     
                     # Calculate reward based on economic outcomes 
-                    reward = calculate_reward_policy(solution, solution_without_rl, quarter_str, simend)
-                    reward_without_tariff = calculate_reward_policy(solution_without_tariff, solution_without_rl, quarter_str, simend)
+                    reward = calculate_reward_policy_v1(solution, solution_without_rl, quarter_str, simend)
+                    reward_without_tariff = calculate_reward_policy_v1(solution_without_tariff, solution_without_rl, quarter_str, simend)
                     total_reward += reward
                     total_reward_without_tariff += reward_without_tariff
                     # Store experience for PPO update
@@ -278,6 +278,8 @@ async def run_the_training_for_simulation_function(ppo_agent, ppo_agent_without_
                 os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff', exist_ok=True)
                 logger.info(f"Total reward for replication {rep}: {total_reward}")
                 logger.info(f"Total reward for replication {rep} without tariff: {total_reward_without_tariff}")
+                logger.info(f"Highest reward for replication {rep} with tariff: {highest_score}")
+                logger.info(f"Highest reward for replication {rep} without tariff: {highest_score_without_tariff}")
                 if total_reward > highest_score:
                     highest_score = total_reward
                     the_best_replication = rep
@@ -519,7 +521,7 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_v5"
+    key_checkpoint_path = "trump_v6"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_10.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_10.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
@@ -544,9 +546,11 @@ async def main_simulation():
     # Your existing setup code - example values shown below
     # The best replication is 4 with score 44 - trump_v5
     # The best replication without tariff is 1 with score 60 - trump_v5
-    key_checkpoint_path = "trump_v5"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_1.pt"
+    # The best replication is 6 with score -34.55998992919922 - trump_v6
+    # The best replication without tariff is 0 with score -99.00028991699219 - trump_v6
+    key_checkpoint_path = "trump_v6"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_6.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=8, action_dim=len(policy_vars)))
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=8, action_dim=len(policy_vars))) 
     simulation_start = "2024q1"
