@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,14 +7,17 @@ from torch.distributions import Normal
 class PPOAgent(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim=128, lr=0.0003, gamma=0.99, eps_clip=0.2):
         super(PPOAgent, self).__init__()
-        
+
         # Larger network for complex economic relationships
         self.actor = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             # Output mean and std for each action
             nn.Linear(hidden_dim, action_dim * 2)
@@ -21,10 +25,13 @@ class PPOAgent(nn.Module):
         
         self.critic = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, 1)
         )
@@ -38,7 +45,7 @@ class PPOAgent(nn.Module):
         self.action_bounds = {
             'rff': (0.125, 8.0),    # Quarterly interest rate change limits (percentage points)
             'gtrt': (0.1, 0.3),    # Trend ratio of transfer payments to GDP (percentage)
-            'egfen': (0.1, 0.5),    # Trend level of federal government expenditures. (billions of dollars)
+            'egfen': (0.5, 5),    # Trend level of federal government expenditures. (billions of dollars)
             'trp': (0.1, 0.4),    # Personal tax revenues rates (percentage)
             'trci': (0.1, 0.4),    # Corporate tax revenues rates (percentage)
         }
@@ -46,59 +53,90 @@ class PPOAgent(nn.Module):
     def forward(self, state):
         state = torch.from_numpy(state).float()
         raw_output = self.actor(state)
-        # Scale the means to be within action bounds
-        means = torch.tanh(raw_output[:self.action_dim]) # Will give values between -1 and 1
-        # Then scale to your desired range
-        means = means * 0.5 # Or whatever scaling factor matches your bounds
-        log_stds = raw_output[self.action_dim:]
-        
-        # Bound the standard deviations
-        stds = log_stds.exp().clamp(min=1e-3, max=1)
-        
-        # Create normal distributions for each action
-        dists = [Normal(mean, std) for mean, std in zip(means, stds)]
-        
-        # Sample actions and get their log probs
+        # Split into means and log_stds
+        means, log_stds = torch.chunk(raw_output, 2, dim=-1)
+        # Optionally clamp the log_stds to avoid extreme values
+        log_stds = torch.clamp(log_stds, min=-5.0, max=2.0)
+        stds = log_stds.exp()
+
+        # Create multivariate distribution
+        dist = Normal(means, stds)
+
+        # Pass through critic
+        value = self.critic(state)
+
+        # 1) Sample raw action from the Normal distribution
+        raw_action = dist.rsample()  # shape: [action_dim] (assuming a single state)
+
+        # 2) Tanh transform to keep values in [-1, 1]
+        action_tanh = torch.tanh(raw_action)  # shape: [action_dim]
+
+        # 3) Adjust log_prob for Tanh
+        #    log_prob of raw_action minus the log of the Jacobian determinant
+        #    = dist.log_prob(raw_action) - log(1 - tanh(raw_action)^2)
+        # We sum across dimensions for the final log prob of the action vector.
+        log_prob = dist.log_prob(raw_action) - torch.log(1 - action_tanh.pow(2) + 1e-6)
+        log_prob = log_prob.sum(dim=-1, keepdim=True)  # shape: [1]
+
+        # 4) Scale each dimension from [-1, 1] to [low, high]
+        #    We'll rely on a consistent ordering of the keys in `self.action_bounds`.
         actions = []
-        log_probs = []
-        
-        for i, dist in enumerate(dists):
-            action = dist.sample()
-            # Apply action bounds
-            bound_low, bound_high = self.action_bounds[list(self.action_bounds.keys())[i]]
-            action = torch.clamp(action, bound_low, bound_high)
-            actions.append(action)
-            log_probs.append(dist.log_prob(action))
-        
-        actions = torch.stack(actions)
-        log_probs = torch.stack(log_probs)
-        
-        state_value = self.critic(state)
-        
-        return actions.detach().numpy(), log_probs, state_value
+        tool_keys = list(self.action_bounds.keys())  # e.g. ['rff','gtrt','egfen','trp','trci']
+
+        # Make sure this ordering matches the order in which your network outputs each action dimension!
+        for i, tool_name in enumerate(tool_keys):
+            low, high = self.action_bounds[tool_name]
+            # Rescale from [-1, 1] to [low, high]
+            #   scaled = low + (high - low)*( (action_tanh[i]+1)/2 )
+            scaled_action = low + (high - low) * (action_tanh[i] + 1) / 2.0
+            actions.append(scaled_action)
+
+        # 5) Combine into a single tensor
+        actions = torch.stack(actions)  # shape: [action_dim]
+ 
+        return actions.detach().numpy(), log_prob, value
     
     def evaluate(self, state, action):
         # Get mean and std from actor network
         action_mean_std = self.actor(state)
-        action_mean, action_std = torch.chunk(action_mean_std, 2, dim=-1)
-        # Use softplus to ensure positive std and add small value for stability
-        action_std = torch.nn.functional.softplus(action_std) + 1e-3
         
-        # Create normal distribution
-        dist = Normal(action_mean, action_std)
+        # Split into means and log_stds (same as forward)
+        means, log_stds = torch.chunk(action_mean_std, 2, dim=-1)
+        log_stds = torch.clamp(log_stds, min=-5.0, max=2.0)
+        stds = log_stds.exp()
         
-        # Get log probability of the taken action
-        action_logprobs = dist.log_prob(action)
+        # Create distribution
+        dist = Normal(means, stds)
         
-        # Get entropy for exploration
-        dist_entropy = dist.entropy().mean()
+        # Convert provided actions back to raw space (inverse of tanh)
+        # First rescale actions from [low, high] to [-1, 1]
+        normalized_actions = []
+        tool_keys = list(self.action_bounds.keys())
         
-        # Get state value
+        for i, tool_name in enumerate(tool_keys):
+            low, high = self.action_bounds[tool_name]
+            # Inverse of scaling from forward method
+            normalized = 2.0 * (action[:, i] - low) / (high - low) - 1.0
+            normalized_actions.append(normalized)
+        
+        normalized_actions = torch.stack(normalized_actions, dim=1)
+        
+        # Inverse of tanh (atanh)
+        raw_actions = torch.atanh(torch.clamp(normalized_actions, -0.999, 0.999))
+        
+        # Calculate log probabilities (same as forward)
+        log_probs = dist.log_prob(raw_actions) - torch.log(1 - normalized_actions.pow(2) + 1e-6)
+        log_probs = log_probs.sum(dim=-1, keepdim=True)
+        
+        # Calculate entropy
+        dist_entropy = dist.entropy()
+        
+        # Get state value from critic
         state_value = self.critic(state)
         
-        return action_logprobs, state_value, dist_entropy
-    
-    def update(self, states, actions, logprobs, rewards, values, dones):
+        return log_probs, state_value, dist_entropy
+        
+    def _update(self, states, actions, logprobs, rewards, values, dones):
         """
         Update policy and value function using PPO algorithm.
         
@@ -150,117 +188,99 @@ class PPOAgent(nn.Module):
             # Calculate policy and value losses
             policy_loss = -torch.min(surr1, surr2).mean()
             value_loss = 0.5 * torch.mean(torch.pow(state_values - rewards, 2))
-            entropy_loss = -0.01 * dist_entropy  # Encourage exploration
+            # Sum entropy across dimensions since it's per-dimension
+            entropy_loss = -0.01 * dist_entropy.sum(dim=-1).mean()  # Changed this line
             
             # Combined loss
             loss = policy_loss + value_loss + entropy_loss
             
             # Take gradient step
             self.optimizer.zero_grad()
-            loss.backward()
+            loss.backward(retain_graph=True)
             # Clip gradients for stability
             torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
             self.optimizer.step()
-
-    def implement_qe_effects(self, qe_amount):
+        
+    def update_ppo(self, experiences):
         """
-        Implement QE effects through existing FRB/US variables
+        Update PPO agent with collected experiences.
         
         Args:
-            qe_amount (float): Amount of QE in billions of dollars
-        
-        Returns:
-            dict: Adjustments to existing variables
+            experiences (list): List of dictionaries containing experience data
         """
-        adjustments = {}
+        # Convert experiences to torch tensors, handling numpy arrays
+        states = torch.stack([torch.from_numpy(e['state']).float() for e in experiences])
         
-        # 1. Term Premium Effects
-        # QE reduces term premiums on longer-term securities
-        adjustments['reqp'] = {
-            'value': -0.15 * (qe_amount / 500),  # Reduce equity premium
-            'description': 'Equity risk premium reduction from QE'
-        }
+        # For actions, we need to handle the case where it's already a tensor
+        actions_list = []
+        log_probs_list = []
+        rewards_list = []
+        values_list = []
+        dones_list = []
         
-        # 2. Treasury Yield Effects
-        # QE typically has larger effects on longer-term rates
-        adjustments['rg30'] = {
-            'value': -0.20 * (qe_amount / 500),  # 30-year yield reduction
-            'description': '30-year Treasury yield reduction'
-        }
-        
-        adjustments['rg10'] = {
-            'value': -0.15 * (qe_amount / 500),  # 10-year yield reduction
-            'description': '10-year Treasury yield reduction'
-        }
-        
-        adjustments['rg5'] = {
-            'value': -0.10 * (qe_amount / 500),  # 5-year yield reduction
-            'description': '5-year Treasury yield reduction'
-        }
-        
-        # 3. Financial Conditions Effects
-        adjustments['rbbbp'] = {
-            'value': -0.10 * (qe_amount / 500),  # Corporate bond premium reduction
-            'description': 'Corporate bond premium reduction'
-        }
-        
-        # 4. Balance Sheet Effects
-        adjustments['fcbn'] = {
-            'value': qe_amount,  # Direct balance sheet expansion
-            'description': 'Net claims adjustment for QE'
-        }
-        
-        return adjustments
-
-    def apply_qe_policy(self, state, qe_amount):
-        """
-        Apply QE policy by modifying multiple channels
-        """
-        # Get QE effects
-        qe_adjustments = self.implement_qe_effects(qe_amount)
-        
-        # Modify action space to include QE effects
-        actions = {
-            'rff': self.action_bounds['rff'][0],  # Keep rates low during QE
-            'reqp': qe_adjustments['reqp']['value'],
-            'rg30': qe_adjustments['rg30']['value'],
-            'rg10': qe_adjustments['rg10']['value'],
-            'rg5': qe_adjustments['rg5']['value'],
-            'rbbbp': qe_adjustments['rbbbp']['value'],
-            'fcbn': qe_adjustments['fcbn']['value']
-        }
-        
-        return actions
-
-    def qe_policy_rule(self, state):
-        """
-        QE policy rule based on economic conditions
-        """
-        # Economic thresholds for QE
-        severe_conditions = (
-            state['lur'] > 6.5 or  # High unemployment
-            state['picnia'] < 0.5 or  # Very low inflation
-            state['hggdp'] < -2.0  # Negative growth
-        )
-        
-        # Determine QE amount based on conditions
-        if severe_conditions:
-            if state['rff'] <= 0.25:  # If at zero lower bound
-                # QE amount based on severity of conditions
-                unemployment_gap = max(0, state['lur'] - 6.5)
-                inflation_gap = max(0, 2.0 - state['picnia'])
-                growth_gap = max(0, -state['hggdp'])
+        for e in experiences:
+            # Handle actions
+            if isinstance(e['actions'], (list, tuple)):
+                actions_list.append(torch.stack(e['actions']))
+            else:
+                actions_list.append(e['actions'])
                 
-                qe_amount = min(500, 100 * (unemployment_gap + inflation_gap + growth_gap))
-                return self.apply_qe_policy(state, qe_amount)
-        # Modified action bounds to include QE-related variables
-        self.action_bounds.update({
-            'reqp': (-0.5, 0.5),    # Equity premium adjustments
-            'rg30': (-0.5, 0.5),    # Long-term rate adjustments
-            'rg10': (-0.5, 0.5),    # Medium-term rate adjustments
-            'rg5': (-0.5, 0.5),     # Shorter-term rate adjustments
-            'rbbbp': (-0.3, 0.3),   # Corporate premium adjustments
-            'fcbn': (-500, 500)     # Balance sheet adjustments
-        })
+            # Handle log_probs
+            if isinstance(e['log_probs'], (list, tuple)):
+                log_probs_list.append(torch.stack(e['log_probs']))
+            else:
+                log_probs_list.append(e['log_probs'])
+                
+            # Handle rewards
+            if isinstance(e['reward'], (np.ndarray, float, int)):
+                rewards_list.append(torch.tensor(float(e['reward'])))
+            else:
+                rewards_list.append(e['reward'])
+                
+            # Handle values
+            if isinstance(e['value'], (np.ndarray, float, int)):
+                values_list.append(torch.tensor(float(e['value'])))
+            else:
+                values_list.append(e['value'])
+                
+            # Handle dones
+            dones_list.append(torch.tensor(float(e['done'])))
         
-        return None  # No QE needed
+        actions = torch.stack(actions_list)
+        log_probs = torch.stack(log_probs_list).detach()
+        rewards = torch.stack(rewards_list)
+        values = torch.stack(values_list)
+        dones = torch.stack(dones_list)
+        
+        # Normalize rewards
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
+        
+        # Create mini-batches for updating
+        batch_size = min(64, len(rewards))  # Ensure batch size isn't larger than dataset
+        n_samples = len(rewards)
+        indices = torch.randperm(n_samples)
+        
+        # Multiple epochs of updating
+        for _ in range(10):
+            for start_idx in range(0, n_samples, batch_size):
+                end_idx = start_idx + batch_size
+                batch_indices = indices[start_idx:end_idx]
+                
+                # Get batch data
+                batch_states = states[batch_indices]
+                batch_actions = actions[batch_indices]
+                batch_log_probs = log_probs[batch_indices]
+                batch_rewards = rewards[batch_indices]
+                batch_values = values[batch_indices]
+                batch_dones = dones[batch_indices]
+
+                # Update the policy and value function
+                self._update(
+                    batch_states,
+                    batch_actions,
+                    batch_log_probs,
+                    batch_rewards,
+                    batch_values,
+                    batch_dones
+                )
+        

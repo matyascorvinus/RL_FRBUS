@@ -207,7 +207,7 @@ def render_gdp_charts(df, title):
                         width=bar_width,
                         offset=-bar_width))
     fig.add_trace(go.Bar(x=df['quarter'], y=df['nominal_gdp'], name='Nominal GDP',
-                        marker_color=MUTED_REDS['bright'],
+                        marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=0))
     

@@ -10,6 +10,7 @@ setup(
         "fastapi==0.68.0",
         "uvicorn==0.15.0",
         "websockets==11.0.3",
+        "torchrl==0.1.1",
         "black",
         "flake8",
         "mypy",
