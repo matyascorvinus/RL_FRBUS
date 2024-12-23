@@ -30,7 +30,7 @@ Python version for Streamlit: Python 3.10.12
 
 ## Installation guideline 
 ### PyFRB/US
-The PyFRB/US package can be installed by running 
+The PyFRB/US package and the PPO RL (supreme-ai) package can be installed by running 
 ```
 pip install -e .
 ```
