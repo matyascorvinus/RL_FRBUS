@@ -83,8 +83,17 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             return data.shift(1).loc[current_quarter].values
 
         def apply_actions(data, current_quarter, actions):
-            """Apply PPO agent's actions to the data"""
-            logger.info(f"Applying actions to the data for quarter {current_quarter} with actions {actions}")
+            """Apply PPO agent's actions to the data""" 
+            
+            
+            # # Action bounds for different policy tools
+            # self.action_bounds = {
+            #     'rff': (-0.25, 0.25),    # Quarterly interest rate change limits (percentage points)
+            #     'gtrt': (-0.05, 0.05),    # Trend ratio of transfer payments to GDP (percentage)
+            #     'egfen': (-0.5, 0.5),    # Trend level of federal government expenditures. (billions of dollars)
+            #     'trp': (-0.05, 0.05),    # Personal tax revenues rates (percentage)
+            #     'trci': (-0.05, 0.05),    # Corporate tax revenues rates (percentage)
+            # }
             # Map actions to specific policy variables
             # Convert actions tensor to numpy if it's a torch tensor
             if torch.is_tensor(actions):
@@ -93,9 +102,20 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 actions_np = actions
             for var, action in zip(policy_vars, actions_np):  
                 if var == 'egfen':
-                    data.loc[current_quarter, var] = action * 1000
+                    if data.shift(1).loc[current_quarter, var] + action * 1000 > 1000 and data.shift(1).loc[current_quarter, var] + action * 1000 < 5000:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var] + action * 1000
+                    else:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var]
+                elif var == 'rff':
+                    if data.shift(1).loc[current_quarter, var] + action <= 8.00 and data.shift(1).loc[current_quarter, var] + action >= 0.00:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var] + action
+                    else:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var]
                 else:
-                    data.loc[current_quarter, var] = action
+                    if data.shift(1).loc[current_quarter, var] + action > 0.05 and data.shift(1).loc[current_quarter, var] + action < 0.5:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var] + action
+                    else:
+                        data.loc[current_quarter, var] = data.shift(1).loc[current_quarter, var] 
             return data
 
         def apply_tariff(data, current_quarter, tariff_rate):
@@ -309,8 +329,8 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                         experiences.append(experience) 
                         experiences_without_tariff.append(experience_without_tariff) 
                         
-                        # Update PPO agent after every 8 quarters (2 years)
-                        if len(experiences) >= 8:
+                        # Update PPO agent after every 20 quarters (5 years)
+                        if len(experiences) >= 20:
                             logger.info(f"Updating PPO agent after collecting {len(experiences)} quarters of experience")
                             ppo_agent.update_ppo(experiences)
                             ppo_agent_without_tariff.update_ppo(experiences_without_tariff)
@@ -389,9 +409,9 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_v11" 
-    ppo_agent = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=512)
-    ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=512) 
+    key_checkpoint_path = "trump_v13" 
+    ppo_agent = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)
+    ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096) 
     simulation_start = "2024q1"
     simulation_end = "2034q1"
     simulation_replications = 40
@@ -409,11 +429,11 @@ async def main_training():
 
 # Add the main execution block
 async def main_simulation(): 
-    key_checkpoint_path = "trump_v11"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_2.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
-    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars)))
-    ppo_agent_without_tariff = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars))) 
+    key_checkpoint_path = "trump_v13"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_25.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_27.pt"
+    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)) 
     simulation_start = "2024q1"
     simulation_end = "2044q1"
     simulation_replications = 1

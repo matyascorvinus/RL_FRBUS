@@ -33,8 +33,74 @@ MUTED_REDS = {
     'medium': '#9A1A3C',  # Muted version of B91D47
     'dark': '#d62728',    # Muted version of 871B2D
     'darkest': '#3A1919',  # Muted version of 441D1D
-    'light': '#F5AE98', # light yellow
+    'light': '#F5AE98', # light
+    'lightest': '#F39C7F', # light orange
 }
+ 
+
+def render_actions_charts(df, title):
+    """Render tax-related charts with rates and amounts"""
+    fig = go.Figure()
+    
+    # Create subplots: top for tax rates, bottom for tax amounts
+    fig = make_subplots(rows=3, cols=1, 
+                       subplot_titles=('Actions Rates', 'Expenditures'),
+                       vertical_spacing=0.2) 
+    
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['interest_rate'], 
+                  name='Federal Funds Rate', line=dict(color=MUTED_REDS['dark'])),
+        row=1, col=1
+    )
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['transfer_payments_ratio'], 
+                  name='Trend Ratio of Transfer Payments to GDP', line=dict(color=MUTED_REDS['light'], dash='dash')),
+        row=2, col=1
+    )
+    
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], 
+                  name='Personal Tax Revenues Rates', line=dict(color=MUTED_REDS['bright'], dash='dash')),
+        row=2, col=1
+    )
+    
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], 
+                  name='Corporate Tax Revenues Rates', line=dict(color=MUTED_REDS['lightest'], dash='dash')),
+        row=2, col=1
+    )
+
+    # Plot Tax Amounts (bottom subplot)
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['federal_expenditures'], 
+                  name='Trend Level of Federal Government Expenditures', line=dict(color=MUTED_REDS['medium'], dash='dash')),
+        row=3, col=1
+    )
+    fig.add_trace(
+        go.Scatter(x=df['quarter'], y=df['government_transfer_payments'], 
+                  name='Government Transfer Payments', line=dict(color=MUTED_REDS['lightest'], dash='dash')),
+        row=3, col=1
+    )
+    
+    # Update layout
+    fig.update_layout(
+        height=800,  # Increased height for better visibility
+        title=title,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    # Update y-axes labels
+    fig.update_yaxes(title_text="Rate (%)", row=1, col=1)
+    fig.update_yaxes(title_text="Revenue ($B)", row=2, col=1)
+    
+    return fig
 
 # Add visualization functions
 def render_overview_charts(df, title):
@@ -1217,6 +1283,9 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_unemployment_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True) 
         st.plotly_chart(render_real_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_nominal_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df, "Actions - AI Decision Makers/FRBUS with Tariff - 100%"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df_without_tariff, "Actions - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df_base_simulation, "Actions - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
     elif selected_view == "GDP Metrics":
         st.plotly_chart(render_gdp_charts(df, "GDP Components - AI Decision Makers/FRBUS with Tariff - 100%"), use_container_width=True)
         st.plotly_chart(render_gdp_charts(df_without_tariff, "GDP Components - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)

@@ -362,5 +362,3 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
                 f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
     return reward
-
-
