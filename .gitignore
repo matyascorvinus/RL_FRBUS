@@ -56,3 +56,11 @@ supreme-ai/__pycache__/ppo_agent.cpython-310.pyc
 .flake8
 supreme-ai/__pycache__/main.cpython-37.pyc
 supreme-ai/__pycache__/main.cpython-37.pyc
+frbus_streamlit_frontend/streamlit_app.log
+supreme-ai/__pycache__/api_client.cpython-37.pyc
+supreme-ai/__pycache__/main.cpython-37.pyc
+supreme-ai/__pycache__/models.cpython-37.pyc
+supreme-ai/__pycache__/simulation.cpython-37.pyc
+supreme-ai/nohup.out
+supreme-ai/simulation_training.log
+supreme-ai/streamlit_socket.log

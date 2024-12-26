@@ -362,7 +362,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                     except Exception as e:
                         logger.error(f"Simulation experience failed for quarter {quarter_str}: {e}") 
                         raise
-            if is_training and rep % 10000 == 0:    
+            if is_training and rep % 1000 == 0:    
                 try:
                     checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
                     # checkpoint_path_without_tariff = f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{rep + replication_restart}.pt'
@@ -439,7 +439,7 @@ async def main_training():
     ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69) 
     simulation_start = "2024q1"
     simulation_end = "2064q1"
-    simulation_replications = 100000
+    simulation_replications = 10000
     
     result = await run_the_simulation_function(
         ppo_agent, 
