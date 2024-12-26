@@ -341,24 +341,13 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
     # 8. Combine all components with balanced weights
     reward += -normalized_inflation_dev * 3.0          # Price stability
     reward += -normalized_unemployment_dev * 3.0       # Employment
-    reward += normalized_gdp_dev * 3.0                # Growth
+    reward += normalized_gdp_dev * 10.0                # Growth
     reward += -normalized_volatility * 4.0            # Smoothness
-    reward += growth_vs_history * 5.0                # Historical comparison - We want to make sure the AI prioritizes GDP performance
+    reward += growth_vs_history * 10.0                # Historical comparison - We want to make sure the AI prioritizes GDP performance
     reward += -normalized_misery * 2.0               # Economic health
-    reward += -normalized_debt * 4.0                 # Fiscal sustainability
+    reward += -normalized_debt * 4.0                 # Fiscal sustainability 
     
-    # 10. Long-term incentives
-    if int(end_quarter.split('q')[0]) >= 2030:
-        reward += torch.clamp(torch.tensor(real_gdp_comparison), -5, 5) * 5.0
-    
-    # 11. Extreme outcome penalties
-    if inflation_dev > 5.0 or unemployment_dev > 8.0:
-        reward -= 5.0
-    
-    if real_gdp_comparison < -2.0:
-        reward -= 5.0
-    
-    logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
-                f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
+    # logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
+    #             f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
     return reward

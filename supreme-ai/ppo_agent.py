@@ -44,11 +44,11 @@ class PPOAgent(nn.Module):
         
         # Action bounds for different policy tools
         self.action_bounds = {
-            'rff': (-0.25, 0.25),    # Quarterly interest rate change limits (percentage points)
-            'gtrt': (-0.1, 0.1),    # Trend ratio of transfer payments to GDP (percentage)
-            'egfen': (-0.25, 0.25),    # Trend level of federal government expenditures. (billions of dollars)
-            'trp': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
-            'trci': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
+            'rff': (0.25, 8.00),    # Quarterly interest rate change limits (percentage points)
+            'gtrt': (0.1, 0.4),    # Trend ratio of transfer payments to GDP (percentage)
+            'egfe': (-0.25, 0.25),    # Trend level of federal government expenditures. (billions of dollars)
+            'trptx': (0.1, 0.6),    # Personal tax revenues rates (percentage)
+            'trcit': (0.1, 0.6),    # Corporate tax revenues rates (percentage)
         }
         
     def forward(self, state):
@@ -82,7 +82,7 @@ class PPOAgent(nn.Module):
         # 4) Scale each dimension from [-1, 1] to [low, high]
         #    We'll rely on a consistent ordering of the keys in `self.action_bounds`.
         actions = []
-        tool_keys = list(self.action_bounds.keys())  # e.g. ['rff','gtrt','egfen','trp','trci']
+        tool_keys = list(self.action_bounds.keys())  # e.g. ['rff','gtrt','egfe','trptx','trcit']
 
         # Make sure this ordering matches the order in which your network outputs each action dimension!
         for i, tool_name in enumerate(tool_keys):

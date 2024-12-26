@@ -10,10 +10,10 @@ class EconomicMetrics(BaseModel):
         'xgdp': 0.0,   # Real GDP
         'tpn': 0.0,    # Personal tax revenues
         'tcin': 0.0,   # Corporate tax revenues
-        'trp': 0.0,    # Personal tax rates
-        'trci': 0.0,   # Corporate tax rates
+        'trptx': 0.0,    # Personal tax rates
+        'trcit': 0.0,   # Corporate tax rates
         'gtrt': 0.0,   # Transfer payments ratio
-        'egfen': 0.0,  # Federal expenditures
+        'egfe': 0.0,  # Federal expenditures
         'rff': 0.0,  # Interest rate
         'pcpi': 0.0,   # PCI value
         'lur': 0.0,    # Unemployment rate
