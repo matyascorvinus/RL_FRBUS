@@ -12,7 +12,7 @@ simulation_guidelines = """
 |------------------------------|----------------------------|-------------------------------------------------------------------------------------|
 | **Population Dynamics**      | Numbers and Growth Rates   | - Total population over time | Annual population growth rate | Rural vs. urban population proportions |
 |                              | Age Structure             | - Age distribution (focus on 20–29 age group) | Trends in youth bulges |
-|                              | Urbanization              | - Urbanization rate (percentage of population in urban areas) | Migration flows (rural to urban) | Regional differences in urbanization (e.g., Hanoi, Ho Chi Minh City) |
+|                              | Urbanization              | - Urbanization rate (percentage of population in urban areas) | Migration flows (rural to urban) |
 |                              | Relative Wages            | - Median wages | GDP per capita | Trends in real wages over time | Urban vs. rural cost of living |
 | **Elite Dynamics**           | Elite Numbers             | - Total number of elites | Breakdown of elites by category (political, economic, cultural) | Established vs. new aspirant elites |
 |                              | Composition of Elites     | - Sectoral distribution of elites (government, business, academia, etc.) | Rising sectors contributing to elite status (e.g., IT, real estate) |
@@ -32,7 +32,21 @@ simulation_guidelines = """
 """
 
 st.markdown(simulation_guidelines)
+import pandas as pd
+import requests
 
+# Fetch the data. Age distribution (focus on 20–29 age group)
+df = pd.read_csv("https://ourworldindata.org/grapher/population-by-age-group.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+
+# Fetch the data. Urbanization rate (percentage of population in urban areas)
+df = pd.read_csv("https://ourworldindata.org/grapher/population-of-cities-towns-and-villages.csv?v=1&csvType=full&useColumnShortNames=true", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+# Fetch the data. Daily median income
+df = pd.read_csv("https://ourworldindata.org/grapher/daily-median-income.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+# Fetch the data. GDP per capita
+df = pd.read_csv("https://ourworldindata.org/grapher/gdp-per-capita-worldbank.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
 
 # Convert the guidelines into a more structured format
 categories = {
@@ -48,8 +62,7 @@ categories = {
         ],
         'Urbanization': [
             'Urbanization rate (percentage of population in urban areas)',
-            'Migration flows (rural to urban)',
-            'Regional differences in urbanization'
+            'Migration flows (rural to urban)'
         ],
         'Relative Wages': [
             'Median wages',

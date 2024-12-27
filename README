@@ -81,14 +81,7 @@ cd supreme-ai
 uvicorn simulation:app --reload --port 8001
 ```
 
-To showcase the result to the Streamlit frontend, run a seperated terminal and run this command
-
-```
-cd supreme-ai
-uvicorn main:app --reload --port 8000
-```
-
-In parallel with the 'python simulation.py', 
+To showcase the result to the Streamlit frontend, run a seperated terminal,
 go to the directory frbus_streamlit_frontend and run this command
 
 ```
@@ -99,7 +92,6 @@ run streamlit run streamlit-app.py
 or
 
 ```
-nohup uvicorn simulation:app --reload --port 8001 > simulation_training.log 2>&1 &
-nohup uvicorn main:app --reload --port 8000 > streamlit_socket.log 2>&1 &
+nohup uvicorn simulation:app --reload --port 8001 > simulation_training.log 2>&1 & 
 nohup streamlit run streamlit-app.py > streamlit_app.log 2>&1 &
 ```

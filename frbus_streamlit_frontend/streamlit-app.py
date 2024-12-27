@@ -1195,7 +1195,7 @@ if 'stream' not in st.session_state:
 with col0: 
     if st.button('Resume', use_container_width=True):
         # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8001/run_simulation_resume')
+        response = requests.get('http://localhost:8000/run_simulation_resume')
         if response.status_code == 200:
             simulation_status.success("Training resumed")
         else:
@@ -1203,7 +1203,7 @@ with col0:
 with col1:
     if st.button('Training', use_container_width=True):
         # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8001/run_simulation_training')
+        response = requests.get('http://localhost:8000/run_simulation_training')
         if response.status_code == 200:
             simulation_status.success("Training completed")
         else:
@@ -1235,7 +1235,7 @@ if st.sidebar.button('Start Simulation After Training', use_container_width=True
     add_script_run_ctx(thread)
     thread.start()
     # Run simulation by calling the API endpoint
-    response = requests.get('http://localhost:8001/run_simulation')
+    response = requests.get('http://localhost:8000/run_simulation')
     if response.status_code == 200 or response.status_code == 204:
         simulation_status.success("Simulation started")     
     else:
