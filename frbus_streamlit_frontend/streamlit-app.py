@@ -192,7 +192,7 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=inflation_without, 
-        name='Inflation - AI Decision Makers/FRBUS Without Tariff', 
+        name='Inflation - Original Data', 
         line=dict(color=MUTED_REDS['bright'])
     ))
     
@@ -229,7 +229,7 @@ def render_inflation_comparison_charts(df_rl_tariff, df_without_tariff, df_base_
     """Render inflation comparison charts"""
     fig = go.Figure()
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS with Tariff - 0%', marker_color=MUTED_REDS['dark']))
-    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['bright']))
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['pcpi'], name='Inflation - Original Data', marker_color=MUTED_REDS['bright']))
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['pcpi'], name='Inflation - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
 
     fig.update_layout(
@@ -247,7 +247,7 @@ def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_ba
     """Render unemployment comparison charts"""
     fig = go.Figure()
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS with Tariff - 0%', marker_color=MUTED_REDS['dark']))
-    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS Without Tariff', marker_color=MUTED_REDS['bright']))
+    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['unemployment'], name='Unemployment - Original Data', marker_color=MUTED_REDS['bright']))
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['unemployment'], name='Unemployment - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
 
     fig.update_layout(
@@ -304,7 +304,7 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
                         offset=-bar_width)) 
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['real_gdp'], 
-                        name='Real GDP (AI Decision Makers/FRBUS Without Tariff)', 
+                        name='Real GDP (Original Data)', 
                         marker_color=MUTED_REDS['bright'],  
                         width=bar_width,
                         offset=0)) 
@@ -356,7 +356,7 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['nominal_gdp'], 
-                        name='Nominal GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Nominal GDP (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -418,7 +418,7 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['personal_tax'], 
-                        name='Personal Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Personal Tax (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -459,7 +459,7 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['corporate_tax'], 
-                        name='Corporate Tax (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Corporate Tax (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -500,7 +500,7 @@ def render_government_transfer_payments_charts_comparison(df_rl_tariff, df_witho
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['government_transfer_payments'], 
-                        name='Government Transfer Payments (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Government Transfer Payments (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -541,7 +541,7 @@ def render_government_debt_to_gdp_charts_comparison(df_rl_tariff, df_without_tar
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['debt_to_gdp'], 
-                        name='Government Debt to GDP (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Government Debt to GDP (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -591,7 +591,7 @@ def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=gdp_growth_without, 
-        name='Real GDP Growth - AI Decision Makers/FRBUS Without Tariff', 
+        name='Real GDP Growth - Original Data', 
         line=dict(color=MUTED_REDS['bright'])
     ))
     
@@ -650,7 +650,7 @@ def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff,
     fig.add_trace(go.Scatter(
         x=df_without_tariff['quarter'], 
         y=gdp_growth_without, 
-        name='Nominal GDP Growth - AI Decision Makers/FRBUS Without Tariff', 
+        name='Nominal GDP Growth - Original Data', 
         line=dict(color=MUTED_REDS['bright'])
     ))
     
@@ -695,7 +695,7 @@ def render_federal_surplus_comparison_charts(df_rl_tariff, df_without_tariff, df
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Scatter(x=df_without_tariff['quarter'], y=df_without_tariff['federal_surplus'], 
-                        name='Federal Surplus (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'])) 
+                        name='Federal Surplus (Original Data)', marker_color=MUTED_REDS['bright'])) 
     
     # Add GDP components for FRBUS-Based Simulation - Without Tariff
     fig.add_trace(go.Scatter(x=df_base_simulation['quarter'], y=df_base_simulation['federal_surplus'], 
@@ -858,7 +858,7 @@ def render_government_expenditure_comparison(df_rl_tariff, df_without_tariff, df
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['federal_expenditures'], 
-                        name='Federal Expenditures (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Federal Expenditures (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
@@ -896,7 +896,7 @@ def render_government_transfers_comparison(df_rl_tariff, df_without_tariff, df_b
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['transfer_payments_ratio'], 
-                        name='Transfer Payments Ratio (AI Decision Makers/FRBUS Without Tariff)', marker_color=MUTED_REDS['bright'],
+                        name='Transfer Payments Ratio (Original Data)', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0))          
     
@@ -1246,7 +1246,7 @@ if st.sidebar.button('Save Simulation', use_container_width=True, disabled=(not 
     df_rl_tariff = st.session_state.stream.metrics_history_rl_tariff
     df_rl_tariff['simulation_type'] = 'AI Decision Makers/FRBUS with Tariff - 0%'
     df_without_tariff = st.session_state.stream.metrics_history_without_tariff
-    df_without_tariff['simulation_type'] = 'AI Decision Makers/FRBUS Without Tariff'
+    df_without_tariff['simulation_type'] = 'Original Data'
     df_base_simulation = st.session_state.stream.metrics_history_base_simulation
     df_base_simulation['simulation_type'] = 'FRBUS-Based Simulation - Without Tariff'
     df_rl_tariff.to_csv('simulation_data_rl_tariff.csv', index=False)
@@ -1279,13 +1279,13 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
     # Display charts based on selected view
     if selected_view == "Overview":
         st.plotly_chart(render_overview_charts(df, "Key Economic Indicators Over Time - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_overview_charts(df_without_tariff, "Key Economic Indicators Over Time - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df_without_tariff, "Key Economic Indicators Over Time - Original Data"), use_container_width=True)
         st.plotly_chart(render_overview_charts(df_base_simulation, "Key Economic Indicators Over Time - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_overview_tax_rates_charts(df, "Tax Rates - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_overview_tax_rates_charts(df_without_tariff, "Tax Rates - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_tax_rates_charts(df_without_tariff, "Tax Rates - Original Data"), use_container_width=True)
         st.plotly_chart(render_overview_tax_rates_charts(df_base_simulation, "Tax Rates - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_overview_inflation_charts(df, "Inflation - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_overview_inflation_charts(df_without_tariff, "Inflation - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_inflation_charts(df_without_tariff, "Inflation - Original Data"), use_container_width=True)
         st.plotly_chart(render_overview_inflation_charts(df_base_simulation, "Inflation - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_inflation_rate_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_inflation_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
@@ -1293,11 +1293,11 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_real_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_nominal_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_actions_charts(df, "Actions - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_actions_charts(df_without_tariff, "Actions - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df_without_tariff, "Actions - Original Data"), use_container_width=True)
         st.plotly_chart(render_actions_charts(df_base_simulation, "Actions - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
     elif selected_view == "GDP Metrics":
         st.plotly_chart(render_gdp_charts(df, "GDP Components - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_gdp_charts(df_without_tariff, "GDP Components - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df_without_tariff, "GDP Components - Original Data"), use_container_width=True)
         st.plotly_chart(render_gdp_charts(df_base_simulation, "GDP Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_gdp_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_gdp_charts_comparison_nominal(df, df_without_tariff, df_base_simulation), use_container_width=True)
@@ -1311,7 +1311,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['real_gdp'].iloc[-1] - df['real_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Real GDP - AI Decision Makers/FRBUS Without Tariff",
+                    "Real GDP - Original Data",
                     f"${df_without_tariff['real_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['real_gdp'].iloc[-1] - df_without_tariff['real_gdp'].iloc[-2]):,.2f}B"
                 )
@@ -1327,7 +1327,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['nominal_gdp'].iloc[-1] - df['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Nominal GDP - AI Decision Makers/FRBUS Without Tariff",
+                    "Nominal GDP - Original Data",
                     f"${df_without_tariff['nominal_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['nominal_gdp'].iloc[-1] - df_without_tariff['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
@@ -1341,7 +1341,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             
     elif selected_view == "Revenue and Expenditure Metrics":
         st.plotly_chart(render_tax_charts(df, "Tax Revenue Components - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_tax_charts(df_without_tariff, "Tax Revenue Components - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df_without_tariff, "Tax Revenue Components - Original Data"), use_container_width=True)
         st.plotly_chart(render_tax_charts(df_base_simulation, "Tax Revenue Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_personal_tax_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
         st.plotly_chart(render_corporate_tax_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
@@ -1361,7 +1361,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['personal_tax'].iloc[-1] - df['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Personal Tax Revenue - AI Decision Makers/FRBUS Without Tariff",
+                    "Personal Tax Revenue - Original Data",
                     f"${df_without_tariff['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['personal_tax'].iloc[-1] - df_without_tariff['personal_tax'].iloc[-2]):,.2f}B"
                 )
@@ -1377,7 +1377,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['corporate_tax'].iloc[-1] - df['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - AI Decision Makers/FRBUS Without Tariff",
+                    "Corporate Tax Revenue - Original Data",
                     f"${df_without_tariff['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['corporate_tax'].iloc[-1] - df_without_tariff['corporate_tax'].iloc[-2]):,.2f}B"
                 )
@@ -1391,7 +1391,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             
     elif selected_view == "Trade Balance":
         st.plotly_chart(render_trade_charts(df, "Trade Balance and Components - AI Decision Makers/FRBUS with Tariff - 0%"), use_container_width=True)
-        st.plotly_chart(render_trade_charts(df_without_tariff, "Trade Balance and Components - AI Decision Makers/FRBUS Without Tariff"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df_without_tariff, "Trade Balance and Components - Original Data"), use_container_width=True)
         st.plotly_chart(render_trade_charts(df_base_simulation, "Trade Balance and Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         
         # Additional trade metrics
@@ -1410,7 +1410,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(trade_balance - prev_trade_balance):,.2f}B"
                 )
                 st.metric(
-                    "Trade Balance - AI Decision Makers/FRBUS Without Tariff",
+                    "Trade Balance - Original Data",
                     f"${trade_balance_without_tariff:,.2f}B",
                     f"{(trade_balance_without_tariff - prev_trade_balance_without_tariff):,.2f}B"
                 )
@@ -1426,7 +1426,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['exports'].iloc[-1] - df['exports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Exports - AI Decision Makers/FRBUS Without Tariff",
+                    "Exports - Original Data",
                     f"${df_without_tariff['exports'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['exports'].iloc[-1] - df_without_tariff['exports'].iloc[-2]):,.2f}B"
                 )
@@ -1442,7 +1442,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df['imports'].iloc[-1] - df['imports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Imports - AI Decision Makers/FRBUS Without Tariff",
+                    "Imports - Original Data",
                     f"${df_without_tariff['imports'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['imports'].iloc[-1] - df_without_tariff['imports'].iloc[-2]):,.2f}B"
                 )
