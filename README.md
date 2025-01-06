@@ -1,6 +1,14 @@
 
-# PyFRB/US
-PyFRB/US is a Python-based simulation platform for the FRB/US model.
+# PyFRB/US - PPO RL
+This is a framework for simulating economic policy decisions using the Federal Reserve Board US (FRB/US) macroeconomic model, implemented in Python. The simulation focuses on two key policy actors:
+
+The Federal Reserve, which manages monetary policy through interest rates and other tools
+The Federal Government, which implements fiscal policy through spending and taxation
+The framework has been enhanced with Proximal Policy Optimization (PPO), a reinforcement learning algorithm, to create more realistic simulations of how these policy institutions interact and make decisions. PPO helps model the complex ways that monetary and fiscal authorities respond to economic conditions and each other's actions.
+
+This toolset allows for analyzing how different combinations of monetary and fiscal policies might affect the US economy under various scenarios and conditions.
+
+
 
 ## Prerequisites
 The PyFRB/US package depends on SuiteSparse version <= 5.13.0 and `swig` to build UMFPACK at install.
