@@ -40,23 +40,15 @@ class PPOAgent(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.gamma = gamma  # Quarterly discount factor
         self.eps_clip = eps_clip
-        self.action_dim = action_dim
-        
-        # Action bounds for different policy tools
-        # self.action_bounds = {
-        #     'rff': (0.25, 8.00),    # Quarterly interest rate change limits (percentage points)
-        #     'gtrt': (0.1, 0.4),    # Trend ratio of transfer payments to GDP (percentage)
-        #     'egfe': (-0.25, 0.25),    # Trend level of federal government expenditures. (billions of dollars)
-        #     'trptx': (0.1, 0.6),    # Personal tax revenues rates (percentage)
-        #     'trcit': (0.1, 0.6),    # Corporate tax revenues rates (percentage)
-        # }
-        # Action bounds for different policy tools
+        self.action_dim = action_dim 
+
+        # Action bounds for different policy tools (Addition - Subtraction)
         self.action_bounds = { 
-            'gtrt': (0.1, 0.4),    # Trend ratio of transfer payments to GDP (percentage)
+            'gtrt': (-0.1, 0.1),    # Trend ratio of transfer payments to GDP (percentage)
             'egfe': (-0.25, 0.25),    # Trend level of federal government expenditures. (billions of dollars)
-            'trptx': (0.1, 0.6),    # Personal tax revenues rates (percentage)
-            'trcit': (0.1, 0.6),    # Corporate tax revenues rates (percentage)
-        }
+            'trptx': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
+            'trcit': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
+        }        
         
     def forward(self, state):
         state = torch.from_numpy(state).float()

@@ -155,6 +155,7 @@ def fsolve_blocks(
                                     f"Solver has converged, but with large residual; resid = {norm(z.fun)}"  # noqa:E501
                                 ) from None
                         else:
+                            print(z)
                             raise ComputationError(
                                 war.args[0], "solver - scipy.optimize.root"
                             ) from None
