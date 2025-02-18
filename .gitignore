@@ -66,3 +66,6 @@ supreme-ai/simulation_training.log
 supreme-ai/streamlit_socket.log
 pyfrbus.zip
 supreme-ai/simulation_training_1.log
+venv/*
+
+frbus_streamlit_frontend/venv
