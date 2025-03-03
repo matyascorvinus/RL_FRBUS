@@ -19,6 +19,7 @@ import logging
 import time
 
 from models import EconomicMetrics, SimulationComparison
+from active_learning_ppo import ActiveLearningPPOAgent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -281,6 +282,12 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
         
         return data
 
+    # Initialize active learning components if using ActiveLearningPPOAgent
+    if isinstance(ppo_agent, ActiveLearningPPOAgent):
+        logger.info("Using Active Learning PPO Agent")
+        # Initialize the uncertainty model that helps select informative actions
+        ppo_agent.initialize_uncertainty_model()
+    
     # Initialize variables for tracking best replication
     score_replications = {}
     the_best_replication = 0 
@@ -342,8 +349,15 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             state = get_state(solutions, quarter_str)
             state_without_tariff = get_state(solutions_without_tariff, quarter_str) 
 
-            # Get PPO action
-            actions, log_probs, state_value = ppo_agent.forward(state)
+            # Get PPO action with active learning if applicable
+            if isinstance(ppo_agent, ActiveLearningPPOAgent):
+                # Active learning mode selects actions based on uncertainty/information gain
+                actions, log_probs, state_value, uncertainty = ppo_agent.forward_with_uncertainty(state)
+                logger.info(f"Action uncertainty: {uncertainty}")
+            else:
+                # Standard PPO action selection
+                actions, log_probs, state_value = ppo_agent.forward(state)
+                
             actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
         
             # Log data before applying actions
@@ -396,14 +410,29 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 total_reward += reward
                 total_reward_without_tariff += reward_without_tariff
                 # Store experience for PPO update
-                experience = {
-                    'state': state,
-                    'actions': torch.as_tensor(actions).float(),
-                    'log_probs': log_probs,
-                    'reward': torch.as_tensor(reward).float(),
-                    'value': state_value,
-                    'done': quarter_str == simend
-                }   
+                if is_training:
+                    if isinstance(ppo_agent, ActiveLearningPPOAgent):
+                        # For active learning, we store the uncertainty along with other experience data
+                        experience = {
+                            'state': state,
+                            'actions': torch.as_tensor(actions).float(),
+                            'log_probs': log_probs,
+                            'reward': torch.as_tensor(reward).float(),
+                            'value': state_value,
+                            'uncertainty': uncertainty,  # Store the uncertainty to weight this experience
+                            'done': quarter_str == simend
+                        }
+                    else:
+                        # Standard experience storing
+                        experience = {
+                            'state': state,
+                            'actions': torch.as_tensor(actions).float(),
+                            'log_probs': log_probs,
+                            'reward': torch.as_tensor(reward).float(),
+                            'value': state_value,
+                            'done': quarter_str == simend
+                        }
+                    
                 experience_without_tariff = {
                     'state': state_without_tariff,
                     'actions': torch.tensor(actions_without_tariff).float(),
@@ -428,8 +457,15 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                     
                     # Update PPO agent after every 40 quarters (10 years)
                     if len(experiences) >= 40:
-                        # logger.info(f"Updating PPO agent after collecting {len(experiences)} quarters of experience")
-                        ppo_agent.update_ppo(experiences)
+                        if isinstance(ppo_agent, ActiveLearningPPOAgent):
+                            # Update the agent with active learning, giving more weight to high-uncertainty experiences
+                            ppo_agent.update_ppo_active_learning(experiences)
+                            # Update the uncertainty model based on prediction errors
+                            ppo_agent.update_uncertainty_model(experiences)
+                        else:
+                            # Standard PPO update
+                            ppo_agent.update_ppo(experiences)
+                        
                         ppo_agent_without_tariff.update_ppo(experiences_without_tariff)
                         experiences = []  # Clear experiences after update
                         experiences_without_tariff = []  # Clear experiences after update
@@ -533,9 +569,19 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical" 
-    ppo_agent = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)
+    key_checkpoint_path = "trump_historical_active" 
+    
+    # Create an active learning PPO agent instead of standard PPO
+    ppo_agent = ActiveLearningPPOAgent(
+        state_dim=934, 
+        action_dim=len(policy_vars), 
+        hidden_dim=4096,
+        uncertainty_model_dim=512  # Size of the uncertainty prediction model
+    )
+    
+    # Keep the standard agent for the without_tariff case
     ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69) 
+    
     simulation_start = "1970q1"
     simulation_end = "2022q4"
     simulation_replications = 25
