@@ -24,7 +24,7 @@ from active_learning_ppo import ActiveLearningPPOAgent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -185,7 +185,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             if var == 'egfe': 
                 data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action * 1000  
             else: 
-                if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.5:
+                if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
                     data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
                 else:
                     data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
@@ -282,12 +282,6 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
         
         return data
 
-    # Initialize active learning components if using ActiveLearningPPOAgent
-    if isinstance(ppo_agent, ActiveLearningPPOAgent):
-        logger.info("Using Active Learning PPO Agent")
-        # Initialize the uncertainty model that helps select informative actions
-        ppo_agent.initialize_uncertainty_model()
-    
     # Initialize variables for tracking best replication
     score_replications = {}
     the_best_replication = 0 
@@ -308,6 +302,24 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
         initial_simulation = True
         total_reward = 0
         total_reward_without_tariff = 0
+                
+        # If using active learning agent, set up the FRB/US components
+        if isinstance(ppo_agent, ActiveLearningPPOAgent):
+            ppo_agent.set_frbus_components(
+                frbus_model=frbus,
+                apply_actions_fn=apply_actions,
+                get_state_fn=get_state,
+                calculate_reward_fn=calculate_reward_policy_v1
+            )
+            
+            # Initialize the uncertainty model at the start of simulation
+            ppo_agent.initialize_uncertainty_model(
+                solutions=frbus.init_trac(residstart, simend, sim_data).copy(),
+                quarter_str=f"{simstart_year}q1".lower(),
+                solution_without_rl=frbus.solve(simstart, simend, frbus.init_trac(residstart, simend, sim_data_without_rl)),
+                simend=simend,
+                tariff_rate=tariff_rate
+            )
         # Quarterly policy decisions
         for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
             q = (quarter.month - 1) // 3 + 1
@@ -361,7 +373,11 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             solutions = apply_actions(solutions, quarter_str, actions)
             
             if not (1970 <= simstart_year <= 2023):
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
+                if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                    actions_without_tariff, log_probs_without_tariff, state_value_without_tariff, uncertainty_without_tariff = ppo_agent_without_tariff.forward_with_uncertainty(state_without_tariff)
+                    logger.info(f"Action uncertainty without tariff: {uncertainty_without_tariff}")
+                else:
+                    actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
                 solutions_without_tariff = apply_actions(solutions_without_tariff, quarter_str, actions_without_tariff)
             
             if initial_simulation and rep == 0:
@@ -458,13 +474,14 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                         if isinstance(ppo_agent, ActiveLearningPPOAgent):
                             # Update the agent with active learning, giving more weight to high-uncertainty experiences
                             ppo_agent.update_ppo_active_learning(experiences)
+                            ppo_agent_without_tariff.update_ppo_active_learning(experiences_without_tariff)
                             # Update the uncertainty model based on prediction errors
                             ppo_agent.update_uncertainty_model(experiences)
+                            ppo_agent_without_tariff.update_uncertainty_model(experiences_without_tariff)
                         else:
                             # Standard PPO update
                             ppo_agent.update_ppo(experiences)
-                        
-                        ppo_agent_without_tariff.update_ppo(experiences_without_tariff)
+                            ppo_agent_without_tariff.update_ppo(experiences_without_tariff)
                         experiences = []  # Clear experiences after update
                         experiences_without_tariff = []  # Clear experiences after update
 
@@ -578,8 +595,14 @@ async def main_training():
     )
     
     # Keep the standard agent for the without_tariff case
-    ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69) 
+    # ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
     
+    ppo_agent_without_tariff = ActiveLearningPPOAgent(
+        state_dim=934, 
+        action_dim=len(policy_vars), 
+        hidden_dim=4096,
+        uncertainty_model_dim=512  # Size of the uncertainty prediction model
+    )
     simulation_start = "1970q1"
     simulation_end = "2022q4"
     simulation_replications = 25
@@ -598,7 +621,7 @@ async def main_training():
 # Add the main execution block - trump_v16 - replication 211
 async def main_training_resume():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical" 
+    key_checkpoint_path = "trump_historical_active" 
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_34.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
@@ -623,25 +646,43 @@ async def main_training_resume():
     logger.info(result)
 
 # Add the main execution block
-async def main_simulation(): 
-    key_checkpoint_path = "trump_historical"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_24.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_best_replication_without_tariff.pt"
-    ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
-    ppo_agent_without_tariff = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)) 
-    simulation_start = "2024q3"
-    simulation_end = "2044q4"
+async def main_simulation(
+    simstart: str,
+    simend: str,
+    tariff_rate: float
+):
+    """
+    Main simulation function that orchestrates the economic simulation process.
+    
+    Parameters:
+    - simstart: Start date for simulation in format 'YYYYqN'
+    - simend: End date for simulation in format 'YYYYqN'
+    - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
+    """
+    key_checkpoint_path = "trump_historical_active"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
+    ppo_agent = load_checkpoint(checkpoint_path, ActiveLearningPPOAgent(
+        state_dim=934, 
+        action_dim=len(policy_vars), 
+        hidden_dim=4096,
+        uncertainty_model_dim=512  # Size of the uncertainty prediction model
+    ))
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)) 
+    
     simulation_replications = 1
 
     result = await run_the_simulation_function(
         ppo_agent, 
         ppo_agent_without_tariff,
-        simulation_start, 
-        simulation_end, 
+        simstart, 
+        simend, 
         simulation_replications,
         key_checkpoint_path,
         is_training=False,
-        tariff_rate=0.0
+        tariff_rate=tariff_rate,
+        replication_restart=0,
+        highest_score=0.0
     )
     logger.info(result)
 
@@ -652,9 +693,43 @@ def run_simulation_training():
 
 
 @app.get("/run_simulation")
-def run_simulation():
-    asyncio.run(main_simulation())
-    return {"message": "Simulation run successfully"}
+async def run_simulation(
+    simulation_type: str = Query("hypothetical", description="Type of simulation: 'historical' or 'hypothetical'"),
+    start_year: int = Query(2024, description="Start year for simulation"),
+    end_year: int = Query(2030, description="End year for simulation"),
+    tariff_rate: float = Query(10.0, description="Tariff rate percentage (for hypothetical simulation)")
+):
+    """
+    Run economic simulation with specified parameters.
+    
+    Parameters:
+    - simulation_type: 'historical' for 1970-2024 data, 'hypothetical' for future projections
+    - start_year: Starting year for simulation
+    - end_year: Ending year for simulation
+    - tariff_rate: Tariff rate percentage (0-50) for hypothetical simulation
+    """
+    # Validate parameters
+    if simulation_type == "historical" and (start_year < 1970 or end_year > 2024):
+        return {"error": "Historical simulation must be between 1970-2024"}
+    
+    if simulation_type == "hypothetical" and (start_year < 2024 or end_year > 2075):
+        return {"error": "Hypothetical simulation must be between 2024-2075"}
+    
+    if end_year < start_year:
+        return {"error": "End year must be after start year"}
+    
+    # Convert dates to the format expected by main_simulation
+    simstart = f"{start_year}q1"
+    simend = f"{end_year}q4" if end_year != 2024 else "2024q3"
+    
+    # Call the main simulation function with the parameters
+    asyncio.create_task(main_simulation(
+        simstart=simstart,
+        simend=simend,
+        tariff_rate=tariff_rate/100.0
+    ))
+    
+    return {"message": f"Simulation started: {simulation_type} from {start_year} to {end_year} with tariff rate {tariff_rate}%"}
 
 @app.get("/run_simulation_resume")
 def run_simulation_resume():

@@ -5,9 +5,11 @@ import torch.optim as optim
 from torch.distributions import Normal
 
 class PPOAgent(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim=128, lr=0.0003, gamma=0.99, eps_clip=0.2, seed=42):
+    def __init__(self, state_dim, action_dim, hidden_dim=128, lr=0.0003, gamma=0.99, eps_clip=0.2, K_epochs=10, seed=42):
         super(PPOAgent, self).__init__()
         torch.manual_seed(seed)
+        self.K_epochs = K_epochs
+        self.device = torch.device("cpu")
 
         # Larger network for complex economic relationships
         self.actor = nn.Sequential(
