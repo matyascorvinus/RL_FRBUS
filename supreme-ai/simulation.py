@@ -344,16 +344,11 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
 
             # Get PPO action
             actions, log_probs, state_value = ppo_agent.forward(state)
-            actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
-        
-            # Log data before applying actions
-            if initial_simulation and rep == 0:
-                report_string = f"Pre-action Quarter {quarter_str} | "
-                for key in policy_vars:
-                    report_string += f" {key}: {solutions.loc[quarter_str, key]} | "
-                logger.info(report_string)
             solutions = apply_actions(solutions, quarter_str, actions)
-            solutions_without_tariff = apply_actions(solutions_without_tariff, quarter_str, actions_without_tariff)
+            
+            if not (1970 <= simstart_year <= 2023):
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
+                solutions_without_tariff = apply_actions(solutions_without_tariff, quarter_str, actions_without_tariff)
             
             if initial_simulation and rep == 0:
                 report_string = f"Post-action Quarter {quarter_str} | "
@@ -364,7 +359,8 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             try: 
 
                 solutions = frbus.solve(quarter_str, quarter_str, solutions)
-                solutions_without_tariff = frbus.solve(quarter_str, quarter_str, solutions_without_tariff)
+                if not (1970 <= simstart_year <= 2023):
+                    solutions_without_tariff = frbus.solve(quarter_str, quarter_str, solutions_without_tariff)
                 report_string = f"Post-FRBUS Quarter {quarter_str} | "
                 
                 if initial_simulation and rep == 0:
@@ -372,7 +368,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                         report_string += f" {key}: {solutions.loc[quarter_str, key]} | "
                     logger.info(report_string)
  
-                if initial_simulation:
+                if initial_simulation: 
                     solution_without_rl = frbus.solve(simstart, simend, with_adds_without_rl) 
                     solution_without_rl_tariff = frbus.solve(simstart, simend, with_adds_without_rl_tariff)
                 initial_simulation = False  
@@ -392,9 +388,11 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 
                 # Calculate reward based on economic outcomes 
                 reward = calculate_reward_policy_v1(solutions, solution_without_rl, quarter_str, simend)    
-                reward_without_tariff = calculate_reward_policy_v1(solutions_without_tariff, solution_without_rl, quarter_str, simend)
+                if not (1970 <= simstart_year <= 2023):
+                    reward_without_tariff = calculate_reward_policy_v1(solutions_without_tariff, solution_without_rl, quarter_str, simend)
+                    total_reward_without_tariff += reward_without_tariff
                 total_reward += reward
-                total_reward_without_tariff += reward_without_tariff
+                
                 # Store experience for PPO update
                 experience = {
                     'state': state,
@@ -406,10 +404,10 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 }   
                 experience_without_tariff = {
                     'state': state_without_tariff,
-                    'actions': torch.tensor(actions_without_tariff).float(),
-                    'log_probs': log_probs_without_tariff,
-                    'reward': torch.tensor(reward_without_tariff).float(),
-                    'value': state_value_without_tariff,
+                    'actions': torch.tensor(actions_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(actions).float(),
+                    'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
+                    'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
+                    'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
                     'done': quarter_str == simend
                 }
             except Exception as e:
@@ -586,7 +584,7 @@ async def main_simulation():
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)) 
     simulation_start = "2024q3"
-    simulation_end = "2030q4"
+    simulation_end = "2044q4"
     simulation_replications = 1
 
     result = await run_the_simulation_function(
