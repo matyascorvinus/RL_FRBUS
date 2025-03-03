@@ -1165,7 +1165,7 @@ else:  # Hypothetical Simulation
     tariff_rate = st.sidebar.slider(
         "Tariff Rate (%)",
         min_value=0.0,
-        max_value=50.0,
+        max_value=100.0,
         value=10.0,  # Default tariff
         step=0.5
     )
