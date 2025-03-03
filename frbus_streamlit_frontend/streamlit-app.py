@@ -447,12 +447,12 @@ def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_ba
     )
     return fig
 
-def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simulation):
+def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff):
     """Render GDP-related charts"""
     fig = go.Figure()
     
     # Calculate bar positions
-    bar_width = 0.25  # Adjust this value to control bar width
+    bar_width = 0.2  # Adjust this value to control bar width
     # Add GDP components for AI Decision Makers/FRBUS
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['real_gdp'], 
                         name='Real GDP (AI Decision Makers/FRBUS)', 
@@ -472,6 +472,13 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
                         marker_color=MUTED_REDS['light'],  
                         width=bar_width,
                         offset=bar_width))
+    
+    # Add GDP components for FRBUS-Based Simulation - With Tariff
+    fig.add_trace(go.Bar(x=df_base_simulation_with_tariff['quarter'], y=df_base_simulation_with_tariff['real_gdp'], 
+                        name='Real GDP (FRBUS-Based Simulation - With Tariff)', 
+                        marker_color=MUTED_REDS['lightest'],  
+                        width=bar_width,
+                        offset=2*bar_width))
     
     # Update layout with dark mode colors
     fig.update_layout(
@@ -498,12 +505,12 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
     
     return fig
 
-def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_base_simulation):
+def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff):
     """Render GDP-related charts"""
     fig = go.Figure()
     
     # Calculate bar positions
-    bar_width = 0.25  # Adjust this value to control bar width
+    bar_width = 0.2  # Adjust this value to control bar width
     
     # Add GDP components for AI Decision Makers/FRBUS
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['nominal_gdp'], 
@@ -522,6 +529,12 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
                         name='Nominal GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
+    
+    # Add GDP components for FRBUS-Based Simulation - With Tariff
+    fig.add_trace(go.Bar(x=df_base_simulation_with_tariff['quarter'], y=df_base_simulation_with_tariff['nominal_gdp'], 
+                        name='Nominal GDP (FRBUS-Based Simulation - With Tariff)', marker_color=MUTED_REDS['lightest'],
+                        width=bar_width,
+                        offset=2*bar_width))
     
     fig.update_layout(
         title='Nominal GDP Components Comparison',
@@ -1322,8 +1335,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_gdp_charts(df_base_simulation, "GDP Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
         st.plotly_chart(render_gdp_charts(df_base_simulation_with_tariff, "GDP Components - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
         
-        st.plotly_chart(render_gdp_charts_comparison(df, df_without_tariff, df_base_simulation), use_container_width=True)
-        st.plotly_chart(render_gdp_charts_comparison_nominal(df, df_without_tariff, df_base_simulation), use_container_width=True)
+        st.plotly_chart(render_gdp_charts_comparison(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
+        st.plotly_chart(render_gdp_charts_comparison_nominal(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
         # Additional GDP metrics
         col1, col2 = st.columns(2)
         try:

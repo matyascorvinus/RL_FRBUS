@@ -436,7 +436,16 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                             'uncertainty': uncertainty,  # Store the uncertainty to weight this experience
                             'done': quarter_str == simend
                         }
-                    else:
+                    if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                        experience_without_tariff = {
+                            'state': state_without_tariff,
+                            'actions': torch.tensor(actions_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(actions).float(),
+                            'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
+                            'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
+                            'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
+                            'done': quarter_str == simend
+                        }
+                    if not isinstance(ppo_agent, ActiveLearningPPOAgent):
                         # Standard experience storing
                         experience = {
                             'state': state,
@@ -446,15 +455,15 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                             'value': state_value,
                             'done': quarter_str == simend
                         }
-                    
-                experience_without_tariff = {
-                    'state': state_without_tariff,
-                    'actions': torch.tensor(actions_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(actions).float(),
-                    'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
-                    'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
-                    'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
-                    'done': quarter_str == simend
-                }
+                    if not isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                        experience_without_tariff = {
+                            'state': state_without_tariff,
+                            'actions': torch.tensor(actions_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(actions).float(),
+                            'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
+                            'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
+                            'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
+                            'done': quarter_str == simend
+                        }
             except Exception as e:
                 previous_quarter = pd.Period(quarter_str) - 1
                 logger.error(f"Actions of Decision Maker: {actions}") 
