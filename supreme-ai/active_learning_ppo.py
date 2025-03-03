@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from ppo_agent import PPOAgent, Actor, Critic
+from ppo_agent import PPOAgent
 
 class UncertaintyModel(nn.Module):
     """
