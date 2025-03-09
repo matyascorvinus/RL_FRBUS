@@ -293,7 +293,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
         start_time = time.time()
         sim_data = data.copy()        
         simstart_year = int(simstart.split('q')[0])
-        if 1970 <= simstart_year <= 2023:
+        if 1970 <= simstart_year <= 2023 and not is_training:
             sim_data_without_tariff = history_data.copy()
         else: 
             sim_data_without_tariff = data.copy()
@@ -372,7 +372,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 
             solutions = apply_actions(solutions, quarter_str, actions)
             
-            if not (1970 <= simstart_year <= 2023):
+            if not (1970 <= simstart_year <= 2023 and not is_training):
                 if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
                     actions_without_tariff, log_probs_without_tariff, state_value_without_tariff, uncertainty_without_tariff = ppo_agent_without_tariff.forward_with_uncertainty(state_without_tariff)
                     logger.info(f"Action uncertainty without tariff: {uncertainty_without_tariff}")
@@ -389,7 +389,8 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             try: 
 
                 solutions = frbus.solve(quarter_str, quarter_str, solutions)
-                if not (1970 <= simstart_year <= 2023):
+                solution_without_rl_tariff = frbus.solve(quarter_str, quarter_str, with_adds_without_rl_tariff)
+                if not (1970 <= simstart_year <= 2023 and not is_training):
                     solutions_without_tariff = frbus.solve(quarter_str, quarter_str, solutions_without_tariff)
                 report_string = f"Post-FRBUS Quarter {quarter_str} | "
                 
@@ -400,7 +401,6 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
  
                 if initial_simulation: 
                     solution_without_rl = frbus.solve(simstart, simend, with_adds_without_rl) 
-                    solution_without_rl_tariff = frbus.solve(simstart, simend, with_adds_without_rl_tariff)
                 initial_simulation = False  
  
 
@@ -418,7 +418,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 
                 # Calculate reward based on economic outcomes 
                 reward = calculate_reward_policy_v1(solutions, solution_without_rl, quarter_str, simend)    
-                if not (1970 <= simstart_year <= 2023):
+                if not (1970 <= simstart_year <= 2023 and not is_training):
                     reward_without_tariff = calculate_reward_policy_v1(solutions_without_tariff, solution_without_rl, quarter_str, simend)
                     total_reward_without_tariff += reward_without_tariff
                 total_reward += reward
@@ -561,20 +561,20 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 raise
     if is_training:
         logger.info(f"The best replication is {the_best_replication} with score {highest_score}")
-        # logger.info(f"The best replication without tariff is {the_best_replication_without_tariff} with score {highest_score_without_tariff}")
+        logger.info(f"The best replication without tariff is {the_best_replication_without_tariff} with score {highest_score_without_tariff}")
         # Save the score replications to a text file
         with open(f'checkpoints_{key_checkpoint_path}/score_replications.txt', 'w') as f:
             f.write(str(score_replications))
-        # with open(f'checkpoints_{key_checkpoint_path}/score_replications_without_tariff.txt', 'w') as f:
-        #     f.write(str(score_replications_without_tariff))
+        with open(f'checkpoints_{key_checkpoint_path}/score_replications_without_tariff.txt', 'w') as f:
+            f.write(str(score_replications_without_tariff))
         with open(f'checkpoints_{key_checkpoint_path}/the_best_replication.txt', 'w') as f:
             f.write(str(the_best_replication))
-        # with open(f'checkpoints_{key_checkpoint_path}/the_best_replication_without_tariff.txt', 'w') as f:
-        #     f.write(str(the_best_replication_without_tariff))
+        with open(f'checkpoints_{key_checkpoint_path}/the_best_replication_without_tariff.txt', 'w') as f:
+            f.write(str(the_best_replication_without_tariff))
         # Copy the best checkpoint to the best_checkpoint folder
         os.makedirs(f'checkpoints_{key_checkpoint_path}/best_checkpoint', exist_ok=True)
         shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{the_best_replication}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication.pt')
-        # shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{the_best_replication_without_tariff}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication_without_tariff.pt')
+        shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{the_best_replication_without_tariff}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication_without_tariff.pt')
     
 
     return "Simulation completed successfully"
@@ -593,7 +593,7 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active" 
+    key_checkpoint_path = "trump_historical_active_1" 
     
     # Create an active learning PPO agent instead of standard PPO
     ppo_agent = ActiveLearningPPOAgent(
@@ -630,7 +630,7 @@ async def main_training():
 # Add the main execution block - trump_v16 - replication 211
 async def main_training_resume():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active" 
+    key_checkpoint_path = "trump_historical_active_1" 
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_34.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
@@ -668,7 +668,7 @@ async def main_simulation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical_active"
+    key_checkpoint_path = "trump_historical_active_1"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, ActiveLearningPPOAgent(
@@ -677,8 +677,12 @@ async def main_simulation(
         hidden_dim=4096,
         uncertainty_model_dim=512  # Size of the uncertainty prediction model
     ))
-    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096)) 
-    
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, ActiveLearningPPOAgent(
+        state_dim=934, 
+        action_dim=len(policy_vars), 
+        hidden_dim=4096,
+        uncertainty_model_dim=512  # Size of the uncertainty prediction model
+    ))
     simulation_replications = 1
 
     result = await run_the_simulation_function(
