@@ -320,6 +320,23 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 simend=simend,
                 tariff_rate=tariff_rate
             )
+        # If using active learning agent, set up the FRB/US components
+        if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+            ppo_agent_without_tariff.set_frbus_components(
+                frbus_model=frbus,
+                apply_actions_fn=apply_actions,
+                get_state_fn=get_state,
+                calculate_reward_fn=calculate_reward_policy_v1
+            )
+            
+            # Initialize the uncertainty model at the start of simulation
+            ppo_agent_without_tariff.initialize_uncertainty_model(
+                solutions=frbus.init_trac(residstart, simend, sim_data_without_tariff).copy(),
+                quarter_str=f"{simstart_year}q1".lower(),
+                solution_without_rl=frbus.solve(simstart, simend, frbus.init_trac(residstart, simend, sim_data_without_rl_tariff)),
+                simend=simend,
+                tariff_rate=tariff_rate
+            )
         # Quarterly policy decisions
         for quarter in pd.date_range(start=simstart, end=simend, freq='Q'):
             q = (quarter.month - 1) // 3 + 1
@@ -353,7 +370,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 with_adds_without_rl.loc[simstart, "rffintay_aerr"] += 1 
                 with_adds_without_rl_tariff.loc[simstart, "rffintay_aerr"] += 1 
 
-            # # Apply actions to the data
+            # Apply actions to the data
             solutions = apply_tariff_enhanced(solutions, quarter_str, tariff_rate)
             sim_data_without_rl_tariff = apply_tariff_enhanced(sim_data_without_rl_tariff, quarter_str, tariff_rate)
 
@@ -369,9 +386,16 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             else:
                 # Standard PPO action selection
                 actions, log_probs, state_value = ppo_agent.forward(state)
-                
+            if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff, uncertainty_without_tariff = ppo_agent_without_tariff.forward_with_uncertainty(state_without_tariff)
+                logger.info(f"Action uncertainty without tariff: {uncertainty_without_tariff}")
+            else:
+                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
+            
+            # Apply PPO actions to the data
             solutions = apply_actions(solutions, quarter_str, actions)
             
+            # Apply PPO actions to the data without tariff
             if not (1970 <= simstart_year <= 2023 and not is_training):
                 if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
                     actions_without_tariff, log_probs_without_tariff, state_value_without_tariff, uncertainty_without_tariff = ppo_agent_without_tariff.forward_with_uncertainty(state_without_tariff)
