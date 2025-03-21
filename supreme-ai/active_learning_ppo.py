@@ -5,6 +5,10 @@ import numpy as np
 from ppo_agent import PPOAgent
 from torch.distributions import MultivariateNormal
 import copy
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, action_std_init=0.6):
@@ -148,15 +152,15 @@ class ActiveLearningPPOAgent(PPOAgent):
         self.apply_actions_fn = apply_actions_fn
         self.get_state_fn = get_state_fn
         self.calculate_reward_fn = calculate_reward_fn
-        print("FRB/US components set in ActiveLearningPPOAgent")
+        logger.info("FRB/US components set in ActiveLearningPPOAgent")
         
     def initialize_uncertainty_model(self, solutions, quarter_str, solution_without_rl, simend, tariff_rate=None):
         """Initialize the uncertainty model with random experiences from FRB/US model"""
         if self.frbus_model is None or self.apply_actions_fn is None or self.get_state_fn is None:
-            print("Warning: FRB/US components not set - skipping uncertainty model initialization")
+            logger.warning("Warning: FRB/US components not set - skipping uncertainty model initialization")
             return
             
-        print(f"Initializing uncertainty model with {self.uncertainty_init_samples} samples...")
+        logger.info(f"Initializing uncertainty model with {self.uncertainty_init_samples} samples...")
         
         # Create storage for random samples
         states = []
@@ -257,14 +261,14 @@ class ActiveLearningPPOAgent(PPOAgent):
                 rewards.append(reward)
                 
             except Exception as e:
-                print(f"Error during random sampling: {e}")
+                logger.error(f"Error during random sampling: {e}")
                 continue
                 
             if len(states) >= self.uncertainty_init_samples:
                 break
                 
         if len(states) == 0:
-            print("Failed to collect any valid samples for uncertainty model")
+            logger.error("Failed to collect any valid samples for uncertainty model")
             return
             
         # Convert to tensors
@@ -283,13 +287,13 @@ class ActiveLearningPPOAgent(PPOAgent):
         targets = td_errors / (td_errors.max() + 1e-8)
         
         # Train uncertainty model
-        print(f"Training uncertainty model with {len(states)} samples...")
+        logger.info(f"Training uncertainty model with {len(states)} samples...")
         for epoch in range(self.uncertainty_init_epochs):
             loss = self.uncertainty_model.train_step(states, actions, targets)
             if epoch % 1 == 0:
-                print(f"Epoch {epoch}: Loss = {loss:.6f}")
+                logger.info(f"Epoch {epoch}: Loss = {loss:.6f}")
                 
-        print("Uncertainty model initialization complete")
+        logger.info("Uncertainty model initialization complete")
         
     def forward_with_uncertainty(self, state):
         """
@@ -340,6 +344,7 @@ class ActiveLearningPPOAgent(PPOAgent):
         log_prob = candidate_log_probs[selected_idx]
         value = candidate_values[selected_idx]
         uncertainty = uncertainties[selected_idx]
+        logger.info(f"Selected action: {action}, log_prob: {log_prob}, value: {value}, uncertainty: {uncertainty}")
         
         return action, log_prob, value, uncertainty
         

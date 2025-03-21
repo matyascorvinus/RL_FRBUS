@@ -386,12 +386,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             else:
                 # Standard PPO action selection
                 actions, log_probs, state_value = ppo_agent.forward(state)
-            if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff, uncertainty_without_tariff = ppo_agent_without_tariff.forward_with_uncertainty(state_without_tariff)
-                logger.info(f"Action uncertainty without tariff: {uncertainty_without_tariff}")
-            else:
-                actions_without_tariff, log_probs_without_tariff, state_value_without_tariff = ppo_agent_without_tariff.forward(state_without_tariff)
-            
+
             # Apply PPO actions to the data
             solutions = apply_actions(solutions, quarter_str, actions)
             
@@ -507,13 +502,18 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                         if isinstance(ppo_agent, ActiveLearningPPOAgent):
                             # Update the agent with active learning, giving more weight to high-uncertainty experiences
                             ppo_agent.update_ppo_active_learning(experiences)
-                            ppo_agent_without_tariff.update_ppo_active_learning(experiences_without_tariff)
                             # Update the uncertainty model based on prediction errors
                             ppo_agent.update_uncertainty_model(experiences)
+
+                        if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                            ppo_agent_without_tariff.update_ppo_active_learning(experiences_without_tariff)
                             ppo_agent_without_tariff.update_uncertainty_model(experiences_without_tariff)
-                        else:
+
+                        if not isinstance(ppo_agent, ActiveLearningPPOAgent):
                             # Standard PPO update
                             ppo_agent.update_ppo(experiences)
+                        if not isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
+                            # Standard PPO update
                             ppo_agent_without_tariff.update_ppo(experiences_without_tariff)
                         experiences = []  # Clear experiences after update
                         experiences_without_tariff = []  # Clear experiences after update
@@ -529,7 +529,6 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 the_best_replication = rep + replication_restart
             if rep + replication_restart == the_best_replication:
                 checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
-                checkpoint_path_without_tariff = f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{rep + replication_restart}.pt'
                 os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
                 checkpoint = {
                     'actor_state_dict': ppo_agent.actor.state_dict(),
@@ -540,11 +539,27 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                 torch.save(checkpoint, checkpoint_path)
                 logger.info(f"Saved the bestcheckpoint at replication {rep + replication_restart}")
                 
+            if total_reward_without_tariff >= highest_score_without_tariff:
+                highest_score_without_tariff = total_reward_without_tariff
+                the_best_replication_without_tariff = rep + replication_restart
+            if rep + replication_restart == the_best_replication_without_tariff:
+                checkpoint_path_without_tariff = f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_{rep + replication_restart}.pt'
+                os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff', exist_ok=True)
+                checkpoint_without_tariff = {
+                    'actor_state_dict': ppo_agent_without_tariff.actor.state_dict(),
+                    'critic_state_dict': ppo_agent_without_tariff.critic.state_dict(),
+                    'replication': rep + replication_restart,
+                    'action_bounds': ppo_agent_without_tariff.action_bounds
+                }
+                torch.save(checkpoint_without_tariff, checkpoint_path_without_tariff)
+                logger.info(f"Saved the best checkpoint without tariff at replication {rep + replication_restart}")
 
             logger.info(f"Total reward for replication {rep + replication_restart}: {total_reward}")
             logger.info(f"Time taken for replication {rep + replication_restart}: {end_time - start_time} seconds")
             logger.info(f"Highest reward for replication {the_best_replication} with tariff: {highest_score}")
+            logger.info(f"Highest reward for replication {the_best_replication_without_tariff} without tariff: {highest_score_without_tariff}")
             logger.info(f"ETA taken for remaining replications {nrepl - rep - replication_restart}: {(end_time - start_time) * (nrepl - rep - replication_restart)} seconds")
+
         if is_training and (rep % 1000 == 0 or rep == nrepl - 1):    
             try:
                 checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
@@ -615,27 +630,32 @@ def load_checkpoint(path, ppo_agent):
         return ppo_agent
 
 # Add the main execution block
-async def main_training():
+async def main_training(active_learning=True):
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_1" 
+    key_checkpoint_path = "trump_historical_active_3" 
     
-    # Create an active learning PPO agent instead of standard PPO
-    ppo_agent = ActiveLearningPPOAgent(
-        state_dim=934, 
-        action_dim=len(policy_vars), 
-        hidden_dim=4096,
-        uncertainty_model_dim=512  # Size of the uncertainty prediction model
-    )
+    # Keep the standard agent for the tariff case
+    if not active_learning:
+        ppo_agent = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
+    else:
+        # Create an active learning PPO agent instead of standard PPO
+        ppo_agent = ActiveLearningPPOAgent(
+            state_dim=934, 
+            action_dim=len(policy_vars), 
+            hidden_dim=4096,
+            uncertainty_model_dim=512  # Size of the uncertainty prediction model
+        )
     
     # Keep the standard agent for the without_tariff case
-    # ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
-    
-    ppo_agent_without_tariff = ActiveLearningPPOAgent(
-        state_dim=934, 
-        action_dim=len(policy_vars), 
-        hidden_dim=4096,
-        uncertainty_model_dim=512  # Size of the uncertainty prediction model
-    )
+    if not active_learning:
+        ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
+    else:
+        ppo_agent_without_tariff = ActiveLearningPPOAgent(
+            state_dim=934, 
+            action_dim=len(policy_vars), 
+            hidden_dim=4096,
+            uncertainty_model_dim=512  # Size of the uncertainty prediction model
+        )
     simulation_start = "1970q1"
     simulation_end = "2022q4"
     simulation_replications = 25
@@ -654,7 +674,7 @@ async def main_training():
 # Add the main execution block - trump_v16 - replication 211
 async def main_training_resume():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_1" 
+    key_checkpoint_path = "trump_historical_active_2" 
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_34.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
     ppo_agent = load_checkpoint(checkpoint_path, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096))
@@ -682,7 +702,8 @@ async def main_training_resume():
 async def main_simulation(
     simstart: str,
     simend: str,
-    tariff_rate: float
+    tariff_rate: float,
+    active_learning: bool = True
 ):
     """
     Main simulation function that orchestrates the economic simulation process.
@@ -692,21 +713,32 @@ async def main_simulation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical_active_1"
-    checkpoint_path = f"checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_0.pt"
-    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/ppo_agent_without_tariff/ppo_agent_replication_0.pt"
-    ppo_agent = load_checkpoint(checkpoint_path, ActiveLearningPPOAgent(
-        state_dim=934, 
-        action_dim=len(policy_vars), 
-        hidden_dim=4096,
-        uncertainty_model_dim=512  # Size of the uncertainty prediction model
-    ))
-    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, ActiveLearningPPOAgent(
-        state_dim=934, 
-        action_dim=len(policy_vars), 
-        hidden_dim=4096,
-        uncertainty_model_dim=512  # Size of the uncertainty prediction model
-    ))
+    key_checkpoint_path = "trump_historical"
+    checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication.pt"
+    checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication_without_tariff.pt"
+    # Keep the standard agent for the tariff case
+    if not active_learning:
+        ppo_agent = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
+    else:
+        ppo_agent = ActiveLearningPPOAgent(
+            state_dim=934, 
+            action_dim=len(policy_vars), 
+            hidden_dim=4096,
+            uncertainty_model_dim=512  # Size of the uncertainty prediction model
+        )
+    
+    # Keep the standard agent for the without_tariff case
+    if not active_learning:
+        ppo_agent_without_tariff = PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)
+    else:
+        ppo_agent_without_tariff = ActiveLearningPPOAgent(
+            state_dim=934, 
+            action_dim=len(policy_vars), 
+            hidden_dim=4096,
+            uncertainty_model_dim=512  # Size of the uncertainty prediction model
+        )
+    ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, ppo_agent_without_tariff)
     simulation_replications = 1
 
     result = await run_the_simulation_function(

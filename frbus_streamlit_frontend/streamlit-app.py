@@ -292,34 +292,38 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
             'x': df_rl_tariff['quarter'],
             'y': df_rl_tariff[metric],
             'name': f'{title} (AI Decision Makers/FRBUS)',
-            'marker_color': MUTED_REDS['dark']
+            'marker_color': MUTED_REDS['dark'],
+            'width': 0.2,
+            'offset': -0.2
         },
         {
             'x': df_without_tariff['quarter'],
             'y': df_without_tariff[metric],
             'name': f'{title} ({historical_label_or_hypothetical_label})',
-            'marker_color': MUTED_REDS['bright']
+            'marker_color': MUTED_REDS['bright'],
+            'width': 0.2,
+            'offset': 0
         },
         {
             'x': df_base_simulation['quarter'],
             'y': df_base_simulation[metric],
             'name': f'{title} (FRBUS-Based Simulation - Without Tariff)',
-            'marker_color': MUTED_REDS['light']
+            'marker_color': MUTED_REDS['light'],
+            'width': 0.2,
+            'offset': 0.2
         },
         {
             'x': df_base_simulation_with_tariff['quarter'],
             'y': df_base_simulation_with_tariff[metric],
             'name': f'{title} (FRBUS-Based Simulation - With Tariff)',
-            'marker_color': MUTED_REDS['lightest']
+            'marker_color': MUTED_REDS['lightest'],
+            'width': 0.2,
+            'offset': 0.4
         }
     ]
     for trace in traces:
         if chart_type == 'bar':
             # Add bar-specific parameters
-            trace.update({
-                'width': 0.25,
-                'offset': -0.25 if 'FRBUS)' in trace['name'] else (0 if 'without Tariff)' in trace['name'] else 0.25)
-            })
             fig.add_trace(go.Bar(**trace))
         else:  # scatter
             fig.add_trace(go.Scatter(**trace))
@@ -401,7 +405,7 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
+            x=0.5,
             bgcolor='rgba(0,0,0,0.5)'
         )
     )
@@ -409,24 +413,6 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
     fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
     fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
     
-    return fig
-
-def render_inflation_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
-    """Render inflation comparison charts"""
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['pcpi'], name='Inflation - AI Decision Makers/FRBUS', marker_color=MUTED_REDS['dark']))
-    fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['pcpi'], name=f'Inflation - {historical_label_or_hypothetical_label}', marker_color=MUTED_REDS['bright']))
-    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['pcpi'], name='Inflation - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
-
-    fig.update_layout(
-        title='Inflation Comparison',
-        xaxis_title='Quarter',
-        yaxis_title='Price Index',
-        hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
-    )
     return fig
 
 def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
@@ -1192,7 +1178,7 @@ historical_label_or_hypothetical_label = "Historical Data" if simulation_type ==
 
 # Connection controls
 with col0: 
-    if st.button('Resume', use_container_width=True):
+    if st.button('Resume', use_container_width=True, disabled=True):
         # Run simulation by calling the API endpoint
         response = requests.get('http://localhost:8000/run_simulation_resume')
         if response.status_code == 200:
@@ -1229,6 +1215,9 @@ with col3:
         if hasattr(st.session_state.stream, 'ws'):
             st.session_state.stream.ws.close()
             connection_status.warning("Disconnected")
+        for key in st.session_state.keys():
+            del st.session_state[key]
+        st.rerun()
 
 # Replace the existing Start Simulation button with this
 if st.sidebar.button('Start Simulation', use_container_width=True):
