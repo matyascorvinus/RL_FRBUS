@@ -138,7 +138,7 @@ class PPOAgent(nn.Module):
         
         return log_probs, state_value, dist_entropy
         
-    def _update(self, states, actions, logprobs, rewards, values, dones):
+    def _update(self, states, actions, logprobs, rewards, values):
         """
         Update policy and value function using PPO algorithm.
         
@@ -148,7 +148,6 @@ class PPOAgent(nn.Module):
             logprobs: Tensor of log probabilities (already stacked)
             rewards: Tensor of rewards (already stacked)
             values: Tensor of state values (already stacked)
-            dones: Tensor of done flags (already stacked)
         """
         # Calculate advantages using GAE
         advantages = []
@@ -218,7 +217,6 @@ class PPOAgent(nn.Module):
         log_probs_list = []
         rewards_list = []
         values_list = []
-        dones_list = []
         
         for e in experiences:
             # Handle actions
@@ -245,14 +243,11 @@ class PPOAgent(nn.Module):
             else:
                 values_list.append(e['value'])
                 
-            # Handle dones
-            dones_list.append(torch.tensor(float(e['done'])))
         
         actions = torch.stack(actions_list)
         log_probs = torch.stack(log_probs_list).detach()
         rewards = torch.stack(rewards_list)
         values = torch.stack(values_list)
-        dones = torch.stack(dones_list)
         
         # Normalize rewards
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
@@ -274,7 +269,6 @@ class PPOAgent(nn.Module):
                 batch_log_probs = log_probs[batch_indices]
                 batch_rewards = rewards[batch_indices]
                 batch_values = values[batch_indices]
-                batch_dones = dones[batch_indices]
 
                 # Update the policy and value function
                 self._update(
@@ -282,7 +276,6 @@ class PPOAgent(nn.Module):
                     batch_actions,
                     batch_log_probs,
                     batch_rewards,
-                    batch_values,
-                    batch_dones
+                    batch_values
                 )
         

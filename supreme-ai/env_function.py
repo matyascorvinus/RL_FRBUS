@@ -243,7 +243,7 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
         float: Calculated reward value
     """
     # 1. Initialize reward and define normalized targets
-    reward = torch.tensor(0.0)
+    reward = torch.tensor(0.0).clone().detach()
     max_expected_deviation = 10.0  # Used for normalization
     
     annual_target = 2.0
@@ -350,4 +350,4 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
     # logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
     #             f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
-    return reward
+    return reward 

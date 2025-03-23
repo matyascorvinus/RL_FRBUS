@@ -287,7 +287,7 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
     fig = go.Figure()
     
     # Common trace parameters
-    traces = [
+    traces_bar = [
         {
             'x': df_rl_tariff['quarter'],
             'y': df_rl_tariff[metric],
@@ -321,11 +321,39 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
             'offset': 0.4
         }
     ]
-    for trace in traces:
-        if chart_type == 'bar':
+    traces_scatter = [
+        {
+            'x': df_rl_tariff['quarter'],
+            'y': df_rl_tariff[metric],
+            'name': f'{title} (AI Decision Makers/FRBUS)',
+            'marker_color': MUTED_REDS['dark']
+        },
+        {
+            'x': df_without_tariff['quarter'],
+            'y': df_without_tariff[metric],
+            'name': f'{title} ({historical_label_or_hypothetical_label})',
+            'marker_color': MUTED_REDS['bright']
+        },
+        {
+            'x': df_base_simulation['quarter'],
+            'y': df_base_simulation[metric],
+            'name': f'{title} (FRBUS-Based Simulation - Without Tariff)',
+            'marker_color': MUTED_REDS['light']
+        },
+        {
+            'x': df_base_simulation_with_tariff['quarter'],
+            'y': df_base_simulation_with_tariff[metric],
+            'name': f'{title} (FRBUS-Based Simulation - With Tariff)',
+            'marker_color': MUTED_REDS['lightest']
+        }
+    ]
+    if chart_type == 'bar':
+        for trace in traces_bar:
             # Add bar-specific parameters
             fig.add_trace(go.Bar(**trace))
-        else:  # scatter
+    else:  
+        # scatter
+        for trace in traces_scatter:
             fig.add_trace(go.Scatter(**trace))
     
     # Update layout
@@ -1178,13 +1206,13 @@ historical_label_or_hypothetical_label = "Historical Data" if simulation_type ==
 
 # Connection controls
 with col0: 
-    if st.button('Resume', use_container_width=True, disabled=True):
+    if st.button('Effective Training', use_container_width=True):
         # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8000/run_simulation_resume')
+        response = requests.get('http://localhost:8000/run_simulation_training_effective_relocation')
         if response.status_code == 200:
-            simulation_status.success("Training resumed")
+            simulation_status.success("Effective training started")
         else:
-            simulation_status.error("Failed to resume training")
+            simulation_status.error("Failed to start effective training")
 with col1:
     if st.button('Training', use_container_width=True):
         # Run simulation by calling the API endpoint
@@ -1228,6 +1256,30 @@ if st.sidebar.button('Start Simulation', use_container_width=True):
     
     # Build URL with parameters
     base_url = 'http://localhost:8000/run_simulation'
+    params = {
+        'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
+        'start_year': start_year,
+        'end_year': end_year,
+        'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0
+    }
+    
+    # Run simulation by calling the API endpoint with parameters
+    response = requests.get(base_url, params=params)
+    
+    if response.status_code == 200 or response.status_code == 204:
+        simulation_status.success("Simulation started")     
+    else:
+        simulation_status.error(f"Failed to start simulation: {response.text}")
+
+# Replace the existing Start Simulation Effective Relocation button with this
+if st.sidebar.button('Start Simulation Effective Relocation', use_container_width=True):
+    thread = threading.Thread(target=st.session_state.stream.connect)
+    thread.daemon = True
+    add_script_run_ctx(thread)
+    thread.start()
+    
+    # Build URL with parameters
+    base_url = 'http://localhost:8000/run_simulation_effective_relocation'
     params = {
         'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
         'start_year': start_year,

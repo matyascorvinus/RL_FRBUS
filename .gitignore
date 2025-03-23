@@ -69,3 +69,4 @@ supreme-ai/simulation_training_1.log
 venv/*
 
 frbus_streamlit_frontend/venv
+supreme-ai/log.log
