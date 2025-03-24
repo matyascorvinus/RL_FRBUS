@@ -834,9 +834,9 @@ def load_checkpoint(path, ppo_agent):
         return ppo_agent
 
 # Add the main execution block
-async def main_training(active_learning=True):
+async def main_training(active_learning=False):
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_3" 
+    key_checkpoint_path = "trump_historical_ppo" 
     
     # Keep the standard agent for the tariff case
     if not active_learning:
@@ -928,7 +928,7 @@ async def main_simulation(
     simstart: str,
     simend: str,
     tariff_rate: float,
-    active_learning: bool = True
+    active_learning: bool = False
 ):
     """
     Main simulation function that orchestrates the economic simulation process.
@@ -938,7 +938,11 @@ async def main_simulation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical"
+    key_checkpoint_path = ""
+    if not active_learning:
+        key_checkpoint_path = "trump_historical_ppo"
+    else:
+        key_checkpoint_path = "trump_historical_active"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication.pt"
     checkpoint_path_without_tariff = f"checkpoints_{key_checkpoint_path}/best_checkpoint/ppo_agent_best_replication_without_tariff.pt"
     # Keep the standard agent for the tariff case
@@ -1030,7 +1034,8 @@ async def run_simulation(
     simulation_type: str = Query("hypothetical", description="Type of simulation: 'historical' or 'hypothetical'"),
     start_year: int = Query(2024, description="Start year for simulation"),
     end_year: int = Query(2030, description="End year for simulation"),
-    tariff_rate: float = Query(10.0, description="Tariff rate percentage (for hypothetical simulation)")
+    tariff_rate: float = Query(10.0, description="Tariff rate percentage (for hypothetical simulation)"),
+    active_learning: bool = Query(False, description="Active learning flag")
 ):
     """
     Run economic simulation with specified parameters.
@@ -1059,7 +1064,8 @@ async def run_simulation(
     asyncio.create_task(main_simulation(
         simstart=simstart,
         simend=simend,
-        tariff_rate=tariff_rate/100.0
+        tariff_rate=tariff_rate/100.0,
+        active_learning=active_learning
     ))
     
     return {"message": f"Simulation started: {simulation_type} from {start_year} to {end_year} with tariff rate {tariff_rate}%"}

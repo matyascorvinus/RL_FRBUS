@@ -1203,6 +1203,22 @@ st.sidebar.divider()
 st.sidebar.header("Connection Controls")
 historical_label_or_hypothetical_label = "Historical Data" if simulation_type == "Historical Simulation" else "AI Decision Makers/FRBUS without Tariff"
 
+def clear_simulation_data(): 
+    st.cache_data.clear()
+    if hasattr(st.session_state.stream, 'metrics_history_rl_tariff'):
+        st.session_state.stream.metrics_history_rl_tariff = pd.DataFrame()
+    if hasattr(st.session_state.stream, 'metrics_history_without_tariff'):
+        st.session_state.stream.metrics_history_without_tariff = pd.DataFrame()
+    if hasattr(st.session_state.stream, 'metrics_history_base_simulation'):
+        st.session_state.stream.metrics_history_base_simulation = pd.DataFrame()
+    if hasattr(st.session_state.stream, 'metrics_history_base_simulation_with_tariff'):
+        st.session_state.stream.metrics_history_base_simulation_with_tariff = pd.DataFrame()
+    if hasattr(st.session_state.stream, 'ws'):
+        st.session_state.stream.ws.close()
+        connection_status.warning("Disconnected")
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.rerun()
 
 # Connection controls
 with col0: 
@@ -1231,24 +1247,10 @@ with col2:
 
 with col3:
     if st.button('Refresh', use_container_width=True): 
-        st.cache_data.clear()
-        if hasattr(st.session_state.stream, 'metrics_history_rl_tariff'):
-            st.session_state.stream.metrics_history_rl_tariff = pd.DataFrame()
-        if hasattr(st.session_state.stream, 'metrics_history_without_tariff'):
-            st.session_state.stream.metrics_history_without_tariff = pd.DataFrame()
-        if hasattr(st.session_state.stream, 'metrics_history_base_simulation'):
-            st.session_state.stream.metrics_history_base_simulation = pd.DataFrame()
-        if hasattr(st.session_state.stream, 'metrics_history_base_simulation_with_tariff'):
-            st.session_state.stream.metrics_history_base_simulation_with_tariff = pd.DataFrame()
-        if hasattr(st.session_state.stream, 'ws'):
-            st.session_state.stream.ws.close()
-            connection_status.warning("Disconnected")
-        for key in st.session_state.keys():
-            del st.session_state[key]
-        st.rerun()
+        clear_simulation_data()
 
 # Replace the existing Start Simulation button with this
-if st.sidebar.button('Start Simulation', use_container_width=True):
+if st.sidebar.button('Start Simulation PPO', use_container_width=True):
     thread = threading.Thread(target=st.session_state.stream.connect)
     thread.daemon = True
     add_script_run_ctx(thread)
@@ -1261,6 +1263,31 @@ if st.sidebar.button('Start Simulation', use_container_width=True):
         'start_year': start_year,
         'end_year': end_year,
         'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0
+    }
+    
+    # Run simulation by calling the API endpoint with parameters
+    response = requests.get(base_url, params=params)
+    
+    if response.status_code == 200 or response.status_code == 204:
+        simulation_status.success("Simulation started")     
+    else:
+        simulation_status.error(f"Failed to start simulation: {response.text}")
+
+# Replace the existing Start Simulation button with this
+if st.sidebar.button('Start Simulation PPO Active Learning', use_container_width=True):
+    thread = threading.Thread(target=st.session_state.stream.connect)
+    thread.daemon = True
+    add_script_run_ctx(thread)
+    thread.start()
+    
+    # Build URL with parameters
+    base_url = 'http://localhost:8000/run_simulation'
+    params = {
+        'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
+        'start_year': start_year,
+        'end_year': end_year,
+        'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0,
+        'active_learning': True
     }
     
     # Run simulation by calling the API endpoint with parameters
