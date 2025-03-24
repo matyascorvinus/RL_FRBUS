@@ -253,7 +253,7 @@ class ActiveLearningPPOAgent(PPOAgent):
             
                     temp_solutions = apply_tariff_enhanced(temp_solutions, quarter_str, tariff_rate)
                 
-                reward = self.calculate_reward_fn(temp_solutions, solution_without_rl, quarter_str, simend)
+                reward = self.calculate_reward_fn(temp_solutions, quarter_str, simend)
                 
                 # Store experience
                 states.append(state)

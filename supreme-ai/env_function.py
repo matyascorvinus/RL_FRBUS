@@ -228,14 +228,13 @@ def calculate_reward_policy(solution, solution_without_rl, quarter, end_quarter)
     
     return reward
 
-def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quarter):
+def calculate_reward_policy_v1(solution, quarter, end_quarter):
     """
     Enhanced reward calculation based on economic outcomes with normalized scaling,
     smoothness incentives, and forward-looking components.
     
     Args:
         solution (DataFrame): Simulation results from FRB/US
-        solution_without_rl (DataFrame): Baseline simulation without RL
         quarter (str): Current quarter (e.g., "2025q1")
         end_quarter (str): Final quarter of simulation
     
@@ -328,9 +327,6 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
     historical_avg_growth = solution.loc[:quarter, 'xgdp'].pct_change().mean()
     growth_vs_history = 1.0 if gdp_growth_rl > historical_avg_growth else -0.5
     
-    real_gdp_comparison = (solution.loc[quarter, 'xgdp'] - solution_without_rl.loc[quarter, 'xgdp']) / \
-                         solution_without_rl.loc[quarter, 'xgdp'] * 100
-    
     # 7. Composite health indicators
     misery_index = torch.tensor(unemployment + quarterly_inflation)
     normalized_misery = torch.clamp(misery_index / 20.0, 0, 1)  # Normalize assuming max misery of 20
@@ -346,8 +342,5 @@ def calculate_reward_policy_v1(solution, solution_without_rl, quarter, end_quart
     reward += growth_vs_history * 10.0                # Historical comparison - We want to make sure the AI prioritizes GDP performance
     reward += -normalized_misery * 2.0               # Economic health
     reward += -normalized_debt * 4.0                 # Fiscal sustainability 
-    
-    # logger.info(f"Quarter {quarter} - GDP Growth: {gdp_growth_rl:.2f}, Inflation: {quarterly_inflation:.2f}, "
-    #             f"Unemployment: {unemployment:.2f}, Reward: {reward:.2f}, Real GDP Comparison: {real_gdp_comparison:.2f}")
     
     return reward 

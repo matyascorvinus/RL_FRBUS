@@ -393,9 +393,9 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                         
                     
                     # Calculate reward based on economic outcomes 
-                    reward = calculate_reward_policy_v1(solutions, solution_without_rl, quarter_str, simend)    
+                    reward = calculate_reward_policy_v1(solutions, quarter_str, simend)    
                     if not (1970 <= simstart_year <= 2023 and not is_training):
-                        reward_without_tariff = calculate_reward_policy_v1(solutions_without_tariff, solution_without_rl, quarter_str, simend)
+                        reward_without_tariff = calculate_reward_policy_v1(solutions_without_tariff, quarter_str, simend)
                         total_reward_without_tariff += reward_without_tariff
                     total_reward += reward
                     
@@ -738,7 +738,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                     
                     # Store experience for PPO update
                     if is_training: # Calculate reward based on economic outcomes 
-                        reward = calculate_reward_policy_v1(sim_data, sim_data_without_rl, quarter_str, simend)
+                        reward = calculate_reward_policy_v1(sim_data, quarter_str, simend)
                         reward = torch.as_tensor(reward).clone().detach()    
                         # Standard experience storing
                         experience = {
