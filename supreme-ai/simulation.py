@@ -537,7 +537,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
 
     return "Simulation completed successfully"
 
-async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLearningEffectiveRelocationPPOAgent, simulation_start: str, simulation_end: str, simulation_replications: int, key_checkpoint_path: str, is_training: bool = True, replication_restart: int = 0, highest_score: float = float('-inf'), tariff_rate: float = 0):
+async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLearningEffectiveRelocationPPOAgent, simulation_start: str, simulation_end: str, simulation_replications: int, key_checkpoint_path: str, is_training: bool = True, replication_restart: int = 0, highest_score: float = float('-inf'), tariff_rate: float = 0, ppo_agent_without_tariff: ActiveLearningEffectiveRelocationPPOAgent = None):
     # Load data and model
     data = load_data("../data/LONGBASE.TXT")
     history_data = load_data("../data/HISTDATA.TXT")
@@ -719,9 +719,15 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                 # Run one quarter of simulation
                 try: 
                     sim_data = frbus.solve(quarter_str, quarter_str, sim_data)
+                    if not (1970 <= simstart_year <= 2023) and not is_training:
+                        state_without_tariff = get_state(sim_data_without_tariff, quarter_str)
+                        # Create a copy of the PPO agent
+                        ppo_agent_without_tariff = ppo_agent 
+                        actions_without_tariff, _, _ = ppo_agent_without_tariff.forward_with_effective_relocation(state_without_tariff)
+                        sim_data_without_tariff = apply_actions(sim_data_without_tariff, quarter_str, actions_without_tariff)
+                        sim_data_without_tariff = frbus.solve(quarter_str, quarter_str, sim_data_without_tariff)
                     if initial_simulation: 
                         sim_data_without_rl_tariff = frbus.solve(quarter_str, quarter_str, sim_data_without_rl_tariff)
-                        sim_data_without_tariff = frbus.solve(quarter_str, quarter_str, sim_data_without_tariff)
                         sim_data_without_rl = frbus.solve(simstart, simend, sim_data_without_rl) 
                     initial_simulation = False  
                     # Send metrics update to API
@@ -1003,10 +1009,11 @@ async def main_simulation_effective_relocation(
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
 
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
-    logger.info("Starting the simulation with effective relocation")
     ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
+    ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    ppo_agent_without_tariff = load_checkpoint(checkpoint_path, ppo_agent)
     simulation_replications = 1
-
+    logger.info("Starting the simulation with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
         simstart, 
@@ -1016,7 +1023,8 @@ async def main_simulation_effective_relocation(
         is_training=False,
         tariff_rate=tariff_rate,
         replication_restart=0,
-        highest_score=0.0
+        highest_score=0.0,
+        ppo_agent_without_tariff=ppo_agent_without_tariff
     )
     logger.info(result)
 @app.get("/run_simulation_training")
