@@ -10,15 +10,20 @@ import plotly.express as px
 # Choose between Historical Data and Trump Tariff plan.
 data_source = st.sidebar.radio(
     "Select Data Source", 
-    options=["Historical Data", "Trump Tariff plan"],
+    options=["Historical Data", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
     index=1
 )
 # Set file path based on the data source selection.
-data_file = (
-    "historical_combined_simulation_data_latest.csv"
-    if data_source == "Historical Data" 
-    else "combined_simulation_data (1).csv"
-)
+data_file = "combined_simulation_data_effective_relocation.csv" 
+if data_source != "Historical Data":
+    if data_source == "Trump Tariff plan 10%":
+        data_file = "combined_simulation_data-10.csv" 
+    if data_source == "Trump Tariff plan 20%":
+        data_file = "combined_simulation_data-20.csv" 
+    if data_source == "Trump Tariff plan 50%":
+        data_file = "combined_simulation_data-50.csv" 
+    if data_source == "Trump Tariff plan 100%":
+        data_file = "combined_simulation_data-100.csv" 
 
 # ---------------------------
 # Load Data Function (with caching)
@@ -199,7 +204,8 @@ else:
     final_filtered_data = filtered_data
 
 # Use a color palette to support many simulation types.
-color_palette = px.colors.qualitative.Plotly
+# Light Orange, Orange, Red, Burgundian Red
+color_palette = ['#FFD700', '#FFA500', '#FF4500', '#8B0000']
 
 def render_component_comparison(dataframe, sim_types, metric):
     """Render a bar chart comparing the selected metric across multiple simulation types."""
