@@ -264,6 +264,8 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
             sim_data_without_tariff = history_data.copy()
         else: 
             sim_data_without_tariff = data.copy()
+        simend_year = int(simend.split('q')[0]) - 1
+        true_simend = f"{simend_year}q4"
         sim_data_without_rl = data.copy()
         sim_data_without_rl_tariff = data.copy()
         initial_simulation = True
@@ -410,7 +412,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                                 'reward': torch.as_tensor(reward).float(),
                                 'value': state_value,
                                 'uncertainty': uncertainty,  # Store the uncertainty to weight this experience
-                                'done': quarter_str.lower() == "2022q4".lower()
+                                'done': quarter_str.lower() == true_simend.lower()
                             }
                         if isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
                             experience_without_tariff = {
@@ -419,7 +421,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                                 'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
                                 'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
                                 'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
-                                'done': quarter_str.lower() == "2022q4".lower()
+                                'done': quarter_str.lower() == true_simend.lower()
                             }
                         if not isinstance(ppo_agent, ActiveLearningPPOAgent):
                             # Standard experience storing
@@ -429,7 +431,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                                 'log_probs': log_probs,
                                 'reward': torch.as_tensor(reward).float(),
                                 'value': state_value,
-                                'done': quarter_str.lower() == "2022q4".lower()
+                                'done': quarter_str.lower() == true_simend.lower()
                             }
                         if not isinstance(ppo_agent_without_tariff, ActiveLearningPPOAgent):
                             experience_without_tariff = {
@@ -438,7 +440,7 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
                                 'log_probs': log_probs_without_tariff if not (1970 <= simstart_year <= 2023) else log_probs,
                                 'reward': torch.tensor(reward_without_tariff).float() if not (1970 <= simstart_year <= 2023) else torch.tensor(reward).float(),
                                 'value': state_value_without_tariff if not (1970 <= simstart_year <= 2023) else state_value,
-                                'done': quarter_str.lower() == "2022q4".lower()
+                                'done': quarter_str.lower() == true_simend.lower()
                             }
                 except Exception as e:
                     previous_quarter = pd.Period(quarter_str) - 1
@@ -657,6 +659,8 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
             sim_data_without_tariff = history_data.copy()
         else: 
             sim_data_without_tariff = data.copy()
+        simend_year = int(simend.split('q')[0]) - 1
+        true_simend = f"{simend_year}q4"
         sim_data_without_rl = data.copy()
         sim_data_without_rl_tariff = data.copy()
         initial_simulation = True
@@ -700,7 +704,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                 q = (quarter.month - 1) // 3 + 1
                 quarter_str = f"{quarter.year}q{q}".lower()  
                 previous_quarter = pd.Period(quarter_str) - 1
-                if quarter_str.lower() == "2022q4".lower() and is_training:
+                if quarter_str.lower() == true_simend.lower() and is_training:
                     break_the_loop = True
                     logger.info(f"Reached end of simulation - breaking the loop")
                     
@@ -754,7 +758,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                             'log_probs': log_probs,
                             'reward': torch.as_tensor(reward).float(),
                             'value': state_value,
-                            'done': quarter_str.lower() == "2022q4".lower()
+                            'done': quarter_str.lower() == true_simend.lower()
                         } 
                         ppo_agent.save_state(state, quarter_str, previous_quarter, sim_data)
                         ppo_agent.visited_quarters.append(quarter_str)
@@ -884,7 +888,7 @@ async def main_training(active_learning=False):
 # Add the main execution block
 async def main_training_effective_relocation():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation" 
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1975-2022" 
     
     # Keep the standard agent for the tariff case
     simulation_start = "1970q1"
@@ -1005,7 +1009,7 @@ async def main_simulation_effective_relocation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation"
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1975-2022"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
 
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
