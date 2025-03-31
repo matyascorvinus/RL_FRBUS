@@ -45,7 +45,7 @@ def load_data(file_path):
     rename_dict = {
         "quarter": "Quarter",
         "gdp_growth": "GDP Growth (%)",
-        "inflation": "Inflation (%)",
+        "inflation": "CPI (Inflation Index)",
         "unemployment": "Unemployment Rate (%)",
         "real_gdp": "Real GDP (Billion)",
         "nominal_gdp": "Nominal GDP (Billion)",
@@ -122,7 +122,7 @@ st.subheader("Comparison Chart Across Simulation Types")
 # Let the user choose which metric to compare.
 metric_options = [
     "GDP Growth (%)",
-    "Inflation (%)",
+    "CPI (Inflation Index)",
     "Unemployment Rate (%)",
     "Real GDP (Billion)",
     "Nominal GDP (Billion)",
@@ -136,7 +136,7 @@ metric_options = [
     "Government Transfer Payments (Billion)"
 ]
 selected_metric = st.selectbox("Select Metric for Comparison", metric_options)
-
+st.write(f"Selected Metric: {selected_metric}")
 # Create an Altair line chart using the filtered data.
 # In this chart, the x-axis uses the quarter_numeric value (for proper ordering)
 # and the tooltip shows the original 'Quarter' string.
