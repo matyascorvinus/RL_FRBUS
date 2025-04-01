@@ -28,7 +28,7 @@ MUTED_REDS = {
     'lightest': '#F39C7F', # light orange
 }
  
-def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False):
+def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
     # Helper function to calculate mean absolute error
     
     # Filter by year range if provided
@@ -117,6 +117,11 @@ def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=
     # Calculate mean MAE for each series
     mae_rl_means = [round(np.mean(series), 2)  for series in mae_rl]
     mae_tariff_means = [round(np.mean(series), 2)  for series in mae_tariff]
+    if not small_value:
+        mae_rl_valid_indices = [i for i, series in enumerate(mae_rl_means) if series > 1.0 and mae_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in mae_rl_valid_indices]
+        mae_rl_means = [mae_rl_means[i] for i in mae_rl_valid_indices]
+        mae_tariff_means = [mae_tariff_means[i] for i in mae_rl_valid_indices] 
     if small_value:
         mae_rl_valid_indices = [i for i, series in enumerate(mae_rl_means) if series <= 1.0 and mae_tariff_means[i] <= 1.0]
         metric_names = [metric_names[i] for i in mae_rl_valid_indices]
@@ -156,37 +161,40 @@ def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=
         title=f'Mean Absolute Error Comparison: {title_with_year}',
         xaxis_title='Economic Metrics',
         yaxis_title='Mean Absolute Error',
+        # Font for y axis title
+        yaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
         barmode='group',
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            font=dict(size=20)
         )
     )
+    
     
     # Improve readability of x-axis labels
     fig.update_xaxes(
         tickangle=45,
-        tickfont=dict(size=10),
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
     
     fig.update_yaxes(
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
     
     return fig  
 
-def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False):
+def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
     
     # Filter by year range if provided
     if year_range is not None:
@@ -274,7 +282,12 @@ def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year
     # Calculate mean MAE for each series
     rmse_rl_means = [round(np.sqrt(np.mean(series)), 2) for series in rmse_rl]
     rmse_tariff_means = [round(np.sqrt(np.mean(series)), 2) for series in rmse_tariff]
-    
+    if not small_value:
+        rmse_rl_valid_indices = [i for i, series in enumerate(rmse_rl_means) if series > 1.0 and rmse_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in rmse_rl_valid_indices]
+        rmse_rl_means = [rmse_rl_means[i] for i in rmse_rl_valid_indices]
+        rmse_tariff_means = [rmse_tariff_means[i] for i in rmse_rl_valid_indices] 
+
     if small_value:
         rmse_rl_valid_indices = [i for i, series in enumerate(rmse_rl_means) if series <= 1.0 and rmse_tariff_means[i] <= 1.0]
         metric_names = [metric_names[i] for i in rmse_rl_valid_indices]
@@ -314,38 +327,41 @@ def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year
         title=f'Root Mean Square Error Comparison: {title_with_year}',
         xaxis_title='Economic Metrics',
         yaxis_title='Root Mean Square Error',
+        # Font for y axis title
+        yaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
         barmode='group',
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            font=dict(size=20)
         )
     )
+    
     
     # Improve readability of x-axis labels
     fig.update_xaxes(
         tickangle=45,
-        tickfont=dict(size=10),
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
     
     fig.update_yaxes(
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
     
     return fig 
 
 
-def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False):
+def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
 
     # Filter by year range if provided
     if year_range is not None:
@@ -433,7 +449,12 @@ def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_r
     # Calculate mean MAE for each series
     smape_rl_means = [round(np.mean(series), 2) for series in smape_rl]
     smape_tariff_means = [round(np.mean(series), 2) for series in smape_tariff]
-    
+    if not small_value:
+        smape_rl_valid_indices = [i for i, series in enumerate(smape_rl_means) if series > 1.0 and smape_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in smape_rl_valid_indices]
+        smape_rl_means = [smape_rl_means[i] for i in smape_rl_valid_indices]
+        smape_tariff_means = [smape_tariff_means[i] for i in smape_rl_valid_indices] 
+
     if small_value:
         smape_rl_valid_indices = [i for i, series in enumerate(smape_rl_means) if series <= 1.0 and smape_tariff_means[i] <= 1.0]
         metric_names = [metric_names[i] for i in smape_rl_valid_indices]
@@ -459,49 +480,53 @@ def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_r
         x=smape_df['Metric'],
         y=smape_df['RL - FRBUS vs Historical Data'],
         name='RL - FRBUS vs Historical Data',
-        marker_color=MUTED_REDS['dark']
+        marker_color=MUTED_REDS['dark'],
+        textfont=dict(size=15, color='black' if not dark_mode else 'white')
     ))
     
     fig.add_trace(go.Bar(
         x=smape_df['Metric'],
         y=smape_df['FRB/US model vs Historical Data'],
         name='FRB/US model vs Historical Data',
-        marker_color=MUTED_REDS['light']
+        marker_color=MUTED_REDS['light'],
+        textfont=dict(size=15, color='black' if not dark_mode else 'white')
     ))
-    
     # Update layout
     fig.update_layout(
         title=f'Symmetric mean absolute percentage error Comparison: {title_with_year}',
         xaxis_title='Economic Metrics',
         yaxis_title='Symmetric mean absolute percentage error',
+        title_font_color='black' if not dark_mode else 'white',
+        # Font for y axis title
+        yaxis_title_font=dict(size=15, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
         barmode='group',
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            font=dict(size=20)
         )
     )
+    
     
     # Improve readability of x-axis labels
     fig.update_xaxes(
         tickangle=45,
-        tickfont=dict(size=10),
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
     
     fig.update_yaxes(
-        gridcolor='#303030', 
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
         zerolinecolor='#303030'
     )
-    
     return fig 
 
 def render_actions_charts(df, title):
@@ -590,10 +615,7 @@ def render_gdp_charts(df, title):
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
-        barmode='overlay',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
+        barmode='overlay'
     )
     
     return fig
@@ -644,10 +666,7 @@ def render_trade_charts(df, title):
         barmode='overlay',
         xaxis_title='Quarter',
         yaxis_title='Value',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
-        legend=dict(bgcolor='rgba(0,0,0,0.5)')
+        legend=dict(font=dict(size=25))
     )
     
     return fig
@@ -695,10 +714,7 @@ def render_overview_charts(df, title):
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage',
-        hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
+        hovermode='x unified'
     )
     fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
     fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
@@ -717,10 +733,7 @@ def render_overview_tax_rates_charts(df, title):
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage',
-        hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
+        hovermode='x unified'
     )
     fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
     fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
@@ -738,10 +751,7 @@ def render_overview_inflation_charts(df, title):
         title=title,
         xaxis_title='Quarter',
         yaxis_title='Percentage (%)',
-        hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
+        hovermode='x unified'
     )
     fig.update_xaxes(gridcolor='#303030', zerolinecolor='#303030')
     fig.update_yaxes(gridcolor='#303030', zerolinecolor='#303030')
@@ -839,16 +849,12 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         yaxis_title=y_axis_title,
         barmode='overlay' if chart_type == 'bar' else None,
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            x=1
         )
     )
     
@@ -901,16 +907,12 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
         xaxis_title='Quarter',
         yaxis_title='Percentage (%)',
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=0.5,
-            bgcolor='rgba(0,0,0,0.5)'
+            x=0.5
         )
     )
     
@@ -930,10 +932,7 @@ def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_ba
         title='Unemployment Comparison',
         xaxis_title='Quarter',
         yaxis_title='Percentage (%)',
-        hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0')
+        hovermode='x unified'
     )
     return fig
 
@@ -975,17 +974,13 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
         title='Real GDP Components Comparison',
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
-        barmode='overlay',
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper
-        font=dict(color='#E0E0E0'),  # Light gray text
+        barmode='overlay',  # Light gray text
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
-            bgcolor='rgba(0,0,0,0.5)'  # Semi-transparent black background
+            x=1  # Semi-transparent black background
         )
     )
     
@@ -1030,17 +1025,13 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
         title='Nominal GDP Components Comparison',
         xaxis_title='Quarter',
         yaxis_title='Billions of $',
-        barmode='overlay',
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper
-        font=dict(color='#E0E0E0'),  # Light gray text
+        barmode='overlay',  # Light gray text
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
-            bgcolor='rgba(0,0,0,0.5)'  # Semi-transparent black background
+            x=1  # Semi-transparent black background
         )
     )
     
@@ -1261,16 +1252,12 @@ def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df
         xaxis_title='Quarter',
         yaxis_title='Growth Rate (%)',
         hovermode='x unified',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            x=1
         )
     )
     
@@ -1329,15 +1316,12 @@ def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff,
         xaxis_title='Quarter',
         yaxis_title='Growth Rate (%)',
         hovermode='x unified',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1,
-            bgcolor='rgba(0,0,0,0.5)'
+            x=1
         )
     )
     
@@ -1840,6 +1824,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
     df_base_simulation_with_tariff = st.session_state.stream.metrics_history_base_simulation_with_tariff
     # Display charts based on selected view
     if selected_view == "Overview":
+        dark_mode = st.checkbox("Dark Mode", value=True)
         def extract_year(quarter_str):
             # Handle both formats: "2020Q1" and "2020q1"
             return int(quarter_str.split('q')[0].split('Q')[0])
@@ -1868,7 +1853,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             df_without_tariff,
             df_base_simulation,
             "Economic Metrics", 
-            year_range=selected_year_range
+            year_range=selected_year_range,
+            dark_mode=dark_mode
         )
 
         mae_fig_small = mean_absolute_error(
@@ -1877,7 +1863,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             df_base_simulation,
             "Economic Metrics", 
             year_range=selected_year_range,
-            small_value=True
+            small_value=True,
+            dark_mode=dark_mode
         )
         # Display the figure
         st.plotly_chart(mae_fig, use_container_width=True)
@@ -1887,7 +1874,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             df_without_tariff,
             df_base_simulation,
             "Economic Metrics", 
-            year_range=selected_year_range
+            year_range=selected_year_range,
+            dark_mode=dark_mode
         )
 
         rmse_fig_small = root_mean_square_deviation(
@@ -1906,7 +1894,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             df_without_tariff,
             df_base_simulation,
             "Economic Metrics", 
-            year_range=selected_year_range
+            year_range=selected_year_range,
+            dark_mode=dark_mode
         )
 
         smape_fig_small = symmetric_mean_absolute_percentage_error(
@@ -1915,7 +1904,8 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
             df_base_simulation,
             "Economic Metrics", 
             year_range=selected_year_range,
-            small_value=True
+            small_value=True,
+            dark_mode=dark_mode
         )
         # Display the figure
         st.plotly_chart(smape_fig, use_container_width=True)
