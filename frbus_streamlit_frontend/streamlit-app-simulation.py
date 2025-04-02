@@ -10,12 +10,14 @@ import plotly.express as px
 # Choose between Historical Data and Trump Tariff plan.
 data_source = st.sidebar.radio(
     "Select Data Source", 
-    options=["Historical Data", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
+    options=["Historical Data", "Historical Data 2022-2024", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
     index=1
 )
 # Set file path based on the data source selection.
 data_file = "combined_simulation_data_effective_relocation.csv" 
 if data_source != "Historical Data":
+    if data_source == "Historical Data 2022-2024":
+        data_file = "combined_simulation_data_effective_relocation_2022-2024-1.csv" 
     if data_source == "Trump Tariff plan 10%":
         data_file = "combined_simulation_data-10.csv" 
     if data_source == "Trump Tariff plan 20%":
@@ -28,7 +30,7 @@ if data_source != "Historical Data":
 # ---------------------------
 # Load Data Function (with caching)
 # ---------------------------
-@st.cache_data
+# @st.cache_data
 def load_data(file_path):
     data = pd.read_csv(file_path)
     
@@ -54,7 +56,7 @@ def load_data(file_path):
         "exports": "Exports (Billion)",
         "imports": "Imports (Billion)",
         "debt_to_gdp": "Debt",
-        "interest_rate": "Interest Rate (%)",
+        "interest_rate": "Federal Fund Rate (%)",
         "pcpi": "PCPI",
         "transfer_payments_ratio": "Transfer Payments Ratio",
         "federal_expenditures": "Federal Expenditures (in Billions)",
@@ -132,7 +134,7 @@ metric_options = [
     "Exports (Billion)",
     "Imports (Billion)",
     "Debt",
-    "Interest Rate (%)",
+    "Federal Fund Rate (%)",
     "Government Transfer Payments (Billion)"
 ]
 selected_metric = st.selectbox("Select Metric for Comparison", metric_options)
@@ -141,9 +143,9 @@ st.write(f"Selected Metric: {selected_metric}")
 # In this chart, the x-axis uses the quarter_numeric value (for proper ordering)
 # and the tooltip shows the original 'Quarter' string.
 chart = alt.Chart(filtered_data).mark_line(point=True).encode(
-    x=alt.X("quarter_numeric:Q", title="Quarter"),
-    y=alt.Y(f"{selected_metric}:Q", title=selected_metric),
-    color=alt.Color("Simulation Type:N", title="Simulation Type"),
+    x=alt.X("quarter_numeric:Q", title="Quarter", axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor='black', labelColor='black')),
+    y=alt.Y(f"{selected_metric}:Q", title=selected_metric, axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor ='black', labelColor='black')),
+    color=alt.Color("Simulation Type:N", title="Simulation Type", legend=alt.Legend(titleFontSize=18, labelFontSize=18, titleColor='black', labelColor='black')),
     tooltip=["Quarter", f"{selected_metric}", "Simulation Type"]
 ).properties(
     width=700,
