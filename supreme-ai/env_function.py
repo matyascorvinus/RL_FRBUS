@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def calculate_reward_policy_v1(solution, quarter, end_quarter):
+def calculate_reward_policy_v1_old(solution, quarter, end_quarter):
     """
     Enhanced reward calculation based on economic outcomes with normalized scaling,
     smoothness incentives, and forward-looking components.
@@ -117,5 +117,44 @@ def calculate_reward_policy_v1(solution, quarter, end_quarter):
     # reward += -normalized_volatility * 4.0            # Smoothness
     # reward += growth_vs_history * 10.0                # Historical comparison - We want to make sure the AI prioritizes GDP performance
     # reward += -normalized_debt * 4.0                 # Fiscal sustainability 
+    reward += normalized_gdp_dev
+    return reward 
+
+def calculate_reward_policy_v1(solution, quarter, end_quarter):
+    """
+    Enhanced reward calculation based on economic outcomes with normalized scaling,
+    smoothness incentives, and forward-looking components.
+    
+    Args:
+        solution (DataFrame): Simulation results from FRB/US
+        quarter (str): Current quarter (e.g., "2025q1")
+        end_quarter (str): Final quarter of simulation
+    
+    Returns:
+        float: Calculated reward value
+    """
+    # 1. Initialize reward and define normalized targets
+    reward = torch.tensor(0.0).clone().detach()
+    max_expected_deviation = 10.0  # Used for normalization
+    
+    annual_target = 2.0
+    quarterly_target = ((1 + annual_target/100)**(1/4) - 1) * 100
+    
+    # Dynamic targets that adjust based on conditions
+    targets = {
+        'hggdp': 4.0,   # 4% GDP growth target annualized
+    }
+    
+    # 2. Calculate current economic indicators
+    gdp_growth_rl = ((solution.loc[quarter, 'xgdp'] - solution.shift(1).loc[quarter, 'xgdp']) / 
+                     solution.shift(1).loc[quarter, 'xgdp'] * 400.0)
+    
+    gdp_growth_dev = gdp_growth_rl - targets['hggdp']
+    normalized_gdp_dev = torch.clamp(
+        torch.tensor(float(gdp_growth_dev) / max_expected_deviation, dtype=torch.float32), 
+        -1, 
+        1
+    )
+
     reward += normalized_gdp_dev
     return reward 
