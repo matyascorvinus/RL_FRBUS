@@ -6,7 +6,7 @@ from pyfrbus.load_data import load_data
 from ppo_agent import PPOAgent
 import numpy as np
 import torch
-from env_function import calculate_reward, calculate_reward_policy, calculate_reward_policy_v1
+from env_function import calculate_reward_policy_v1
 import pandas as pd
 import time
 
@@ -19,6 +19,7 @@ import logging
 import time
 
 from models import EconomicMetrics, SimulationComparison
+from ppo_agent import PPOAgent, ACTION_BOUNDS
 from active_learning_ppo import ActiveLearningPPOAgent
 from active_learning_effective_relocation_ppo import ActiveLearningEffectiveRelocationPPOAgent
 
@@ -140,7 +141,95 @@ async def broadcast_metrics_update(
         logger.error(f"Error broadcasting metrics: {e}")
         raise
 
-policy_vars = ['gtrt', 'egfe', 'trptx', 'trcit']  
+policy_vars = list(ACTION_BOUNDS.keys())
+
+def get_state(data, current_quarter):
+    """Extract state variables from data from the previous quarter"""   
+    previous_quarter = pd.Period(current_quarter) - 1
+    return data.loc[previous_quarter].values
+
+def apply_actions(data, current_quarter, actions):
+    """Apply PPO agent's actions to the data""" 
+    
+    previous_quarter = pd.Period(current_quarter) - 1 
+    # Map actions to specific policy variables
+    # Convert actions tensor to numpy if it's a torch tensor
+    if torch.is_tensor(actions):
+        actions_np = actions.detach().cpu().numpy()
+    else:
+        actions_np = actions 
+    for var, action in zip(policy_vars, actions_np):
+        if var == 'egfe': 
+            if (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] >= 0.02 and (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] <= 0.1:
+                data.loc[previous_quarter, 'egfe'] += action * 1000  
+            logger.info(f"Applied action {var} for previous quarter {previous_quarter}: {data.loc[previous_quarter, var]} with additional spending { action * 1000} | Real GDP: {data.loc[previous_quarter, 'xgdp']} | Spending to GDP: {data.loc[previous_quarter, 'egfe'] / data.loc[previous_quarter, 'xgdp']}")    
+            logger.info(f"Applied action {var} for current quarter {current_quarter}: {data.loc[current_quarter, var]} with additional spending { action * 1000} | Real GDP: {data.loc[current_quarter, 'xgdp']} | Spending to GDP: {data.loc[current_quarter, 'egfe'] / data.loc[current_quarter, 'xgdp']}")
+        else: 
+            if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
+                data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
+            else:
+                data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
+            logger.info(f"Applied action {var} for quarter {current_quarter}: {data.loc[current_quarter, var]}")
+    return data
+
+def apply_tariff_enhanced(data, current_quarter, tariff_rate):
+    """
+    Apply tariff effects to the U.S. economy with more nuanced logic.
+    
+    Args:
+        data: DataFrame containing economic variables (indexed by quarter).
+        current_quarter: Current simulation quarter (string or datetime).
+        tariff_rate: Base rate of tariff (e.g., 0.05 for 5%).
+    
+    Returns:
+        Modified DataFrame with updated import/export data and govt. revenue.
+    """
+    if tariff_rate == 0:
+        return data
+    # 1) Access import and export levels
+    imports = data.loc[current_quarter, 'emn']  # Nominal imports
+    exports = data.loc[current_quarter, 'exn']  # Nominal exports
+    
+    # 2) Tiered or adaptive elasticity approach
+    # For demonstration, let's do a logistic-based elasticity
+    # That shifts from -0.7 to -0.3 over the range of tariff_rate [0, 0.2] as an example
+    import_elasticity = -0.5 + 0.4 / (1 + np.exp(-(tariff_rate - 0.1)*10))
+    
+    # Optionally mix with a base elasticity from some table or categories
+    # import_elasticity could be a weighted average of multiple sub-elasticities.
+    
+    # 3) Compute tariff revenue
+    tariff_revenue = imports * tariff_rate
+    data.loc[current_quarter, 'gfrecn'] += tariff_revenue
+    
+    # 4) Adjust imports with partial or immediate effect
+    # immediate effect = imports * (1 + tariff_rate * import_elasticity)
+    # partial approach = alpha * immediate + (1-alpha)*previous
+    alpha = 0.5  # partial adjustment factor
+    desired_import = imports * (1 + tariff_rate * import_elasticity)
+    new_imports = alpha * desired_import + (1 - alpha) * imports
+    
+    data.loc[current_quarter, 'emn'] = max(new_imports, 0)  # ensure not negative
+    
+    # 5) More nuanced retaliation model
+    # maybe the partner imposes a tariff that is 70% of ours once we exceed 5%:
+    min_tariff_threshold = 0.05
+    if tariff_rate >= min_tariff_threshold:
+        partner_tariff = 0.7 * tariff_rate
+    else:
+        partner_tariff = 0.0
+
+    # Then the elasticity of demand for U.S. exports might differ from our import elasticity
+    # We do a simple approach for demonstration:
+    export_elasticity = -0.4
+    # If partner_tariff > 0, reduce exports
+    desired_export = exports * (1 + partner_tariff * export_elasticity)
+    new_exports = alpha * desired_export + (1 - alpha) * exports
+    data.loc[current_quarter, 'exn'] = max(new_exports, 0)
+    
+    return data
+
+
 async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simulation_start, simulation_end, simulation_replications, key_checkpoint_path, is_training=True, replication_restart=0, highest_score= float('-inf'), tariff_rate=0):
     # Load data and model
     data = load_data("../data/LONGBASE.TXT")
@@ -162,93 +251,6 @@ async def run_the_simulation_function(ppo_agent, ppo_agent_without_tariff, simul
     # Policy settings
     data.loc[simstart:simend, "dfpdbt"] = 0
     data.loc[simstart:simend, "dfpsrp"] = 1
-    # data.loc[simstart:simend, "eps_s"] = 0
-    # data.loc[simstart:simend, "eps_i"] = 0
-    def get_state(data, current_quarter):
-        """Extract state variables from data from the previous quarter"""   
-        previous_quarter = pd.Period(current_quarter) - 1
-        return data.loc[previous_quarter].values
-
-    def apply_actions(data, current_quarter, actions):
-        """Apply PPO agent's actions to the data""" 
-        
-        previous_quarter = pd.Period(current_quarter) - 1 
-        # # Action bounds for different policy tools 
-        # Map actions to specific policy variables
-        # Convert actions tensor to numpy if it's a torch tensor
-        if torch.is_tensor(actions):
-            actions_np = actions.detach().cpu().numpy()
-        else:
-            actions_np = actions 
-        for var, action in zip(policy_vars, actions_np):
-            if var == 'rff':
-                continue
-            if var == 'egfe': 
-                data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action * 1000  
-            else: 
-                if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
-                    data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
-                else:
-                    data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
-        return data
-
-    def apply_tariff_enhanced(data, current_quarter, tariff_rate):
-        """
-        Apply tariff effects to the U.S. economy with more nuanced logic.
-        
-        Args:
-            data: DataFrame containing economic variables (indexed by quarter).
-            current_quarter: Current simulation quarter (string or datetime).
-            tariff_rate: Base rate of tariff (e.g., 0.05 for 5%).
-        
-        Returns:
-            Modified DataFrame with updated import/export data and govt. revenue.
-        """
-        if tariff_rate == 0:
-            return data
-        # 1) Access import and export levels
-        imports = data.loc[current_quarter, 'emn']  # Nominal imports
-        exports = data.loc[current_quarter, 'exn']  # Nominal exports
-        
-        # 2) Tiered or adaptive elasticity approach
-        # For demonstration, let's do a logistic-based elasticity
-        # That shifts from -0.7 to -0.3 over the range of tariff_rate [0, 0.2] as an example
-        import_elasticity = -0.5 + 0.4 / (1 + np.exp(-(tariff_rate - 0.1)*10))
-        
-        # Optionally mix with a base elasticity from some table or categories
-        # import_elasticity could be a weighted average of multiple sub-elasticities.
-        
-        # 3) Compute tariff revenue
-        tariff_revenue = imports * tariff_rate
-        data.loc[current_quarter, 'gfrecn'] += tariff_revenue
-        
-        # 4) Adjust imports with partial or immediate effect
-        # immediate effect = imports * (1 + tariff_rate * import_elasticity)
-        # partial approach = alpha * immediate + (1-alpha)*previous
-        alpha = 0.5  # partial adjustment factor
-        desired_import = imports * (1 + tariff_rate * import_elasticity)
-        new_imports = alpha * desired_import + (1 - alpha) * imports
-        
-        data.loc[current_quarter, 'emn'] = max(new_imports, 0)  # ensure not negative
-        
-        # 5) More nuanced retaliation model
-        # maybe the partner imposes a tariff that is 70% of ours once we exceed 5%:
-        min_tariff_threshold = 0.05
-        if tariff_rate >= min_tariff_threshold:
-            partner_tariff = 0.7 * tariff_rate
-        else:
-            partner_tariff = 0.0
-
-        # Then the elasticity of demand for U.S. exports might differ from our import elasticity
-        # We do a simple approach for demonstration:
-        export_elasticity = -0.4
-        # If partner_tariff > 0, reduce exports
-        desired_export = exports * (1 + partner_tariff * export_elasticity)
-        new_exports = alpha * desired_export + (1 - alpha) * exports
-        data.loc[current_quarter, 'exn'] = max(new_exports, 0)
-        
-        return data
-
     # Initialize variables for tracking best replication
     score_replications = {}
     the_best_replication = 0 
@@ -560,90 +562,6 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
     # Policy settings
     data.loc[simstart:simend, "dfpdbt"] = 0
     data.loc[simstart:simend, "dfpsrp"] = 1
-    def get_state(data, current_quarter):
-        """Extract state variables from data from the previous quarter"""   
-        previous_quarter = pd.Period(current_quarter) - 1
-        return data.loc[previous_quarter].values
-
-    def apply_actions(data, current_quarter, actions):
-        """Apply PPO agent's actions to the data""" 
-        
-        previous_quarter = pd.Period(current_quarter) - 1 
-        # Map actions to specific policy variables
-        # Convert actions tensor to numpy if it's a torch tensor
-        if torch.is_tensor(actions):
-            actions_np = actions.detach().cpu().numpy()
-        else:
-            actions_np = actions 
-        for var, action in zip(policy_vars, actions_np):
-            if var == 'rff':
-                continue
-            if var == 'egfe': 
-                data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action * 1000  
-            else: 
-                if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
-                    data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
-                else:
-                    data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
-        return data
-
-    def apply_tariff_enhanced(data, current_quarter, tariff_rate):
-        """
-        Apply tariff effects to the U.S. economy with more nuanced logic.
-        
-        Args:
-            data: DataFrame containing economic variables (indexed by quarter).
-            current_quarter: Current simulation quarter (string or datetime).
-            tariff_rate: Base rate of tariff (e.g., 0.05 for 5%).
-        
-        Returns:
-            Modified DataFrame with updated import/export data and govt. revenue.
-        """
-        if tariff_rate == 0:
-            return data
-        # 1) Access import and export levels
-        imports = data.loc[current_quarter, 'emn']  # Nominal imports
-        exports = data.loc[current_quarter, 'exn']  # Nominal exports
-        
-        # 2) Tiered or adaptive elasticity approach
-        # For demonstration, let's do a logistic-based elasticity
-        # That shifts from -0.7 to -0.3 over the range of tariff_rate [0, 0.2] as an example
-        import_elasticity = -0.5 + 0.4 / (1 + np.exp(-(tariff_rate - 0.1)*10))
-        
-        # Optionally mix with a base elasticity from some table or categories
-        # import_elasticity could be a weighted average of multiple sub-elasticities.
-        
-        # 3) Compute tariff revenue
-        tariff_revenue = imports * tariff_rate
-        data.loc[current_quarter, 'gfrecn'] += tariff_revenue
-        
-        # 4) Adjust imports with partial or immediate effect
-        # immediate effect = imports * (1 + tariff_rate * import_elasticity)
-        # partial approach = alpha * immediate + (1-alpha)*previous
-        alpha = 0.5  # partial adjustment factor
-        desired_import = imports * (1 + tariff_rate * import_elasticity)
-        new_imports = alpha * desired_import + (1 - alpha) * imports
-        
-        data.loc[current_quarter, 'emn'] = max(new_imports, 0)  # ensure not negative
-        
-        # 5) More nuanced retaliation model
-        # maybe the partner imposes a tariff that is 70% of ours once we exceed 5%:
-        min_tariff_threshold = 0.05
-        if tariff_rate >= min_tariff_threshold:
-            partner_tariff = 0.7 * tariff_rate
-        else:
-            partner_tariff = 0.0
-
-        # Then the elasticity of demand for U.S. exports might differ from our import elasticity
-        # We do a simple approach for demonstration:
-        export_elasticity = -0.4
-        # If partner_tariff > 0, reduce exports
-        desired_export = exports * (1 + partner_tariff * export_elasticity)
-        new_exports = alpha * desired_export + (1 - alpha) * exports
-        data.loc[current_quarter, 'exn'] = max(new_exports, 0)
-        
-        return data
-
     # Initialize variables for tracking best replication
     score_replications = {}
     the_best_replication = 0 
@@ -710,7 +628,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                     
 
                 # Apply actions to the data
-                if tariff_rate > 0:
+                if tariff_rate > 0 and not is_training:
                     sim_data = apply_tariff_enhanced(sim_data, quarter_str, tariff_rate)
                     sim_data_without_rl_tariff = apply_tariff_enhanced(sim_data_without_rl_tariff, quarter_str, tariff_rate)
 
@@ -723,6 +641,9 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                 # Run one quarter of simulation
                 try: 
                     sim_data = frbus.solve(quarter_str, quarter_str, sim_data)
+                    
+                    for var in policy_vars:
+                        logger.info(f"Aftermath: action {var} for previous quarter {previous_quarter}: {sim_data.loc[previous_quarter, var]} | current quarter {quarter_str}: {sim_data.loc[quarter_str, var]}")
                     if not (1970 <= simstart_year <= 2023) and not is_training:
                         state_without_tariff = get_state(sim_data_without_tariff, quarter_str)
                         # Create a copy of the PPO agent
@@ -765,7 +686,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         experiences.append(experience)  
                         reward_list[quarter_str] = total_reward.clone().detach()
                         total_reward += reward
-                        logger.info(f"Visited quarters: {quarter_str} with total reward {total_reward} reward {reward} and action {actions}") 
+                        logger.info(f"Visited quarters: {quarter_str} with total reward {total_reward} | reward {reward}") 
                         should_relocate, target_quarter =  ppo_agent.should_relocate(previous_quarter, quarter_str)
                         if should_relocate and not(break_the_loop):
                             ppo_agent.relocate(target_quarter)
@@ -800,18 +721,17 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
             end_time = time.time()                    
             if total_reward >= highest_score:
                 highest_score = total_reward
-                the_best_replication = rep + replication_restart
-            if rep + replication_restart == the_best_replication:
-                checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
-                os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
-                checkpoint = {
-                    'actor_state_dict': ppo_agent.actor.state_dict(),
-                    'critic_state_dict': ppo_agent.critic.state_dict(),
-                    'replication': rep + replication_restart,
-                    'action_bounds': ppo_agent.action_bounds
-                }
-                torch.save(checkpoint, checkpoint_path)
-                logger.info(f"Saved the bestcheckpoint at replication {rep + replication_restart}")
+                the_best_replication = rep + replication_restart 
+            checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
+            os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
+            checkpoint = {
+                'actor_state_dict': ppo_agent.actor.state_dict(),
+                'critic_state_dict': ppo_agent.critic.state_dict(),
+                'replication': rep + replication_restart,
+                'action_bounds': ppo_agent.action_bounds
+            }
+            torch.save(checkpoint, checkpoint_path)
+            logger.info(f"Saved the bestcheckpoint at replication {rep + replication_restart}")
                 
             logger.info(f"Total reward for replication effective relocation {rep + replication_restart}: {total_reward}")
             logger.info(f"Time taken for replication effective relocation {rep + replication_restart}: {end_time - start_time} seconds")
@@ -871,7 +791,7 @@ async def main_training(active_learning=False):
             uncertainty_model_dim=512  # Size of the uncertainty prediction model
         )
     simulation_start = "1970q1"
-    simulation_end = "2023q1"
+    simulation_end = "2000q1"
     simulation_replications = 25
     
     result = await run_the_simulation_function(
@@ -888,11 +808,11 @@ async def main_training(active_learning=False):
 # Add the main execution block
 async def main_training_effective_relocation():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1975-2022" 
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999" 
     
     # Keep the standard agent for the tariff case
     simulation_start = "1970q1"
-    simulation_end = "2023q1"
+    simulation_end = "2000q1"
     simulation_replications = 25
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
     logger.info("Starting simulation training with effective relocation")
@@ -916,7 +836,7 @@ async def main_training_resume():
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path_without_tariff, PPOAgent(state_dim=934, action_dim=len(policy_vars), hidden_dim=4096, seed=69)) 
 
     simulation_start = "1970q1"
-    simulation_end = "2023q1"
+    simulation_end = "2000q1"
     simulation_replications = 25
     replication_restart = 211
     
@@ -1009,7 +929,7 @@ async def main_simulation_effective_relocation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1975-2022"
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
 
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
@@ -1031,6 +951,7 @@ async def main_simulation_effective_relocation(
         ppo_agent_without_tariff=ppo_agent_without_tariff
     )
     logger.info(result)
+
 @app.get("/run_simulation_training")
 def run_simulation_training():
     asyncio.run(main_training())

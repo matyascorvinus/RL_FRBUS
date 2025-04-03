@@ -172,6 +172,10 @@ class ActiveLearningEffectiveRelocationPPOAgent(PPOAgent):
             index += 1 
         logger.info(f"Trajectories: {len(trajectories)}")
         for trajectory in trajectories:
-            super().update_ppo(trajectory) 
+            try:
+                super().update_ppo(trajectory) 
+            except Exception as e:
+                logger.error(f"Error updating PPO: {e}")
+                continue
 
         

@@ -4,6 +4,15 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Normal
 
+import logging 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__) 
+ACTION_BOUNDS = { 
+    'egfe': (-0.5, 0.5),    # Trend level of federal government expenditures. (trillions of dollars)
+    'trptx': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
+    'trcit': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
+}        
+
 class PPOAgent(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim=128, lr=0.0003, gamma=0.99, eps_clip=0.2, K_epochs=10, seed=42):
         super(PPOAgent, self).__init__()
@@ -45,12 +54,7 @@ class PPOAgent(nn.Module):
         self.action_dim = action_dim 
 
         # Action bounds for different policy tools (Addition - Subtraction)
-        self.action_bounds = { 
-            'gtrt': (-0.1, 0.1),    # Trend ratio of transfer payments to GDP (percentage)
-            'egfe': (-0.25, 0.25),    # Trend level of federal government expenditures. (billions of dollars)
-            'trptx': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
-            'trcit': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
-        }        
+        self.action_bounds = ACTION_BOUNDS
         
     def forward(self, state):
         state = torch.from_numpy(state).float()
@@ -170,8 +174,9 @@ class PPOAgent(nn.Module):
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         
         # Optimize policy for K epochs
-        for _ in range(10):
+        for _ in range(self.K_epochs):
             # Get current policy and value predictions
+            logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
             logprobs_new, state_values, dist_entropy = self.evaluate(states, actions)
             
             # Calculate KL divergence
@@ -194,7 +199,6 @@ class PPOAgent(nn.Module):
             
             # Combined loss
             loss = policy_loss + value_loss + entropy_loss
-            
             # Take gradient step
             self.optimizer.zero_grad()
             loss.backward(retain_graph=True)

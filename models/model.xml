@@ -703,7 +703,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
     <definition>Federal Government expenditures, CW 2012$</definition>
     <description/>
     <standard_equation>
-      <eviews_equation>d( log(egfe), 0, 1 )  - egfe_aerr =
+      <!-- <eviews_equation>d( log(egfe), 0, 1 )  - egfe_aerr =
            y_egfe(1)
           + y_egfe(2) * log(egfe(-1)/egfet(-1))
           + y_egfe(3) *  d( log(egfe(-1)), 0, 1 )
@@ -718,7 +718,9 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
           + y_egfe_4 *  ( log(egfe(-2)) - ( log(egfe(-3))))
           + y_egfe_5 * ( log(egfet) - ( log(egfet(-1))))
           + y_egfe_6 *  xgap2
-          + y_egfe_7 *  xgap2(-1)</python_equation>
+          + y_egfe_7 *  xgap2(-1)</python_equation> -->
+      <eviews_equation>egfe - egfe_aerr = egfe(-1)</eviews_equation>
+      <python_equation>egfe - egfe_aerr = egfe(-1)</python_equation>
       <coeff>
         <cf_name>y_egfe(1)</cf_name>
         <cf_value>-0.0008045327442607825</cf_value>
@@ -6621,7 +6623,8 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
     <name>trcit</name>
     <equation_type>Exogenous</equation_type>
     <definition>Government corporate income tax rate, trend</definition>
-    <exogenous_projection>2</exogenous_projection>
+    <!-- <exogenous_projection>2</exogenous_projection> -->
+    <exogenous_projection>0</exogenous_projection>
   </variable>
   <variable>
     <name>trfcim</name>
@@ -6745,7 +6748,8 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
     <name>trptx</name>
     <equation_type>Exogenous</equation_type>
     <definition>Average tax rate for personal income tax, trend, policy setting</definition>
-    <exogenous_projection>2</exogenous_projection>
+    <!-- <exogenous_projection>2</exogenous_projection> -->
+    <exogenous_projection>0</exogenous_projection>
   </variable>
   <variable>
     <name>trspp</name>
