@@ -93,7 +93,7 @@ class PPOAgent(nn.Module):
         for i, tool_name in enumerate(tool_keys):
             low, high = self.action_bounds[tool_name]
             # Rescale from [-1, 1] to [low, high]
-            #   scaled = low + (high - low)*( (action_tanh[i]+1)/2 )
+            # scaled = low + (high - low)*( (action_tanh[i]+1)/2 )
             scaled_action = low + (high - low) * (action_tanh[i] + 1) / 2.0
             actions.append(scaled_action)
 

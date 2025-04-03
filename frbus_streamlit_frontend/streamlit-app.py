@@ -777,7 +777,7 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         {
             'x': df_rl_tariff['quarter'],
             'y': df_rl_tariff[metric],
-            'name': f'{title} (AI Decision Makers/FRBUS)',
+            'name': f'{title} (RL-FRB/US Agent)',
             'marker_color': MUTED_REDS['dark'],
             'width': 0.2,
             'offset': -0.2
@@ -793,7 +793,7 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         {
             'x': df_base_simulation['quarter'],
             'y': df_base_simulation[metric],
-            'name': f'{title} (FRBUS-Based Simulation - Without Tariff)',
+            'name': f'{title} (FRB/US)',
             'marker_color': MUTED_REDS['light'],
             'width': 0.2,
             'offset': 0.2
@@ -801,7 +801,7 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         {
             'x': df_base_simulation_with_tariff['quarter'],
             'y': df_base_simulation_with_tariff[metric],
-            'name': f'{title} (FRBUS-Based Simulation - With Tariff)',
+            'name': f'{title} (FRB/US - With Tariff)',
             'marker_color': MUTED_REDS['lightest'],
             'width': 0.2,
             'offset': 0.4
@@ -811,7 +811,7 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         {
             'x': df_rl_tariff['quarter'],
             'y': df_rl_tariff[metric],
-            'name': f'{title} (AI Decision Makers/FRBUS)',
+            'name': f'{title} (RL-FRB/US Agent)',
             'marker_color': MUTED_REDS['dark']
         },
         {
@@ -823,13 +823,13 @@ def render_comparison_chart(df_rl_tariff, df_without_tariff, df_base_simulation,
         {
             'x': df_base_simulation['quarter'],
             'y': df_base_simulation[metric],
-            'name': f'{title} (FRBUS-Based Simulation - Without Tariff)',
+            'name': f'{title} (FRB/US)',
             'marker_color': MUTED_REDS['light']
         },
         {
             'x': df_base_simulation_with_tariff['quarter'],
             'y': df_base_simulation_with_tariff[metric],
-            'name': f'{title} (FRBUS-Based Simulation - With Tariff)',
+            'name': f'{title} (FRB/US - With Tariff)',
             'marker_color': MUTED_REDS['lightest']
         }
     ]
@@ -877,7 +877,7 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
     fig.add_trace(go.Scatter(
         x=df_rl_tariff['quarter'], 
         y=inflation_rl, 
-        name='Inflation - AI Decision Makers/FRBUS', 
+        name='Inflation - RL-FRB/US Agent', 
         line=dict(color=MUTED_REDS['dark'])
     ))
     
@@ -891,14 +891,14 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=inflation_base, 
-        name='Inflation - FRBUS-Based Simulation - Without Tariff', 
+        name='Inflation - FRB/US', 
         line=dict(color=MUTED_REDS['light'])
     ))
     
     fig.add_trace(go.Scatter(
         x=df_base_simulation_with_tariff['quarter'], 
         y=inflation_base_with_tariff, 
-        name='Inflation - FRBUS-Based Simulation - With Tariff', 
+        name='Inflation - FRB/US - With Tariff', 
         line=dict(color=MUTED_REDS['lightest'])
     ))
 
@@ -924,9 +924,9 @@ def render_inflation_rate_comparison_charts(df_rl_tariff, df_without_tariff, df_
 def render_unemployment_comparison_charts(df_rl_tariff, df_without_tariff, df_base_simulation):
     """Render unemployment comparison charts"""
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['unemployment'], name='Unemployment - AI Decision Makers/FRBUS', marker_color=MUTED_REDS['dark']))
+    fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['unemployment'], name='Unemployment - RL-FRB/US Agent', marker_color=MUTED_REDS['dark']))
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['unemployment'], name=f'Unemployment - {historical_label_or_hypothetical_label}', marker_color=MUTED_REDS['bright']))
-    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['unemployment'], name='Unemployment - FRBUS-Based Simulation - Without Tariff', marker_color=MUTED_REDS['light']))
+    fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['unemployment'], name='Unemployment - FRB/US', marker_color=MUTED_REDS['light']))
 
     fig.update_layout(
         title='Unemployment Comparison',
@@ -942,9 +942,9 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
     
     # Calculate bar positions
     bar_width = 0.2  # Adjust this value to control bar width
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['real_gdp'], 
-                        name='Real GDP (AI Decision Makers/FRBUS)', 
+                        name='Real GDP (RL-FRB/US Agent)', 
                         marker_color=MUTED_REDS['dark'],  
                         width=bar_width,
                         offset=-bar_width)) 
@@ -955,16 +955,16 @@ def render_gdp_charts_comparison(df_rl_tariff, df_without_tariff, df_base_simula
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['real_gdp'], 
-                        name='Real GDP (FRBUS-Based Simulation - Without Tariff)', 
+                        name='Real GDP (FRB/US)', 
                         marker_color=MUTED_REDS['light'],  
                         width=bar_width,
                         offset=bar_width))
     
-    # Add GDP components for FRBUS-Based Simulation - With Tariff
+    # Add GDP components for FRB/US - With Tariff
     fig.add_trace(go.Bar(x=df_base_simulation_with_tariff['quarter'], y=df_base_simulation_with_tariff['real_gdp'], 
-                        name='Real GDP (FRBUS-Based Simulation - With Tariff)', 
+                        name='Real GDP (FRB/US - With Tariff)', 
                         marker_color=MUTED_REDS['lightest'],  
                         width=bar_width,
                         offset=2*bar_width))
@@ -997,9 +997,9 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
     # Calculate bar positions
     bar_width = 0.2  # Adjust this value to control bar width
     
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['nominal_gdp'], 
-                        name='Nominal GDP (AI Decision Makers/FRBUS)', marker_color=MUTED_REDS['dark'],
+                        name='Nominal GDP (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
@@ -1009,15 +1009,15 @@ def render_gdp_charts_comparison_nominal(df_rl_tariff, df_without_tariff, df_bas
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['nominal_gdp'], 
-                        name='Nominal GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
+                        name='Nominal GDP (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
-    # Add GDP components for FRBUS-Based Simulation - With Tariff
+    # Add GDP components for FRB/US - With Tariff
     fig.add_trace(go.Bar(x=df_base_simulation_with_tariff['quarter'], y=df_base_simulation_with_tariff['nominal_gdp'], 
-                        name='Nominal GDP (FRBUS-Based Simulation - With Tariff)', marker_color=MUTED_REDS['lightest'],
+                        name='Nominal GDP (FRB/US - With Tariff)', marker_color=MUTED_REDS['lightest'],
                         width=bar_width,
                         offset=2*bar_width))
     
@@ -1044,9 +1044,9 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width
     
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'], 
-                        name='Personal Tax (AI Decision Makers/FRBUS)', marker_color=MUTED_REDS['dark'],
+                        name='Personal Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
@@ -1056,9 +1056,9 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['personal_tax'], 
-                        name='Personal Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
+                        name='Personal Tax (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -1085,9 +1085,9 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width
     
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'], 
-                        name='Corporate Tax (AI Decision Makers/FRBUS)', marker_color=MUTED_REDS['dark'],
+                        name='Corporate Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
@@ -1097,9 +1097,9 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['corporate_tax'], 
-                        name='Corporate Tax (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
+                        name='Corporate Tax (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
@@ -1126,9 +1126,9 @@ def render_government_transfer_payments_charts_comparison(df_rl_tariff, df_witho
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width
     
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['government_transfer_payments'], 
-                        name='Government Transfer Payments (AI Decision Makers/FRBUS)', marker_color=MUTED_REDS['dark'],
+                        name='Government Transfer Payments (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
@@ -1138,9 +1138,9 @@ def render_government_transfer_payments_charts_comparison(df_rl_tariff, df_witho
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['government_transfer_payments'], 
-                        name='Government Transfer Payments (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
+                        name='Government Transfer Payments (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -1167,9 +1167,9 @@ def render_government_debt_to_gdp_charts_comparison(df_rl_tariff, df_without_tar
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width
     
-    # Add GDP components for AI Decision Makers/FRBUS
+    # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['debt_to_gdp'], 
-                        name='Government Debt to GDP (AI Decision Makers/FRBUS)', marker_color=MUTED_REDS['dark'],
+                        name='Government Debt to GDP (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
@@ -1179,9 +1179,9 @@ def render_government_debt_to_gdp_charts_comparison(df_rl_tariff, df_without_tar
                         width=bar_width,
                         offset=0)) 
     
-    # Add GDP components for FRBUS-Based Simulation - Without Tariff
+    # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['debt_to_gdp'], 
-                        name='Government Debt to GDP (FRBUS-Based Simulation - Without Tariff)', marker_color=MUTED_REDS['light'],
+                        name='Government Debt to GDP (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
@@ -1222,7 +1222,7 @@ def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df
     fig.add_trace(go.Scatter(
         x=df_rl_tariff['quarter'], 
         y=gdp_growth_rl, 
-        name='Real GDP Growth - AI Decision Makers/FRBUS', 
+        name='Real GDP Growth - RL-FRB/US Agent', 
         line=dict(color=MUTED_REDS['dark'])
     ))
     
@@ -1236,14 +1236,14 @@ def render_real_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff, df
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=gdp_growth_base, 
-        name='Real GDP Growth - FRBUS-Based Simulation - Without Tariff', 
+        name='Real GDP Growth - FRB/US', 
         line=dict(color=MUTED_REDS['light'])
     ))
 
     fig.add_trace(go.Scatter(
         x=df_base_simulation_with_tariff['quarter'], 
         y=gdp_growth_base_with_tariff, 
-        name='Real GDP Growth - FRBUS-Based Simulation - With Tariff', 
+        name='Real GDP Growth - FRB/US - With Tariff', 
         line=dict(color=MUTED_REDS['lightest'])
     ))
 
@@ -1286,7 +1286,7 @@ def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff,
     fig.add_trace(go.Scatter(
         x=df_rl_tariff['quarter'], 
         y=gdp_growth_rl, 
-        name='Nominal GDP Growth - AI Decision Makers/FRBUS', 
+        name='Nominal GDP Growth - RL-FRB/US Agent', 
         line=dict(color=MUTED_REDS['dark'])
     ))
     
@@ -1300,14 +1300,14 @@ def render_nominal_gdp_growth_comparison_charts(df_rl_tariff, df_without_tariff,
     fig.add_trace(go.Scatter(
         x=df_base_simulation['quarter'], 
         y=gdp_growth_base, 
-        name='Nominal GDP Growth - FRBUS-Based Simulation - Without Tariff', 
+        name='Nominal GDP Growth - FRB/US', 
         line=dict(color=MUTED_REDS['light'])
     ))
 
     fig.add_trace(go.Scatter(
         x=df_base_simulation_with_tariff['quarter'], 
         y=gdp_growth_base_with_tariff, 
-        name='Nominal GDP Growth - FRBUS-Based Simulation - With Tariff', 
+        name='Nominal GDP Growth - FRB/US - With Tariff', 
         line=dict(color=MUTED_REDS['lightest'])
     ))
 
@@ -1622,14 +1622,14 @@ if 'stream' not in st.session_state:
 # Add in the sidebar, before current controls
 st.sidebar.header("Simulation Settings")
 # Add simulation type selector
-simulation_type = st.sidebar.radio(
+st.session_state.simulation_type = st.sidebar.radio(
     "Simulation Type",
     ["Historical Simulation", "Hypothetical Simulation"],
     index=1  # Default to hypothetical
 )
 
 # Add year range sliders based on simulation type
-if simulation_type == "Historical Simulation":
+if st.session_state.simulation_type == "Historical Simulation":
     start_year, end_year = st.sidebar.slider(
         "Historical Year Range",
         min_value=1970,
@@ -1637,6 +1637,8 @@ if simulation_type == "Historical Simulation":
         value=(1990, 2000),  # Default range
         step=1
     )
+    st.session_state.start_year = start_year
+    st.session_state.end_year = end_year
     # Historical simulation doesn't use tariff rate
     tariff_rate = 0.0
     st.sidebar.info("Historical simulation uses actual economic data from the selected period.")
@@ -1648,6 +1650,8 @@ else:  # Hypothetical Simulation
         value=(2024, 2030),  # Default range
         step=1
     )
+    st.session_state.start_year = start_year
+    st.session_state.end_year = end_year
     # Add tariff rate for hypothetical simulation
     tariff_rate = st.sidebar.slider(
         "Tariff Rate (%)",
@@ -1656,12 +1660,13 @@ else:  # Hypothetical Simulation
         value=10.0,  # Default tariff
         step=0.5
     )
+    st.session_state.tariff_rate = tariff_rate
     st.sidebar.info("Hypothetical simulation projects economic outcomes into the future with the specified tariff rate.")
 
 # Add a divider
 st.sidebar.divider()
 st.sidebar.header("Connection Controls")
-historical_label_or_hypothetical_label = "Historical Data" if simulation_type == "Historical Simulation" else "AI Decision Makers/FRBUS without Tariff"
+historical_label_or_hypothetical_label = "Historical Data" if st.session_state.simulation_type == "Historical Simulation" else "RL-FRB/US Agent without Tariff"
 
 def clear_simulation_data(): 
     st.cache_data.clear()
@@ -1719,10 +1724,10 @@ if st.sidebar.button('Start Simulation PPO', use_container_width=True):
     # Build URL with parameters
     base_url = 'http://localhost:8000/run_simulation'
     params = {
-        'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
+        'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
         'start_year': start_year,
         'end_year': end_year,
-        'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0
+        'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0
     }
     
     # Run simulation by calling the API endpoint with parameters
@@ -1743,10 +1748,10 @@ if st.sidebar.button('Start Simulation PPO Active Learning', use_container_width
     # Build URL with parameters
     base_url = 'http://localhost:8000/run_simulation'
     params = {
-        'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
+        'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
         'start_year': start_year,
         'end_year': end_year,
-        'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0,
+        'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0,
         'active_learning': True
     }
     
@@ -1768,10 +1773,10 @@ if st.sidebar.button('Start Simulation Effective Relocation', use_container_widt
     # Build URL with parameters
     base_url = 'http://localhost:8000/run_simulation_effective_relocation'
     params = {
-        'simulation_type': 'historical' if simulation_type == "Historical Simulation" else 'hypothetical',
+        'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
         'start_year': start_year,
         'end_year': end_year,
-        'tariff_rate': tariff_rate if simulation_type == "Hypothetical Simulation" else 0.0
+        'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0
     }
     
     # Run simulation by calling the API endpoint with parameters
@@ -1785,30 +1790,35 @@ if st.sidebar.button('Start Simulation Effective Relocation', use_container_widt
 if st.sidebar.button('Save Simulation', use_container_width=True, disabled=(not (hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.session_state.stream.metrics_history_rl_tariff.empty))):
     # Save the simulation data to a CSV file
     df_rl_tariff = st.session_state.stream.metrics_history_rl_tariff
-    df_rl_tariff['simulation_type'] = 'AI Decision Makers/FRBUS'
+    df_rl_tariff['simulation_type'] = 'RL-FRB/US Agent'
     df_without_tariff = st.session_state.stream.metrics_history_without_tariff
     df_without_tariff['simulation_type'] = historical_label_or_hypothetical_label
     df_base_simulation = st.session_state.stream.metrics_history_base_simulation
-    df_base_simulation['simulation_type'] = 'FRBUS-Based Simulation - Without Tariff'
+    df_base_simulation['simulation_type'] = 'FRB/US'
     df_base_simulation_with_tariff = st.session_state.stream.metrics_history_base_simulation_with_tariff
-    df_base_simulation_with_tariff['simulation_type'] = 'FRBUS-Based Simulation - With Tariff'
+    df_base_simulation_with_tariff['simulation_type'] = 'FRB/US - With Tariff'
 
     df_rl_tariff.to_csv('simulation_data_rl_tariff.csv', index=False)
     df_without_tariff.to_csv('simulation_data_without_tariff.csv', index=False)
     df_base_simulation.to_csv('simulation_data_base_simulation.csv', index=False)
     df_base_simulation_with_tariff.to_csv('simulation_data_base_simulation_with_tariff.csv', index=False)
     # Combine all dataframes
-    combined_df = pd.concat([df_rl_tariff, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff], 
-                          ignore_index=True)
+    if st.session_state.simulation_type == "Historical Simulation":
+        combined_df = pd.concat([df_rl_tariff, df_without_tariff, df_base_simulation], 
+                            ignore_index=True)
+    else:
+        combined_df = pd.concat([df_rl_tariff, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff], 
+                            ignore_index=True)
     
     # Save combined data to a single CSV
-    combined_df.to_csv('combined_simulation_data.csv', index=False)
+    filename = f'combined_simulation_data_{st.session_state.start_year}_{st.session_state.end_year}.csv' if st.session_state.simulation_type == "Historical Simulation" else f'combined_simulation_data_with_tariff_{st.session_state.start_year}_{st.session_state.end_year}.csv'
+    combined_df.to_csv(filename, index=False)
     simulation_status.success("Simulation data saved to CSV files") 
 
     st.sidebar.download_button(
         label="Download Combined Simulation Data",
         data=combined_df.to_csv(index=False),
-        file_name="combined_simulation_data.csv",
+        file_name=filename,
         mime="text/csv",
         key=f"download_combined_simulation_data",
         use_container_width=True
@@ -1910,20 +1920,20 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         # Display the figure
         st.plotly_chart(smape_fig, use_container_width=True)
         st.plotly_chart(smape_fig_small, use_container_width=True)
-        st.plotly_chart(render_overview_charts(df, "Key Economic Indicators Over Time - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df, "Key Economic Indicators Over Time - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_overview_charts(df_without_tariff, f"Key Economic Indicators Over Time - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_overview_charts(df_base_simulation, "Key Economic Indicators Over Time - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_overview_charts(df_base_simulation_with_tariff, "Key Economic Indicators Over Time - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df_base_simulation, "Key Economic Indicators Over Time - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_overview_charts(df_base_simulation_with_tariff, "Key Economic Indicators Over Time - FRB/US - With Tariff"), use_container_width=True)
 
-        st.plotly_chart(render_overview_tax_rates_charts(df, "Tax Rates - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_overview_tax_rates_charts(df, "Tax Rates - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_overview_tax_rates_charts(df_without_tariff, f"Tax Rates - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_overview_tax_rates_charts(df_base_simulation, "Tax Rates - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_overview_tax_rates_charts(df_base_simulation_with_tariff, "Tax Rates - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_tax_rates_charts(df_base_simulation, "Tax Rates - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_overview_tax_rates_charts(df_base_simulation_with_tariff, "Tax Rates - FRB/US - With Tariff"), use_container_width=True)
 
-        st.plotly_chart(render_overview_inflation_charts(df, "Inflation - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_overview_inflation_charts(df, "Inflation - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_overview_inflation_charts(df_without_tariff, f"Inflation - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_overview_inflation_charts(df_base_simulation, "Inflation - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_overview_inflation_charts(df_base_simulation_with_tariff, "Inflation - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_overview_inflation_charts(df_base_simulation, "Inflation - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_overview_inflation_charts(df_base_simulation_with_tariff, "Inflation - FRB/US - With Tariff"), use_container_width=True)
 
         st.plotly_chart(render_inflation_rate_comparison_charts(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
         st.plotly_chart(render_comparison_chart(
@@ -1939,15 +1949,15 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_real_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
         st.plotly_chart(render_nominal_gdp_growth_comparison_charts(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
         
-        st.plotly_chart(render_actions_charts(df, "Actions - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df, "Actions - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_actions_charts(df_without_tariff, f"Actions - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_actions_charts(df_base_simulation, "Actions - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_actions_charts(df_base_simulation_with_tariff, "Actions - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df_base_simulation, "Actions - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_actions_charts(df_base_simulation_with_tariff, "Actions - FRB/US - With Tariff"), use_container_width=True)
     elif selected_view == "GDP Metrics":
-        st.plotly_chart(render_gdp_charts(df, "GDP Components - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df, "GDP Components - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_gdp_charts(df_without_tariff, f"GDP Components - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_gdp_charts(df_base_simulation, "GDP Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_gdp_charts(df_base_simulation_with_tariff, "GDP Components - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df_base_simulation, "GDP Components - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_gdp_charts(df_base_simulation_with_tariff, "GDP Components - FRB/US - With Tariff"), use_container_width=True)
         
         st.plotly_chart(render_gdp_charts_comparison(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
         st.plotly_chart(render_gdp_charts_comparison_nominal(df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff), use_container_width=True)
@@ -1956,7 +1966,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         try:
             with col1:
                 st.metric(
-                    "Real GDP - AI Decision Makers/FRBUS",
+                    "Real GDP - RL-FRB/US Agent",
                     f"${df['real_gdp'].iloc[-1]:,.2f}B",
                     f"{(df['real_gdp'].iloc[-1] - df['real_gdp'].iloc[-2]):,.2f}B"
                 )
@@ -1966,18 +1976,18 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['real_gdp'].iloc[-1] - df_without_tariff['real_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Real GDP - FRBUS-Based Simulation - Without Tariff",
+                    "Real GDP - FRB/US",
                     f"${df_base_simulation['real_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['real_gdp'].iloc[-1] - df_base_simulation['real_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Real GDP - FRBUS-Based Simulation - With Tariff",
+                    "Real GDP - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['real_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['real_gdp'].iloc[-1] - df_base_simulation_with_tariff['real_gdp'].iloc[-2]):,.2f}B"
                 )
             with col2:
                 st.metric(
-                    "Nominal GDP - AI Decision Makers/FRBUS",
+                    "Nominal GDP - RL-FRB/US Agent",
                     f"${df['nominal_gdp'].iloc[-1]:,.2f}B",
                     f"{(df['nominal_gdp'].iloc[-1] - df['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
@@ -1987,22 +1997,22 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['nominal_gdp'].iloc[-1] - df_without_tariff['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Nominal GDP - FRBUS-Based Simulation - Without Tariff",
+                    "Nominal GDP - FRB/US",
                     f"${df_base_simulation['nominal_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['nominal_gdp'].iloc[-1] - df_base_simulation['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Nominal GDP - FRBUS-Based Simulation - With Tariff",
+                    "Nominal GDP - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['nominal_gdp'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['nominal_gdp'].iloc[-1] - df_base_simulation_with_tariff['nominal_gdp'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying GDP metrics: {str(e)}")
     elif selected_view == "Revenue and Expenditure Metrics":
-        st.plotly_chart(render_tax_charts(df, "Tax Revenue Components - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df, "Tax Revenue Components - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_tax_charts(df_without_tariff, f"Tax Revenue Components - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_tax_charts(df_base_simulation, "Tax Revenue Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_tax_charts(df_base_simulation_with_tariff, "Tax Revenue Components - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df_base_simulation, "Tax Revenue Components - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_tax_charts(df_base_simulation_with_tariff, "Tax Revenue Components - FRB/US - With Tariff"), use_container_width=True)
         st.plotly_chart(render_comparison_chart(
             df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff,
             'personal_tax', 'Personal Tax', 'Value'
@@ -2038,7 +2048,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         try:
             with col1:
                 st.metric(
-                    "Personal Tax Revenue - AI Decision Makers/FRBUS",
+                    "Personal Tax Revenue - RL-FRB/US Agent",
                     f"${df['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df['personal_tax'].iloc[-1] - df['personal_tax'].iloc[-2]):,.2f}B"
                 )
@@ -2048,17 +2058,17 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['personal_tax'].iloc[-1] - df_without_tariff['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Personal Tax Revenue - FRBUS-Based Simulation - Without Tariff",
+                    "Personal Tax Revenue - FRB/US",
                     f"${df_base_simulation['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['personal_tax'].iloc[-1] - df_base_simulation['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Personal Tax Revenue - FRBUS-Based Simulation - With Tariff",
+                    "Personal Tax Revenue - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['personal_tax'].iloc[-1] - df_base_simulation_with_tariff['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - AI Decision Makers/FRBUS",
+                    "Corporate Tax Revenue - RL-FRB/US Agent",
                     f"${df['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df['corporate_tax'].iloc[-1] - df['corporate_tax'].iloc[-2]):,.2f}B"
                 )
@@ -2068,22 +2078,22 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['corporate_tax'].iloc[-1] - df_without_tariff['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - FRBUS-Based Simulation - Without Tariff",
+                    "Corporate Tax Revenue - FRB/US",
                     f"${df_base_simulation['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['corporate_tax'].iloc[-1] - df_base_simulation['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - FRBUS-Based Simulation - With Tariff",
+                    "Corporate Tax Revenue - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['corporate_tax'].iloc[-1] - df_base_simulation_with_tariff['corporate_tax'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying Revenue and Expenditure Metrics: {str(e)}")
     elif selected_view == "Trade Balance":
-        st.plotly_chart(render_trade_charts(df, "Trade Balance and Components - AI Decision Makers/FRBUS"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df, "Trade Balance and Components - RL-FRB/US Agent"), use_container_width=True)
         st.plotly_chart(render_trade_charts(df_without_tariff, f"Trade Balance and Components - {historical_label_or_hypothetical_label}"), use_container_width=True)
-        st.plotly_chart(render_trade_charts(df_base_simulation, "Trade Balance and Components - FRBUS-Based Simulation - Without Tariff"), use_container_width=True)
-        st.plotly_chart(render_trade_charts(df_base_simulation_with_tariff, "Trade Balance and Components - FRBUS-Based Simulation - With Tariff"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df_base_simulation, "Trade Balance and Components - FRB/US"), use_container_width=True)
+        st.plotly_chart(render_trade_charts(df_base_simulation_with_tariff, "Trade Balance and Components - FRB/US - With Tariff"), use_container_width=True)
         # Additional trade metrics
         col1, col2, col3 = st.columns(3)
         try:
@@ -2097,7 +2107,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                 trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['exports'].iloc[-1] - df_base_simulation_with_tariff['imports'].iloc[-1]
                 prev_trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['exports'].iloc[-2] - df_base_simulation_with_tariff['imports'].iloc[-2]
                 st.metric(
-                    "Trade Balance - AI Decision Makers/FRBUS",
+                    "Trade Balance - RL-FRB/US Agent",
                     f"${trade_balance:,.2f}B",
                     f"{(trade_balance - prev_trade_balance):,.2f}B"
                 )
@@ -2107,18 +2117,18 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(trade_balance_without_tariff - prev_trade_balance_without_tariff):,.2f}B"
                 )
                 st.metric(
-                    "Trade Balance - FRBUS-Based Simulation - Without Tariff",
+                    "Trade Balance - FRB/US",
                     f"${trade_balance_base_simulation:,.2f}B",
                     f"{(trade_balance_base_simulation - prev_trade_balance_base_simulation):,.2f}B"
                 )
                 st.metric(
-                    "Trade Balance - FRBUS-Based Simulation - With Tariff",
+                    "Trade Balance - FRB/US - With Tariff",
                     f"${trade_balance_base_simulation_with_tariff:,.2f}B",
                     f"{(trade_balance_base_simulation_with_tariff - prev_trade_balance_base_simulation_with_tariff):,.2f}B"
                 )
             with col2:
                 st.metric(
-                    "Exports - AI Decision Makers/FRBUS",
+                    "Exports - RL-FRB/US Agent",
                     f"${df['exports'].iloc[-1]:,.2f}B",
                     f"{(df['exports'].iloc[-1] - df['exports'].iloc[-2]):,.2f}B"
                 )
@@ -2128,19 +2138,19 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['exports'].iloc[-1] - df_without_tariff['exports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Exports - FRBUS-Based Simulation - Without Tariff",
+                    "Exports - FRB/US",
                     f"${df_base_simulation['exports'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['exports'].iloc[-1] - df_base_simulation['exports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Exports - FRBUS-Based Simulation - With Tariff",
+                    "Exports - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['exports'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['exports'].iloc[-1] - df_base_simulation_with_tariff['exports'].iloc[-2]):,.2f}B"
                 )
 
             with col3:
                 st.metric(
-                    "Imports - AI Decision Makers/FRBUS",
+                    "Imports - RL-FRB/US Agent",
                     f"${df['imports'].iloc[-1]:,.2f}B",
                     f"{(df['imports'].iloc[-1] - df['imports'].iloc[-2]):,.2f}B"
                 )
@@ -2150,12 +2160,12 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     f"{(df_without_tariff['imports'].iloc[-1] - df_without_tariff['imports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Imports - FRBUS-Based Simulation - Without Tariff",
+                    "Imports - FRB/US",
                     f"${df_base_simulation['imports'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['imports'].iloc[-1] - df_base_simulation['imports'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Imports - FRBUS-Based Simulation - With Tariff",
+                    "Imports - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['imports'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['imports'].iloc[-1] - df_base_simulation_with_tariff['imports'].iloc[-2]):,.2f}B"
                 )
