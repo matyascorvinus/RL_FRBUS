@@ -169,6 +169,11 @@ MUTED_REDS = {
     'light': '#FFA07A'    # Light salmon (for FRBUS-based simulation)
 }
 
+PURPLE_RED_LIGHT_BLUE = {
+    'purple': '#702963',    # Dark red (for tariff simulation)
+    'red': '#FF0000',  # Bright red/orange (for original data)
+    'light_blue': '#add8e6'    # Light salmon (for FRBUS-based simulation)
+}
 # ---------------------------
 # Component Comparison Chart using selected metric from metrics_options
 # ---------------------------
@@ -209,6 +214,8 @@ else:
 # Light Orange, Orange, Red, Burgundian Red
 color_palette = ['#FFD700', '#FFA500', '#FF4500', '#8B0000']
 
+custom_pallets = ['#702963', '#FF0000', '#add8e6', '#0000FF']
+
 def render_component_comparison(dataframe, sim_types, metric):
     """Render a bar chart comparing the selected metric across multiple simulation types."""
     fig = go.Figure()
@@ -220,7 +227,7 @@ def render_component_comparison(dataframe, sim_types, metric):
             x = df_sim['Quarter'],
             y = df_sim[metric],
             name = f'{metric} ({sim})',
-            marker_color = color_palette[i % len(color_palette)]
+            marker_color = custom_pallets[i % len(custom_pallets)]
         ))
     
     # Update chart layout for a light mode style
@@ -232,18 +239,37 @@ def render_component_comparison(dataframe, sim_types, metric):
         plot_bgcolor = 'rgba(255,255,255,1)',  # White background
         paper_bgcolor = 'rgba(255,255,255,1)',   # White paper
         font = dict(color='#000000'),            # Black text
+        # Font for y axis title
+        yaxis_title_font=dict(size=20, color='black'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black'),
         legend = dict(
             orientation = "h",
             yanchor = "bottom",
             y = 1.02,
             xanchor = "right",
             x = 1,
-            bgcolor = 'rgba(255,255,255,0.8)'
+            font = dict(size=20)
         )
     )
-    fig.update_xaxes(gridcolor='#cccccc', zerolinecolor='#cccccc')
-    fig.update_yaxes(gridcolor='#cccccc', zerolinecolor='#cccccc')
+    # fig.update_xaxes(gridcolor='#cccccc', zerolinecolor='#cccccc')
+    # fig.update_yaxes(gridcolor='#cccccc', zerolinecolor='#cccccc')
     
+    
+    
+    # Improve readability of x-axis labels
+    fig.update_xaxes(
+        tickangle=45,
+        tickfont=dict(size=18, color='black'),  # Increased from 10 to 18
+        gridcolor='black',
+        zerolinecolor='#303030'
+    )
+    
+    fig.update_yaxes(
+        tickfont=dict(size=18, color='black'),  # Added explicit font size for y-axis
+        gridcolor='black',
+        zerolinecolor='#303030'
+    )
     return fig
 
 # Use the simulation types that the user selected in the sidebar.
