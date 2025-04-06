@@ -162,8 +162,6 @@ def apply_actions(data, current_quarter, actions):
         if var == 'egfe': 
             if (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] >= 0.02 and (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] <= 0.1:
                 data.loc[previous_quarter, 'egfe'] += action * 1000  
-            logger.info(f"Applied action {var} for previous quarter {previous_quarter}: {data.loc[previous_quarter, var]} with additional spending { action * 1000} | Real GDP: {data.loc[previous_quarter, 'xgdp']} | Spending to GDP: {data.loc[previous_quarter, 'egfe'] / data.loc[previous_quarter, 'xgdp']}")    
-            logger.info(f"Applied action {var} for current quarter {current_quarter}: {data.loc[current_quarter, var]} with additional spending { action * 1000} | Real GDP: {data.loc[current_quarter, 'xgdp']} | Spending to GDP: {data.loc[current_quarter, 'egfe'] / data.loc[current_quarter, 'xgdp']}")
         else: 
             if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
                 data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action

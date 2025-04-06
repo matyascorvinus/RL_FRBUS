@@ -172,11 +172,11 @@ class PPOAgent(nn.Module):
         
         # Normalize advantages for stable training
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
         
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
             # Get current policy and value predictions
-            logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
             logprobs_new, state_values, dist_entropy = self.evaluate(states, actions)
             
             # Calculate KL divergence

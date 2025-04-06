@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import logging
+from ppo_agent import ACTION_BOUNDS
 
 logger = logging.getLogger(__name__)
 
@@ -137,19 +138,17 @@ def calculate_reward_policy_v1(solution, quarter, end_quarter):
     reward = torch.tensor(0.0).clone().detach()
     max_expected_deviation = 10.0  # Used for normalization
     
-    annual_target = 2.0
-    quarterly_target = ((1 + annual_target/100)**(1/4) - 1) * 100
-    
     # Dynamic targets that adjust based on conditions
     targets = {
-        'hggdp': 4.0,   # 4% GDP growth target annualized
+        'hggdp': 3.0,   # 3% GDP growth target annualized
     }
     
     # 2. Calculate current economic indicators
     gdp_growth_rl = ((solution.loc[quarter, 'xgdp'] - solution.shift(1).loc[quarter, 'xgdp']) / 
-                     solution.shift(1).loc[quarter, 'xgdp'] * 400.0)
-    
-    gdp_growth_dev = gdp_growth_rl - targets['hggdp']
+                     solution.shift(1).loc[quarter, 'xgdp'])
+    gdp_growth_rl_annualized = ((1 + gdp_growth_rl)**4 - 1) * 100
+    logger.info(f"GDP growth rate {quarter}: {gdp_growth_rl_annualized}")
+    gdp_growth_dev = gdp_growth_rl_annualized - targets['hggdp']
     normalized_gdp_dev = torch.clamp(
         torch.tensor(float(gdp_growth_dev) / max_expected_deviation, dtype=torch.float32), 
         -1, 

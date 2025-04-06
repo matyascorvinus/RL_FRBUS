@@ -1634,7 +1634,7 @@ if st.session_state.simulation_type == "Historical Simulation":
         "Historical Year Range",
         min_value=1970,
         max_value=2024,
-        value=(1990, 2000),  # Default range
+        value=(2000, 2024),  # Default range
         step=1
     )
     st.session_state.start_year = start_year
@@ -1714,54 +1714,54 @@ with col3:
     if st.button('Refresh', use_container_width=True): 
         clear_simulation_data()
 
-# Replace the existing Start Simulation button with this
-if st.sidebar.button('Start Simulation PPO', use_container_width=True):
-    thread = threading.Thread(target=st.session_state.stream.connect)
-    thread.daemon = True
-    add_script_run_ctx(thread)
-    thread.start()
+# # Replace the existing Start Simulation button with this
+# if st.sidebar.button('Start Simulation PPO', use_container_width=True):
+#     thread = threading.Thread(target=st.session_state.stream.connect)
+#     thread.daemon = True
+#     add_script_run_ctx(thread)
+#     thread.start()
     
-    # Build URL with parameters
-    base_url = 'http://localhost:8000/run_simulation'
-    params = {
-        'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
-        'start_year': start_year,
-        'end_year': end_year,
-        'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0
-    }
+#     # Build URL with parameters
+#     base_url = 'http://localhost:8000/run_simulation'
+#     params = {
+#         'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
+#         'start_year': start_year,
+#         'end_year': end_year,
+#         'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0
+#     }
     
-    # Run simulation by calling the API endpoint with parameters
-    response = requests.get(base_url, params=params)
+#     # Run simulation by calling the API endpoint with parameters
+#     response = requests.get(base_url, params=params)
     
-    if response.status_code == 200 or response.status_code == 204:
-        simulation_status.success("Simulation started")     
-    else:
-        simulation_status.error(f"Failed to start simulation: {response.text}")
+#     if response.status_code == 200 or response.status_code == 204:
+#         simulation_status.success("Simulation started")     
+#     else:
+#         simulation_status.error(f"Failed to start simulation: {response.text}")
 
-# Replace the existing Start Simulation button with this
-if st.sidebar.button('Start Simulation PPO Active Learning', use_container_width=True):
-    thread = threading.Thread(target=st.session_state.stream.connect)
-    thread.daemon = True
-    add_script_run_ctx(thread)
-    thread.start()
+# # Replace the existing Start Simulation button with this
+# if st.sidebar.button('Start Simulation PPO Active Learning', use_container_width=True):
+#     thread = threading.Thread(target=st.session_state.stream.connect)
+#     thread.daemon = True
+#     add_script_run_ctx(thread)
+#     thread.start()
     
-    # Build URL with parameters
-    base_url = 'http://localhost:8000/run_simulation'
-    params = {
-        'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
-        'start_year': start_year,
-        'end_year': end_year,
-        'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0,
-        'active_learning': True
-    }
+#     # Build URL with parameters
+#     base_url = 'http://localhost:8000/run_simulation'
+#     params = {
+#         'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
+#         'start_year': start_year,
+#         'end_year': end_year,
+#         'tariff_rate': tariff_rate if st.session_state.simulation_type == "Hypothetical Simulation" else 0.0,
+#         'active_learning': True
+#     }
     
-    # Run simulation by calling the API endpoint with parameters
-    response = requests.get(base_url, params=params)
+#     # Run simulation by calling the API endpoint with parameters
+#     response = requests.get(base_url, params=params)
     
-    if response.status_code == 200 or response.status_code == 204:
-        simulation_status.success("Simulation started")     
-    else:
-        simulation_status.error(f"Failed to start simulation: {response.text}")
+#     if response.status_code == 200 or response.status_code == 204:
+#         simulation_status.success("Simulation started")     
+#     else:
+#         simulation_status.error(f"Failed to start simulation: {response.text}")
 
 # Replace the existing Start Simulation Effective Relocation button with this
 if st.sidebar.button('Start Simulation Effective Relocation', use_container_width=True):
@@ -1834,7 +1834,7 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
     df_base_simulation_with_tariff = st.session_state.stream.metrics_history_base_simulation_with_tariff
     # Display charts based on selected view
     if selected_view == "Overview":
-        dark_mode = st.checkbox("Dark Mode", value=True)
+        dark_mode = st.checkbox("Dark Mode", value=False)
         def extract_year(quarter_str):
             # Handle both formats: "2020Q1" and "2020q1"
             return int(quarter_str.split('q')[0].split('Q')[0])
