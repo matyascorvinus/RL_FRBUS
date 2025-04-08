@@ -1,5 +1,5 @@
 
-# PyFRB/US - PPO RL
+# RL-FRB/US
 This is a framework for simulating economic policy decisions using the Federal Reserve Board US (FRB/US) macroeconomic model, implemented in Python. The simulation focuses on two key policy actors:
 
 The Federal Reserve, which manages monetary policy through interest rates and other tools
@@ -38,7 +38,7 @@ Python version for Streamlit: Python 3.10.12
 
 ## Installation guideline 
 ### PyFRB/US
-The PyFRB/US package and the PPO RL (supreme-ai) package can be installed by running 
+The PyFRB/US package and the RL-FRB/US (RL_FRBUS) package can be installed by running 
 ```
 pip install -e .
 ```
@@ -63,7 +63,7 @@ or
 pip3 install -r requirements.txt 
 ``` 
 
-inside the directory frbus_streamlit_frontend
+inside the directory RL_FRBUS_Frontend
 
 ### Documentation
 To access the PyFRB/US documentation, open docs/index.html in a web browser.
@@ -80,20 +80,20 @@ python stochsim.py
 Demos expect the data/ folder to contain the LONGBASE.TXT dataset, which can be copied
 over from the data_only_package.
 
-### Running the PPO RL
+### Running the RL-FRB/US
 
-To run the PPO RL, go to the supreme-ai directory and run 
+To run the RL-FRB/US, go to the RL_FRBUS directory and run 
 
 ```
-cd supreme-ai
+cd RL_FRBUS
 uvicorn simulation:app --reload --port 8001
 ```
 
 To showcase the result to the Streamlit frontend, run a seperated terminal,
-go to the directory frbus_streamlit_frontend and run this command
+go to the directory RL_FRBUS_Frontend and run this command
 
 ```
-cd frbus_streamlit_frontend
+cd RL_FRBUS_Frontend
 run streamlit run streamlit-app.py
 ```
 
@@ -103,3 +103,5 @@ or
 nohup uvicorn simulation:app --reload --port 8001 > simulation_training.log 2>&1 & 
 nohup streamlit run streamlit-app.py > streamlit_app.log 2>&1 &
 ```
+
+Please refer to the [RL-FRBUS-PPO-Relocation.md](RL-FRBUS-PPO-Relocation.md) for more details.
