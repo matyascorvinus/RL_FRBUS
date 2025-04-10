@@ -1,6 +1,10 @@
 
-# RL-FRB/US
-This is a framework for simulating economic policy decisions using the Federal Reserve Board US (FRB/US) macroeconomic model, implemented in Python. The simulation focuses on two key policy actors:
+# RL-FRB/US - (Fiscal Policy Towards Optimizing Macroeconomic Indicators by Integrating FRB/US with Reinforcement Learning)
+
+The RL-FRB/US framework is a framework for simulating economic policy decisions using the Federal Reserve Board US (FRB/US) macroeconomic model, implemented in Python.
+The details of the framework can be found in the paper "Fiscal Policy Towards Optimizing Macroeconomic Indicators by Integrating FRB/US with Reinforcement Learning"
+
+The simulation focuses on two key policy actors:
 
 The Federal Reserve, which manages monetary policy through interest rates and other tools
 The Federal Government, which implements fiscal policy through spending and taxation
@@ -105,3 +109,6 @@ nohup streamlit run streamlit-app.py > streamlit_app.log 2>&1 &
 ```
 
 Please refer to the [RL-FRBUS-PPO-Relocation.md](RL-FRBUS-PPO-Relocation.md) for more details.
+
+### Simulation Data for the "Fiscal Policy Towards Optimizing Macroeconomic Indicators by Integrating FRB/US with Reinforcement Learning" research
+All the related historical data from 1975-2024 [combined_simulation_data_1975_2024.csv](RL_FRBUS_Frontend/combined_simulation_data_1975_2024.csv) and 2000-2024 [combined_simulation_data_2000_2024.csv](RL_FRBUS_Frontend/combined_simulation_data_2000_2024.csv) are stored in the RL_FRBUS_Frontend.
