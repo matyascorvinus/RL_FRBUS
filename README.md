@@ -1,8 +1,10 @@
 
 # RL-FRB/US - (Fiscal Policy Towards Optimizing Macroeconomic Indicators by Integrating FRB/US with Reinforcement Learning)
 
-The RL-FRB/US framework is a framework for simulating economic policy decisions using the Federal Reserve Board US (FRB/US) macroeconomic model, implemented in Python.
-The details of the framework can be found in the paper "Fiscal Policy Towards Optimizing Macroeconomic Indicators by Integrating FRB/US with Reinforcement Learning"
+The RL-FRB/US framework combines the Federal Reserve Board's macroeconomic model (FRB/US) with reinforcement learning techniques to optimize economic policy decisions. This integration, detailed in the paper "Fiscal Policy Strategy: Integrating FRB/US with Reinforcement Learning and Active Relocation," uses Python to implement an intelligent system that can explore and evaluate fiscal policy options more comprehensively than traditional approaches.
+
+The framework leverages the structural economic relationships embedded in the FRB/US model (which is publicly available on the Federal Reserve's website [FRB/US in Python
+](https://www.federalreserve.gov/econres/us-models-python.htm) with accompanying licenses) while adding the adaptive learning capabilities of reinforcement learning algorithms. 
 
 The simulation focuses on two key policy actors:
 
