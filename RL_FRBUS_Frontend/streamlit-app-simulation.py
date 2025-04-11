@@ -10,14 +10,35 @@ import plotly.express as px
 # Choose between Historical Data and Trump Tariff plan.
 data_source = st.sidebar.radio(
     "Select Data Source", 
-    options=["Historical Data", "Historical Data 2022-2024", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
+    options=["Historical Data", "Historical Data 2022-2024", "Stephen Miran Tariff plan 50%", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
     index=1
 )
+# Let the user choose which metric to compare.
+metric_options = [
+    "GDP Growth (%)",
+    "CPI (Inflation Index)",
+    "Unemployment Rate (%)",
+    "Real GDP (Billion)",
+    "Nominal GDP (Billion)",
+    "Federal Expenditures (in Billions)",
+    "Personal Tax (Billion)",
+    "Corporate Tax (Billion)",
+    "Exports (Billion)",
+    "Imports (Billion)",
+    "Debt",
+    "Federal Fund Rate (%)",
+    "Government Transfer Payments (Billion)",
+    "Federal Surplus (Billion)",
+    "Trade Balance (Billion)",
+    "Net Foreign Investment Income (Billion)",
+]
 # Set file path based on the data source selection.
 data_file = "combined_simulation_data_1975_2024.csv" 
 if data_source != "Historical Data":
     if data_source == "Historical Data 2022-2024":
         data_file = "combined_simulation_data_2000_2024.csv" 
+    if data_source == "Stephen Miran Tariff plan 50%":
+        data_file = "combined_simulation_data_with_tariff_2025_2030.csv" 
     if data_source == "Trump Tariff plan 10%":
         data_file = "combined_simulation_data-10.csv" 
     if data_source == "Trump Tariff plan 20%":
@@ -64,7 +85,9 @@ def load_data(file_path):
         "corporate_tax_rates": "Corporate Tax Rates",
         "government_transfer_payments": "Government Transfer Payments (Billion)",
         "federal_surplus": "Federal Surplus (Billion)",
-        "simulation_type": "Simulation Type"
+        "simulation_type": "Simulation Type",
+        "trade_balance": "Trade Balance (Billion)",
+        "net_foreign_investment_income": "Net Foreign Investment Income (Billion)"
     }
     data = data.rename(columns=rename_dict)
     
@@ -121,27 +144,12 @@ st.dataframe(data)
 st.markdown("---")
 st.subheader("Comparison Chart Across Simulation Types")
 
-# Let the user choose which metric to compare.
-metric_options = [
-    "GDP Growth (%)",
-    "CPI (Inflation Index)",
-    "Unemployment Rate (%)",
-    "Real GDP (Billion)",
-    "Nominal GDP (Billion)",
-    "Federal Expenditures (in Billions)",
-    "Personal Tax (Billion)",
-    "Corporate Tax (Billion)",
-    "Exports (Billion)",
-    "Imports (Billion)",
-    "Debt",
-    "Federal Fund Rate (%)",
-    "Government Transfer Payments (Billion)"
-]
 selected_metric = st.selectbox("Select Metric for Comparison", metric_options)
 st.write(f"Selected Metric: {selected_metric}")
 # Create an Altair line chart using the filtered data.
 # In this chart, the x-axis uses the quarter_numeric value (for proper ordering)
 # and the tooltip shows the original 'Quarter' string.
+
 chart = alt.Chart(filtered_data).mark_line(point=True).encode(
     x=alt.X("quarter_numeric:Q", title="Quarter", axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor='black', labelColor='black')),
     y=alt.Y(f"{selected_metric}:Q", title=selected_metric, axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor ='black', labelColor='black')),
@@ -158,25 +166,6 @@ st.altair_chart(chart, use_container_width=True)
 # Add bar chart for comparison of key metrics across simulation types
 st.subheader("Bar Chart Comparison of Key Metrics Across Simulation Types")
 
-# ---------------------------
-# Real GDP Components Comparison Chart (from streamlit-app.py)
-# ---------------------------
-
-# Define the muted red color scheme if not defined already
-MUTED_REDS = {
-    'dark': '#8B0000',    # Dark red (for tariff simulation)
-    'bright': '#FF4500',  # Bright red/orange (for original data)
-    'light': '#FFA07A'    # Light salmon (for FRBUS-based simulation)
-}
-
-PURPLE_RED_LIGHT_BLUE = {
-    'purple': '#702963',    # Dark red (for tariff simulation)
-    'red': '#FF0000',  # Bright red/orange (for original data)
-    'light_blue': '#add8e6'    # Light salmon (for FRBUS-based simulation)
-}
-# ---------------------------
-# Component Comparison Chart using selected metric from metrics_options
-# ---------------------------
 
 # Let the user choose which metric to use for the components comparison.
 # (The default index 3 selects "Real GDP (Billion)" from the list below.)
@@ -214,7 +203,7 @@ else:
 # Light Orange, Orange, Red, Burgundian Red
 color_palette = ['#FFD700', '#FFA500', '#FF4500', '#8B0000']
 
-custom_pallets = ['#702963', '#FF0000', '#add8e6', '#0000FF']
+custom_pallets = ['#702963', '#FF0000', '#F39C7F', '#0000FF']
 
 def render_component_comparison(dataframe, sim_types, metric):
     """Render a bar chart comparing the selected metric across multiple simulation types."""

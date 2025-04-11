@@ -17,7 +17,7 @@ setup(
         "typing_extensions",
         "scikit-umfpack==0.3.3",
         "multiprocess",
-        "sympy==1.12",
+        "sympy==1.3",
         "symengine",
         "matplotlib",
         "lxml",

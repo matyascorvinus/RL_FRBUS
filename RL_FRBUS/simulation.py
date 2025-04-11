@@ -104,7 +104,9 @@ async def broadcast_metrics_update(
                     'emn': float(current['emn']),
                     'exn': float(current['exn']),
                     'gtn': float(current['gtn']),
-                    'gfsrpn': float(current['gfsrpn'])
+                    'gfsrpn': float(current['gfsrpn']),
+                    'fcbn': float(current['fcbn']),
+                    'fynin': float(current['fynin'])
                 },
                 "previous_metrics": {
                     'hggdp': float(previous['hggdp']),
@@ -123,7 +125,9 @@ async def broadcast_metrics_update(
                     'emn': float(previous['emn']),
                     'exn': float(previous['exn']),
                     'gtn': float(previous['gtn']),
-                    'gfsrpn': float(previous['gfsrpn'])
+                    'gfsrpn': float(previous['gfsrpn']),
+                    'fcbn': float(previous['fcbn']),
+                    'fynin': float(previous['fynin'])
                 },
                 "targets": targets
             }
@@ -543,7 +547,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
     # Load data and model
     data = load_data("../data/LONGBASE.TXT")
     history_data = load_data("../data/HISTDATA.TXT")
-    frbus = Frbus("../models/model.xml") 
+    frbus = Frbus("../models/model_RL_FRBUS.xml") 
 
     # Simulation parameters
     residstart = "1975q1"

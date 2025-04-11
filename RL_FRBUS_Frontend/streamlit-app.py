@@ -644,9 +644,6 @@ def render_trade_charts(df, title):
     # Calculate bar positions
     bar_width = 0.25  # Adjust this value to control bar width  
     
-    # Calculate trade balance
-    df['trade_balance'] = df['exports'] - df['imports']
-    
     # Add trade components
     fig.add_trace(go.Bar(x=df['quarter'], y=df['trade_balance'], name='Trade Balance',
                         marker_color=MUTED_REDS['dark'],
@@ -660,6 +657,10 @@ def render_trade_charts(df, title):
                         marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
+    fig.add_trace(go.Bar(x=df['quarter'], y=df['net_foreign_investment_income'], name='Net Foreign Investment Income',
+                        marker_color=MUTED_REDS['lightest'],
+                        width=bar_width,
+                        offset=2*bar_width))
     
     fig.update_layout(
         title=title,
@@ -1381,7 +1382,9 @@ class EconomicStream:
                 'personal_tax_rates': metrics['metrics']['trptx'],
                 'corporate_tax_rates': metrics['metrics']['trcit'],
                 'government_transfer_payments': metrics['metrics']['gtn'],
-                'federal_surplus': metrics['metrics']['gfsrpn']
+                'federal_surplus': metrics['metrics']['gfsrpn'],
+                'trade_balance': metrics['metrics']['fcbn'],
+                "net_foreign_investment_income": metrics['metrics']['fynin']
             }
             
             new_data_without_tariff = {
@@ -1403,7 +1406,9 @@ class EconomicStream:
                 'personal_tax_rates': metrics_without_tariff['metrics']['trptx'],
                 'corporate_tax_rates': metrics_without_tariff['metrics']['trcit'],
                 'government_transfer_payments': metrics_without_tariff['metrics']['gtn'],
-                'federal_surplus': metrics_without_tariff['metrics']['gfsrpn']
+                'federal_surplus': metrics_without_tariff['metrics']['gfsrpn'],
+                'trade_balance': metrics_without_tariff['metrics']['fcbn'],
+                "net_foreign_investment_income": metrics_without_tariff['metrics']['fynin']
             }
             
             new_data_base_simulation = {
@@ -1425,7 +1430,9 @@ class EconomicStream:
                 'personal_tax_rates': metrics_base_simulation['metrics']['trptx'],
                 'corporate_tax_rates': metrics_base_simulation['metrics']['trcit'],
                 'government_transfer_payments': metrics_base_simulation['metrics']['gtn'],
-                'federal_surplus': metrics_base_simulation['metrics']['gfsrpn']
+                'federal_surplus': metrics_base_simulation['metrics']['gfsrpn'],
+                'trade_balance': metrics_base_simulation['metrics']['fcbn'],
+                "net_foreign_investment_income": metrics_base_simulation['metrics']['fynin']
             }
             
             new_data_base_simulation_with_tariff = {
@@ -1447,7 +1454,9 @@ class EconomicStream:
                 'personal_tax_rates': metrics_base_simulation_with_tariff['metrics']['trptx'],
                 'corporate_tax_rates': metrics_base_simulation_with_tariff['metrics']['trcit'],
                 'government_transfer_payments': metrics_base_simulation_with_tariff['metrics']['gtn'],
-                'federal_surplus': metrics_base_simulation_with_tariff['metrics']['gfsrpn']
+                'federal_surplus': metrics_base_simulation_with_tariff['metrics']['gfsrpn'],
+                'trade_balance': metrics_base_simulation_with_tariff['metrics']['fcbn'],
+                "net_foreign_investment_income": metrics_base_simulation_with_tariff['metrics']['fynin']
             }
             
             # Update metrics history
@@ -2095,17 +2104,17 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_trade_charts(df_base_simulation, "Trade Balance and Components - FRB/US"), use_container_width=True)
         st.plotly_chart(render_trade_charts(df_base_simulation_with_tariff, "Trade Balance and Components - FRB/US - With Tariff"), use_container_width=True)
         # Additional trade metrics
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         try:
             with col1:
-                trade_balance = df['exports'].iloc[-1] - df['imports'].iloc[-1]
-                prev_trade_balance = df['exports'].iloc[-2] - df['imports'].iloc[-2]
-                trade_balance_without_tariff = df_without_tariff['exports'].iloc[-1] - df_without_tariff['imports'].iloc[-1]
-                prev_trade_balance_without_tariff = df_without_tariff['exports'].iloc[-2] - df_without_tariff['imports'].iloc[-2]
-                trade_balance_base_simulation = df_base_simulation['exports'].iloc[-1] - df_base_simulation['imports'].iloc[-1]
-                prev_trade_balance_base_simulation = df_base_simulation['exports'].iloc[-2] - df_base_simulation['imports'].iloc[-2]
-                trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['exports'].iloc[-1] - df_base_simulation_with_tariff['imports'].iloc[-1]
-                prev_trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['exports'].iloc[-2] - df_base_simulation_with_tariff['imports'].iloc[-2]
+                trade_balance = df['trade_balance'].iloc[-1]
+                prev_trade_balance = df['trade_balance'].iloc[-2]
+                trade_balance_without_tariff = df_without_tariff['trade_balance'].iloc[-1]
+                prev_trade_balance_without_tariff = df_without_tariff['trade_balance'].iloc[-2]
+                trade_balance_base_simulation = df_base_simulation['trade_balance'].iloc[-1]
+                prev_trade_balance_base_simulation = df_base_simulation['trade_balance'].iloc[-2]
+                trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['trade_balance'].iloc[-1]
+                prev_trade_balance_base_simulation_with_tariff = df_base_simulation_with_tariff['trade_balance'].iloc[-2]
                 st.metric(
                     "Trade Balance - RL-FRB/US Agent",
                     f"${trade_balance:,.2f}B",
@@ -2168,6 +2177,27 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
                     "Imports - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['imports'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['imports'].iloc[-1] - df_base_simulation_with_tariff['imports'].iloc[-2]):,.2f}B"
+                )
+            with col4:
+                st.metric(
+                    "Net Foreign Investment Income - RL-FRB/US Agent",
+                    f"${df['net_foreign_investment_income'].iloc[-1]:,.2f}B",
+                    f"{(df['net_foreign_investment_income'].iloc[-1] - df['net_foreign_investment_income'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    f"Net Foreign Investment Income - {historical_label_or_hypothetical_label}",
+                    f"${df_without_tariff['net_foreign_investment_income'].iloc[-1]:,.2f}B",
+                    f"{(df_without_tariff['net_foreign_investment_income'].iloc[-1] - df_without_tariff['net_foreign_investment_income'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Net Foreign Investment Income - FRB/US",
+                    f"${df_base_simulation['net_foreign_investment_income'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation['net_foreign_investment_income'].iloc[-1] - df_base_simulation['net_foreign_investment_income'].iloc[-2]):,.2f}B"
+                )
+                st.metric(
+                    "Net Foreign Investment Income - FRB/US - With Tariff",
+                    f"${df_base_simulation_with_tariff['net_foreign_investment_income'].iloc[-1]:,.2f}B",
+                    f"{(df_base_simulation_with_tariff['net_foreign_investment_income'].iloc[-1] - df_base_simulation_with_tariff['net_foreign_investment_income'].iloc[-2]):,.2f}B"
                 )
         except Exception as e:
             st.error(f"Error displaying trade metrics: {str(e)}")
