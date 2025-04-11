@@ -6,10 +6,7 @@ The RL-FRB/US framework combines the Federal Reserve Board's macroeconomic model
 The framework leverages the structural economic relationships embedded in the FRB/US model (which is publicly available on the Federal Reserve's website [FRB/US in Python
 ](https://www.federalreserve.gov/econres/us-models-python.htm) with accompanying licenses) while adding the adaptive learning capabilities of reinforcement learning algorithms. 
 
-The simulation focuses on two key policy actors:
-
-The Federal Reserve, which manages monetary policy through interest rates and other tools
-The Federal Government, which implements fiscal policy through spending and taxation
+The simulation focuses on the key policy actor in the form of Federal Government, who implements fiscal policy through spending and taxation.
 The framework has been enhanced with Proximal Policy Optimization (PPO), a reinforcement learning algorithm, to create more realistic simulations of how these policy institutions interact and make decisions. PPO helps model the complex ways that monetary and fiscal authorities respond to economic conditions and each other's actions.
 
 This toolset allows for analyzing how different combinations of monetary and fiscal policies might affect the US economy under various scenarios and conditions.
