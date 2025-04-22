@@ -54,7 +54,7 @@ from the root directory of this package.
 Python dependencies are listed in setup.py and should be automatically installed.
 
 ### Streamlit Frontend
-The Streamlit are using different Python version, hence it is advisable to install seperatedly with by running 
+The Streamlit are using different Python version, hence it is advisable to install seperatedly
 
 ```
 pip install -r requirements.txt
