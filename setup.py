@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "pandas",
         "scipy",
-        "numpy==1.22.0",
+        "numpy==1.21.0",
         "fastapi==0.68.0",
         "uvicorn==0.15.0",
         "websockets==11.0.3",
