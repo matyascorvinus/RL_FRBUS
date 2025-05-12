@@ -19,7 +19,7 @@ import logging
 import time
 
 from models import EconomicMetrics, SimulationComparison
-from ppo_agent import PPOAgent, ACTION_BOUNDS, FederalReservePPOAgent
+from ppo_agent import PPOAgent, ACTION_BOUNDS, FEDERAL_RESERVE_ACTION_BOUNDS, FederalReservePPOAgent
 from active_learning_ppo import ActiveLearningPPOAgent
 from active_learning_effective_relocation_ppo import ActiveLearningEffectiveRelocationPPOAgent, FederalReserveActiveLearningEffectiveRelocationPPOAgent
 
@@ -154,19 +154,16 @@ def get_state(data, current_quarter):
 def federal_reserve_apply_actions(data, current_quarter, actions):
     """Apply PPO agent's actions to the data""" 
     
-    previous_quarter = pd.Period(current_quarter) - 1 
-    # Map actions to specific policy variables
-    # Convert actions tensor to numpy if it's a torch tensor
+    previous_quarter = pd.Period(current_quarter) - 1  
     if torch.is_tensor(actions):
         actions_np = actions.detach().cpu().numpy()
     else:
         actions_np = actions 
     for var, action in zip(federal_reserve_policy_vars, actions_np):
-        if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
-            data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
+        if data.loc[previous_quarter, var] + round(action, 2) > 0.025:
+            data.loc[current_quarter, var] = data.loc[previous_quarter, var] + round(action, 2)
         else:
             data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
-        logger.info(f"Applied action {var} for quarter {current_quarter}: {data.loc[current_quarter, var]}")
     return data
 
 def apply_actions(data, current_quarter, actions):
@@ -197,7 +194,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
     history_data = load_data("../data/HISTDATA.TXT")
     frbus = Frbus("../models/model_RL_FRBUS_Federal_Reserve.xml") 
     original_frbus = Frbus("../models/model_original.xml")
-
+    original_frbus_with_tariff = Frbus("../models/model_original.xml")
     # Simulation parameters
     residstart = "1975q1"
     residend = "2024q4"
@@ -265,7 +262,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
         simend_year = int(simend.split('q')[0]) - 1
         true_simend = f"{simend_year}q4"
         sim_data_without_rl = data_without_tariff.copy()
-        sim_data_without_rl_tariff = data.copy()
+        sim_data_without_rl_with_tariff = data.copy()
         initial_simulation = True
         total_reward = torch.tensor(0.0).clone().detach()
         annual_inflation_target = 2.0  # 2% annual inflation target
@@ -292,16 +289,17 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                 # Standard configuration, use surplus ratio targeting 
                 sim_data_without_rl.loc[simstart:simend, "dfpdbt"] = 0
                 sim_data_without_rl.loc[simstart:simend, "dfpsrp"] = 1
-                sim_data_without_rl_tariff = sim_data_without_rl.copy()
+                sim_data_without_rl_with_tariff = sim_data_without_rl.copy()
 
                 sim_data = frbus.init_trac(residstart, simend, sim_data)
                 sim_data_without_tariff = frbus.init_trac(residstart, simend, sim_data_without_tariff)
-                sim_data_without_rl = frbus.init_trac(residstart, simend, sim_data_without_rl)
-                sim_data_without_rl_tariff = frbus.init_trac(residstart, simend, sim_data_without_rl_tariff)
+
+                sim_data_without_rl = original_frbus.init_trac(residstart, simend, sim_data_without_rl)
+                sim_data_without_rl_with_tariff = original_frbus.init_trac(residstart, simend, sim_data_without_rl_with_tariff)
 
                 # 100 bp monetary policy shock and solve
                 sim_data_without_rl.loc[simstart, "rffintay_aerr"] += 1 
-                sim_data_without_rl_tariff.loc[simstart, "rffintay_aerr"] += 1 
+                sim_data_without_rl_with_tariff.loc[simstart, "rffintay_aerr"] += 1 
 
             if ppo_agent.current_quarter in ppo_agent.economic_states and not initial_simulation:
                 sim_data = ppo_agent.economic_states[ppo_agent.current_quarter]['solutions'] 
@@ -337,7 +335,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         sim_data_without_tariff = apply_actions(sim_data_without_tariff, quarter_str, actions_without_tariff)
                         sim_data_without_tariff = frbus.solve(quarter_str, quarter_str, sim_data_without_tariff)
                     if initial_simulation: 
-                        sim_data_without_rl_tariff = original_frbus.solve(quarter_str, quarter_str, sim_data_without_rl_tariff)
+                        sim_data_without_rl_with_tariff = original_frbus.solve(quarter_str, quarter_str, sim_data_without_rl_with_tariff)
                         sim_data_without_rl = original_frbus.solve(simstart, simend, sim_data_without_rl) 
                     initial_simulation = False  
                     # Send metrics update to API
@@ -346,7 +344,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                             solution=sim_data,
                             solution_without_tariff=sim_data_without_tariff,
                             solution_without_rl=sim_data_without_rl,
-                            solution_without_rl_tariff=sim_data_without_rl_tariff,
+                            solution_without_rl_tariff=sim_data_without_rl_with_tariff,
                             quarter_str=quarter_str.upper(),
                             targets=targets
                         )
@@ -401,7 +399,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                     logger.error(f"Current quarter: {quarter_str}, Previous quarter: {previous_quarter}")
                     for var, action in zip(policy_vars, actions):
                         logger.error(f"Variable: {var}, Action: {action}, Previous Data: {sim_data.loc[previous_quarter, var]}, Current Data: {sim_data.loc[quarter_str, var]}")
-                    for var, action in zip(policy_vars, federal_reserve_actions):
+                    for var, action in zip(federal_reserve_policy_vars, federal_reserve_actions):
                         logger.error(f"Variable: {var}, Action: {action}, Previous Data: {sim_data.loc[previous_quarter, var]}, Current Data: {sim_data.loc[quarter_str, var]}")
                     logger.error(f"Simulation stochsim failed for quarter {quarter_str}: {e}")
                     raise 
@@ -487,8 +485,8 @@ async def main_training_effective_relocation():
     simulation_start = "1970q1"
     simulation_end = "2000q1"
     simulation_replications = 25
-    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
-    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(federal_reserve_policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
+    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(federal_reserve_policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
     logger.info("Starting simulation training with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
@@ -519,11 +517,11 @@ async def main_simulation_effective_relocation(
     key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_miran"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
 
-    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
-    ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path, ppo_agent)
-    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(federal_reserve_policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(federal_reserve_policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     federal_reserve_ppo_agent = load_checkpoint(checkpoint_path, federal_reserve_ppo_agent)
     simulation_replications = 1
     logger.info("Starting the simulation with effective relocation")
