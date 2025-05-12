@@ -250,6 +250,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
     score_replications_without_tariff = {}
     the_best_replication_without_tariff = 0
     highest_score_without_tariff = float('-inf')
+    save_checkpoint_when_stochastic_failure = True
     # Modified simulation loop
     for rep in range(nrepl):
         start_time = time.time()
@@ -401,8 +402,23 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         logger.error(f"Variable: {var}, Action: {action}, Previous Data: {sim_data.loc[previous_quarter, var]}, Current Data: {sim_data.loc[quarter_str, var]}")
                     for var, action in zip(federal_reserve_policy_vars, federal_reserve_actions):
                         logger.error(f"Variable: {var}, Action: {action}, Previous Data: {sim_data.loc[previous_quarter, var]}, Current Data: {sim_data.loc[quarter_str, var]}")
-                    logger.error(f"Simulation stochsim failed for quarter {quarter_str}: {e}")
-                    raise 
+                    logger.error(f"Simulation stochastic failed for quarter {quarter_str}: {e}")
+                    ppo_agent.relocate(simstart)
+                    federal_reserve_ppo_agent.relocate(simstart)
+                    total_reward = reward_list[simstart] if simstart in reward_list else 0
+                    logger.info(f"Relocated to {simstart} with total reward {total_reward} due to stochastic failure")
+                    logger.info(f"Reward list during stochastic failure: {reward_list}")
+                    # Save the last checkpoint to the best_checkpoint folder
+                    if save_checkpoint_when_stochastic_failure:
+                        os.makedirs(f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation', exist_ok=True) 
+                        if os.path.exists(f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'):
+                            save_checkpoint_when_stochastic_failure = False
+                            shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt')
+                        if os.path.exists(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{rep + replication_restart}.pt'):
+                            save_checkpoint_when_stochastic_failure = False
+                            shutil.copy(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{rep + replication_restart}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/federal_reserve_ppo_agent_best_replication_effective_relocation.pt')
+
+
 
             if break_the_loop and is_training:
                 # Standard PPO update
@@ -425,31 +441,37 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
             if total_reward >= highest_score:
                 highest_score = total_reward
                 the_best_replication = rep + replication_restart 
-            checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
-            os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
-            checkpoint_path_federal_reserve = f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{rep + replication_restart}.pt'
-            os.makedirs(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent', exist_ok=True)
-            checkpoint = {
-                'actor_state_dict': ppo_agent.actor.state_dict(),
-                'critic_state_dict': ppo_agent.critic.state_dict(),
-                'replication': rep + replication_restart,
-                'action_bounds': ppo_agent.action_bounds
-            }
-            checkpoint_federal_reserve = {
-                'actor_state_dict': federal_reserve_ppo_agent.actor.state_dict(),
-                'critic_state_dict': federal_reserve_ppo_agent.critic.state_dict(),
-                'replication': rep + replication_restart,
-                'action_bounds': federal_reserve_ppo_agent.action_bounds
-            }
-            torch.save(checkpoint, checkpoint_path)
-            torch.save(checkpoint_federal_reserve, checkpoint_path_federal_reserve)
-            logger.info(f"Saved the bestcheckpoint at replication {rep + replication_restart}")
+                checkpoint_path = f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{rep + replication_restart}.pt'
+                os.makedirs(f'checkpoints_{key_checkpoint_path}/ppo_agent', exist_ok=True)
+                checkpoint_path_federal_reserve = f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{rep + replication_restart}.pt'
+                os.makedirs(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent', exist_ok=True)
+                checkpoint = {
+                    'actor_state_dict': ppo_agent.actor.state_dict(),
+                    'critic_state_dict': ppo_agent.critic.state_dict(),
+                    'replication': rep + replication_restart,
+                    'action_bounds': ppo_agent.action_bounds
+                }
+                checkpoint_federal_reserve = {
+                    'actor_state_dict': federal_reserve_ppo_agent.actor.state_dict(),
+                    'critic_state_dict': federal_reserve_ppo_agent.critic.state_dict(),
+                    'replication': rep + replication_restart,
+                    'action_bounds': federal_reserve_ppo_agent.action_bounds
+                }
+                try:
+                    torch.save(checkpoint, checkpoint_path)
+                    torch.save(checkpoint_federal_reserve, checkpoint_path_federal_reserve)
+                    logger.info(f"Saved the bestcheckpoint at replication {rep + replication_restart}")        
+                    os.makedirs(f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation', exist_ok=True)
+                    shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{the_best_replication}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt')
+                    shutil.copy(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{the_best_replication}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/federal_reserve_ppo_agent_best_replication_effective_relocation.pt')
+                except Exception as e: 
+                    logger.error(f"Error saving checkpoint: {e}")
+                logger.info(f"Total reward for replication effective relocation {rep + replication_restart}: {total_reward}")
+                logger.info(f"Time taken for replication effective relocation {rep + replication_restart}: {end_time - start_time} seconds")
+                logger.info(f"Highest reward for replication effective relocation {the_best_replication} with tariff: {highest_score}")
+                logger.info(f"ETA taken for remaining replications effective relocation {nrepl - rep - replication_restart}: {(end_time - start_time) * (nrepl - rep - replication_restart)} seconds")
+        
                 
-            logger.info(f"Total reward for replication effective relocation {rep + replication_restart}: {total_reward}")
-            logger.info(f"Time taken for replication effective relocation {rep + replication_restart}: {end_time - start_time} seconds")
-            logger.info(f"Highest reward for replication effective relocation {the_best_replication} with tariff: {highest_score}")
-            logger.info(f"ETA taken for remaining replications effective relocation {nrepl - rep - replication_restart}: {(end_time - start_time) * (nrepl - rep - replication_restart)} seconds")
-            
     if is_training:
         logger.info(f"The best replication effective relocation is {the_best_replication} with score {highest_score}")
         # Save the score replications to a text file
@@ -490,7 +512,7 @@ async def main_training_effective_relocation():
     logger.info("Starting simulation training with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
-        federal_reserve_ppo_agent,
+        federal_reserve_ppo_agent, 
         simulation_start, 
         simulation_end, 
         simulation_replications, 
@@ -514,9 +536,9 @@ async def main_simulation_effective_relocation(
     - simend: End date for simulation in format 'YYYYqN'
     - tariff_rate: Tariff rate as a decimal (e.g., 0.10 for 10%)
     """
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_miran"
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_Federal_Reserve"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
-
+    checkpoint_path_federal_reserve = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/federal_reserve_ppo_agent_best_replication_effective_relocation.pt"
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
     ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)

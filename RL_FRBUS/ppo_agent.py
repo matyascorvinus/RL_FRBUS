@@ -13,7 +13,7 @@ ACTION_BOUNDS = {
     'trcit': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
 }        
 FEDERAL_RESERVE_ACTION_BOUNDS = { 
-    'rff': (-0.1, 0.1),    # Federal funds rate (percentage)
+    'rff': (-0.25, 0.25),    # Federal funds rate (percentage)
 }        
 
 class PPOAgent(nn.Module):
@@ -175,7 +175,7 @@ class PPOAgent(nn.Module):
         
         # Normalize advantages for stable training
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-        logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
+        # logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
         
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
@@ -445,7 +445,7 @@ class FederalReservePPOAgent(nn.Module):
         
         # Normalize advantages for stable training
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-        logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
+        # logger.info(f"Evaluating policy and value predictions for {len(states)} states and actions {actions}")
         
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
