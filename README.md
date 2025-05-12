@@ -89,7 +89,7 @@ To run the RL-FRB/US, go to the RL_FRBUS directory and run
 
 ```
 cd RL_FRBUS
-uvicorn simulation:app --reload --port 8001
+uvicorn simulation:app --reload --port 8000
 ```
 
 To showcase the result to the Streamlit frontend, run a seperated terminal,
