@@ -462,7 +462,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
         # Copy the best checkpoint to the best_checkpoint folder
         os.makedirs(f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation', exist_ok=True)
         shutil.copy(f'checkpoints_{key_checkpoint_path}/ppo_agent/ppo_agent_replication_{the_best_replication}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt')
-
+        shutil.copy(f'checkpoints_{key_checkpoint_path}/federal_reserve_ppo_agent/federal_reserve_ppo_agent_replication_{the_best_replication}.pt', f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/federal_reserve_ppo_agent_best_replication_effective_relocation.pt')
     return "Simulation effective relocation completed successfully"
 
 
@@ -481,16 +481,18 @@ def load_checkpoint(path, ppo_agent):
 # Add the main execution block
 async def main_training_effective_relocation():
     # Your existing setup code - example values shown below
-    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_miran" 
+    key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_Federal_Reserve" 
     
     # Keep the standard agent for the tariff case
     simulation_start = "1970q1"
     simulation_end = "2000q1"
     simulation_replications = 25
     ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(federal_reserve_policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
     logger.info("Starting simulation training with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
+        federal_reserve_ppo_agent,
         simulation_start, 
         simulation_end, 
         simulation_replications, 
@@ -521,10 +523,13 @@ async def main_simulation_effective_relocation(
     ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
     ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path, ppo_agent)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934 + 2, action_dim=len(federal_reserve_policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = load_checkpoint(checkpoint_path, federal_reserve_ppo_agent)
     simulation_replications = 1
     logger.info("Starting the simulation with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
+        federal_reserve_ppo_agent,
         simstart, 
         simend, 
         simulation_replications,
