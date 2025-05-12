@@ -423,14 +423,17 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
             if break_the_loop and is_training:
                 # Standard PPO update
                 logger.info(f"Updating PPO for replication effective relocation - cleaning up state")
-                ppo_agent.update_ppo_effective_relocation(experiences) 
-                federal_reserve_ppo_agent.update_ppo_effective_relocation(federal_reserve_experiences)
-                # Standard PPO update
-                experiences = []  # Clear experiences after update
-                federal_reserve_experiences = []
-                reward_list = {}
-                ppo_agent.clean_up_state()
-                federal_reserve_ppo_agent.clean_up_state()
+                try:
+                    ppo_agent.update_ppo_effective_relocation(experiences) 
+                    federal_reserve_ppo_agent.update_ppo_effective_relocation(federal_reserve_experiences)
+                    # Standard PPO update
+                    experiences = []  # Clear experiences after update
+                    federal_reserve_experiences = []
+                    reward_list = {}
+                    ppo_agent.clean_up_state()
+                    federal_reserve_ppo_agent.clean_up_state()
+                except Exception as e:
+                    logger.error(f"Error updating PPO in replication {rep + replication_restart}: {e}")
                 break
             
             # Break the loop if not training after running the simulation
