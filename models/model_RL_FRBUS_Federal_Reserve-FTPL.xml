@@ -4107,25 +4107,29 @@ More information on the estimation of the price-wage NKPC
 equations is available &lt;a href="price_wage_sector_083013.pdf"&gt;here&lt;/a&gt;.
 
 P/S: Here is the equation for the price index for core PCE prices (PICXFE) enhanced by FTPL.
-PICXFE_FTPL = 0.6*ZPICXFE + 0.4*(2.0*(GFDBTN/XGDPN - GFDRT) + 1.5*((RFF(-1)/400 - hggdpt/400)*GFDBTN(-1)/XGDPN(-1) - GFSRPN/XGDPN) + 0.5*(PTR - PITARG))
-PICXFE_NK = 1/(1+y1*y3) * [y1*PICXFE(-1) + y3*ZPICXFE + (1-y3)(1-y1)*PTR(-1) + y2*400*log(QPCNIA(-1)/PCNIA(-1))]
-PICXFE = (1-α_ftpl) * PICXFE_NK + α_ftpl * PICXFE_FTPL
+PICXFE = 0.98*ZPICXFE + 0.5*XGAP2 + 0.3*[(GFDBTN/XGDPN - GFDBTN(-1)/XGDPN(-1)) - (GFSRPN/XGDPN)]
 
  
 </description>
     <standard_equation>
-      <eviews_equation>picxfe - picxfe_aerr = ((y_picxfe(1)*picxfe(-1)
+      <!-- <eviews_equation>picxfe - picxfe_aerr = ((y_picxfe(1)*picxfe(-1)
                      + y_picxfe(3)*zpicxfe
                      + (1-y_picxfe(3))*(1-y_picxfe(1))*ptr(-1)
                      + y_picxfe(2)*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe(1)*y_picxfe(3)))
-                     * (1-y_picxfe(4))
-                     + y_picxfe(4) * (0.6*zpicxfe + 0.4*(2.0*(gfdbtn/xgdpn - gfdrt) + 1.5*((rff(-1)/400 - hggdpt/400)*gfdbtn(-1)/xgdpn(-1) - gfsrpn/xgdpn) + 0.5*(ptr - pitarg)))
       </eviews_equation>
       <python_equation>picxfe - picxfe_aerr = ((y_picxfe_1*picxfe(-1)
                      + y_picxfe_3*zpicxfe
                      + (1-y_picxfe_3)*(1-y_picxfe_1)*ptr(-1)
-                     + y_picxfe_2*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe_1*y_picxfe_3)) * (1-y_picxfe_4)
-                     + y_picxfe_4 * (0.6*zpicxfe + 0.4*(2.0*(gfdbtn/xgdpn - gfdrt) + 1.5*((rff(-1)/400 - hggdpt/400)*gfdbtn(-1)/xgdpn(-1) - gfsrpn/xgdpn) + 0.5*(ptr - pitarg)))
+                     + y_picxfe_2*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe_1*y_picxfe_3)) 
+      </python_equation> -->
+      
+      <eviews_equation>picxfe - picxfe_aerr = y_picxfe(3)*zpicxfe
+                      + (y_picxfe(4))*xgap2
+                      + y_picxfe(5)*((gfdbtn/xgdpn - gfdbtn(-1)/xgdpn(-1)) - (gfsrpn/xgdpn))
+      </eviews_equation>
+      <python_equation>picxfe - picxfe_aerr = y_picxfe_3*zpicxfe
+                     + (y_picxfe_4)*xgap2
+                     + y_picxfe_5*((gfdbtn/xgdpn - gfdbtn(-1)/xgdpn(-1)) - (gfsrpn/xgdpn)) 
       </python_equation>
       <coeff>
         <cf_name>y_picxfe(1)</cf_name>
@@ -4140,9 +4144,16 @@ PICXFE = (1-α_ftpl) * PICXFE_NK + α_ftpl * PICXFE_FTPL
         <cf_value>0.98</cf_value>
       </coeff>
       <coeff>
-        <!-- alpha_ftpl - Reuse y_picxfe(4) for alpha_ftpl -->
         <cf_name>y_picxfe(4)</cf_name>
-        <cf_value>0.9</cf_value>
+        <cf_value>0.5</cf_value>
+      </coeff>
+      <coeff>
+        <cf_name>y_picxfe(5)</cf_name>
+        <cf_value>0.3</cf_value>
+      </coeff>
+      <coeff>
+        <cf_name>y_picxfe(6)</cf_name>
+        <cf_value>0.3</cf_value>
       </coeff>
       <rhs_eq_var>pcnia</rhs_eq_var>
       <rhs_eq_var>picxfe</rhs_eq_var>
@@ -4155,7 +4166,7 @@ PICXFE = (1-α_ftpl) * PICXFE_NK + α_ftpl * PICXFE_FTPL
       <rhs_eq_var>hggdpt</rhs_eq_var>
       <rhs_eq_var>gfsrpn</rhs_eq_var>
       <rhs_eq_var>pitarg</rhs_eq_var>
-      
+      <rhs_eq_var>gfdrt</rhs_eq_var>
       <estimation_statistics>
         <estimation_date>2017</estimation_date>
         <sample_end>-</sample_end>

@@ -144,6 +144,25 @@ class ActiveLearningEffectiveRelocationPPOAgent(PPOAgent):
             return True, target_quarter
             
         return False, None
+    
+
+    def forced_relocate(self, previous_quarter, current_quarter):
+        """Determine if agent should relocate based on current method"""
+        if current_quarter == 0 or len(self.visited_quarters) <= 1:
+            return 0, None
+            
+        current_value = self.state_values[current_quarter]
+        previous_quarter = self.visited_quarters[-2]
+        previous_value = self.state_values[previous_quarter]
+        forced_reloc_prob = 0
+        if self.method == "Bored":
+            forced_reloc_prob = self.calculate_relocation_probability_bored(current_value, previous_value)
+        else:  # "InTrouble"
+            forced_reloc_prob = self.calculate_relocation_probability_in_trouble(current_value, previous_value) 
+         
+        target_quarter = self.choose_relocation_quarter()
+        logger.info(f"Relocating to {target_quarter} from {current_quarter} with relocation cost {self.relocation_cost}")
+        return forced_reloc_prob, target_quarter
 
     def forward_with_effective_relocation(self, state):
         """
@@ -315,6 +334,24 @@ class FederalReserveActiveLearningEffectiveRelocationPPOAgent(FederalReservePPOA
             
         return False, None
 
+    def forced_relocate(self, previous_quarter, current_quarter):
+        """Determine if agent should relocate based on current method"""
+        if current_quarter == 0 or len(self.visited_quarters) <= 1:
+            return 0, None
+            
+        current_value = self.state_values[current_quarter]
+        previous_quarter = self.visited_quarters[-2]
+        previous_value = self.state_values[previous_quarter]
+        forced_reloc_prob = 0
+        if self.method == "Bored":
+            forced_reloc_prob = self.calculate_relocation_probability_bored(current_value, previous_value)
+        else:  # "InTrouble"
+            forced_reloc_prob = self.calculate_relocation_probability_in_trouble(current_value, previous_value)
+         
+        target_quarter = self.choose_relocation_quarter()
+        logger.info(f"Relocating to {target_quarter} from {current_quarter} with relocation cost {self.relocation_cost}")
+        return forced_reloc_prob, target_quarter
+    
     def forward_with_effective_relocation(self, state):
         """
         Forward pass that using effective relocation for active learning.

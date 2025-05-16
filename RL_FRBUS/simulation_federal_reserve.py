@@ -185,7 +185,7 @@ def apply_actions(data, current_quarter, actions):
                 data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
             else:
                 data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
-            logger.info(f"Applied action {var} for quarter {current_quarter}: {data.loc[current_quarter, var]}")
+
     return data
 
 async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLearningEffectiveRelocationPPOAgent, federal_reserve_ppo_agent: FederalReserveActiveLearningEffectiveRelocationPPOAgent, simulation_start: str, simulation_end: str, simulation_replications: int, key_checkpoint_path: str, is_training: bool = True, replication_restart: int = 0, highest_score: float = float('-inf'), max_tariff_rate: float = 0, ppo_agent_without_tariff: ActiveLearningEffectiveRelocationPPOAgent = None):
@@ -283,10 +283,6 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
         logger.info(f"Starting training simulation with effective relocation in iteration {rep}")
         while True: 
             if initial_simulation:
-                # Policy settings
-                logger.info(f"Setting up initial simulation")
-                logger.info(f"sim_data tariff_rate: {sim_data.loc[simstart:simend, 'tariff_rate']}")
-                logger.info(f"sim_data foreign_retaliatory_tariff_rate: {sim_data.loc[simstart:simend, 'foreign_retaliatory_tariff_rate']}")
                 # Standard configuration, use surplus ratio targeting 
                 sim_data_without_rl.loc[simstart:simend, "dfpdbt"] = 0
                 sim_data_without_rl.loc[simstart:simend, "dfpsrp"] = 1
@@ -325,9 +321,6 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                 # Run one quarter of simulation
                 try: 
                     sim_data = frbus.solve(quarter_str, quarter_str, sim_data)
-                    
-                    for var in policy_vars:
-                        logger.info(f"Aftermath: action {var} for previous quarter {previous_quarter}: {sim_data.loc[previous_quarter, var]} | current quarter {quarter_str}: {sim_data.loc[quarter_str, var]}")
                     if not (1970 <= simstart_year <= 2023) and not is_training:
                         state_without_tariff = get_state(sim_data_without_tariff, quarter_str)
                         # Create a copy of the PPO agent
@@ -380,7 +373,7 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         federal_reserve_experiences.append(federal_reserve_experience)
                         reward_list[quarter_str] = total_reward.clone().detach()
                         total_reward += reward
-                        logger.info(f"Visited quarters: {quarter_str} with total reward {total_reward} | reward {reward}") 
+                        
                         should_relocate, target_quarter =  ppo_agent.should_relocate(previous_quarter, quarter_str)
                         should_relocate_federal_reserve, target_quarter_federal_reserve =  federal_reserve_ppo_agent.should_relocate(previous_quarter, quarter_str)
                         decide_to_relocate = should_relocate or should_relocate_federal_reserve

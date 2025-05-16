@@ -77,3 +77,7 @@ ActiveLearning.md
 RL_FRBUS/simulation.log
 RL_FRBUS/simulation_tariff_miran.log
 Đổi tên - Fiscal.txt
+RL_FRBUS/training_1.log
+RL_FRBUS/training_2.log
+RL_FRBUS/training_*.log
+RL_FRBUS/training.log
