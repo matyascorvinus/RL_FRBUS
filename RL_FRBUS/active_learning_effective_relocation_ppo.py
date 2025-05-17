@@ -59,6 +59,10 @@ class ActiveLearningEffectiveRelocationPPOAgent(PPOAgent):
         if target_quarter in self.economic_states:
             # Call FRB/US model API to reset economic conditions
             self.current_quarter = target_quarter 
+
+    def force_relocate(self, target_quarter):
+        """Reset the FRB/US model to a previous economic state"""
+        self.current_quarter = target_quarter 
     
     def calculate_uncertainty(self, state):
         """Calculate uncertainty for a state using policy distribution"""
@@ -248,7 +252,11 @@ class FederalReserveActiveLearningEffectiveRelocationPPOAgent(FederalReservePPOA
         if target_quarter in self.economic_states:
             # Call FRB/US model API to reset economic conditions
             self.current_quarter = target_quarter 
-    
+            
+    def force_relocate(self, target_quarter):
+        """Reset the FRB/US model to a previous economic state"""
+        self.current_quarter = target_quarter 
+
     def calculate_uncertainty(self, state):
         """Calculate uncertainty for a state using policy distribution"""
         with torch.no_grad():

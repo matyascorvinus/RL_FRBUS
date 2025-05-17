@@ -82,7 +82,8 @@ async def broadcast_metrics_update(
         def create_metrics(df: pd.DataFrame) -> Dict:
             current = df.loc[quarter_str]
             previous = df.shift(1).loc[quarter_str]
-            
+            logger.info(f"Current: {current}")
+            logger.info(f"Previous: {previous}")
             return {
                 "quarter": quarter_str.upper(),
                 "metrics": {
@@ -161,9 +162,10 @@ def federal_reserve_apply_actions(data, current_quarter, actions):
         actions_np = actions 
     for var, action in zip(federal_reserve_policy_vars, actions_np):
         if data.loc[previous_quarter, var] + round(action, 2) > 0.025:
-            data.loc[current_quarter, var] = data.loc[previous_quarter, var] + round(action, 2)
+            data.loc[current_quarter, var] = round(data.loc[previous_quarter, var] + round(action, 2), 2)
         else:
-            data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
+            data.loc[current_quarter, var] = round(data.loc[previous_quarter, var], 2) 
+        logger.info(f"Federal Reserve action Quarter: {current_quarter} | {var} = {data.loc[current_quarter, var]} changed from {data.loc[previous_quarter, var]} by {round(action, 2)}")
     return data
 
 def apply_actions(data, current_quarter, actions):
@@ -178,15 +180,48 @@ def apply_actions(data, current_quarter, actions):
         actions_np = actions 
     for var, action in zip(policy_vars, actions_np):
         if var == 'egfe': 
-            if (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] >= 0.02 and (data.loc[previous_quarter, var] +  action * 1000) / data.loc[previous_quarter, 'xgdp'] <= 0.1:
-                data.loc[previous_quarter, 'egfe'] += action * 1000  
+            previous_egfe = data.loc[previous_quarter, var]
+            if (previous_egfe + round(action, 2) * 1000) / data.loc[previous_quarter, 'xgdp'] >= 0.02 and (previous_egfe +  round(action, 2) * 1000) / data.loc[previous_quarter, 'xgdp'] <= 0.1:
+                data.loc[previous_quarter, var] += round(action, 2) * 1000  
+            logger.info(f"PPO action Quarter: {previous_quarter} | {var} = {data.loc[previous_quarter, var]} changed from {previous_egfe} by {round(action, 2) * 1000}")
         else: 
-            if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.4:
-                data.loc[current_quarter, var] = data.loc[previous_quarter, var] + action
+            if data.loc[previous_quarter, var] + action > 0.1 and data.loc[previous_quarter, var] + action < 0.2:
+                data.loc[current_quarter, var] = data.loc[previous_quarter, var] + round(action, 2)
             else:
                 data.loc[current_quarter, var] = data.loc[previous_quarter, var] 
+            logger.info(f"PPO action Quarter: {current_quarter} | {var} = {data.loc[current_quarter, var]} changed from {data.loc[previous_quarter, var]} by {round(action, 2)}")
     return data
-
+def get_quarters_between(start_quarter, end_quarter):
+    """
+    Generate a list of quarters between start_quarter and end_quarter (inclusive)
+    Args:
+        start_quarter: format YYYYqN (e.g., "1970q1" for 1970 Q1)
+        end_quarter: format YYYYqN (e.g., "1970q3" for 1970 Q3)
+    Returns:
+        List of quarters in chronological order as strings
+    """
+    quarters = []
+    
+    # Extract year and quarter from strings
+    start_year = int(start_quarter.split('q')[0])
+    start_q = int(start_quarter.split('q')[1])
+    end_year = int(end_quarter.split('q')[0])
+    end_q = int(end_quarter.split('q')[1])
+    
+    current_year = start_year
+    current_q = start_q
+    
+    # Build the list of quarters
+    while (current_year < end_year) or (current_year == end_year and current_q <= end_q):
+        quarters.append(f"{current_year}q{current_q}")
+        
+        # Move to next quarter
+        current_q += 1
+        if current_q > 4:
+            current_q = 1
+            current_year += 1
+            
+    return quarters
 async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLearningEffectiveRelocationPPOAgent, federal_reserve_ppo_agent: FederalReserveActiveLearningEffectiveRelocationPPOAgent, simulation_start: str, simulation_end: str, simulation_replications: int, key_checkpoint_path: str, is_training: bool = True, replication_restart: int = 0, highest_score: float = float('-inf'), max_tariff_rate: float = 0, ppo_agent_without_tariff: ActiveLearningEffectiveRelocationPPOAgent = None):
     # Load data and model
     data = load_data("../data/LONGBASE.TXT")
@@ -209,41 +244,8 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
     experiences_without_tariff = []
     # Policy settings
     data.loc[simstart:simend, "dfpdbt"] = 0
-    data.loc[simstart:simend, "dfpsrp"] = 1
-    data.loc[:, "tariff_rate"] = 0
-    data.loc[:, "foreign_retaliatory_tariff_rate"] = 0
-    data_without_tariff = data.copy()
-    if not is_training and max_tariff_rate > 0:
-        # Increase the foreign retaliatory tariff rate by 10% each year until reaching the tariff rate
-        for quarter in pd.date_range(start=simstart, end=simend, freq='Q'): 
-            simend_year = int(simend.split('q')[0]) - 1
-            true_simend = f"{simend_year}q4"
-            quarter_str = f"{quarter.year}q{((quarter.month-1)//3)+1}"
-            # Calculate current foreign retaliatory tariff rate
-            # Increase by 10% of the target tariff rate per year (2.5% per quarter)
-            quarters_elapsed = (pd.Period(quarter_str) - pd.Period(simstart)).n
-            years_elapsed = quarters_elapsed / 4
-            current_tariff_rate = min(max_tariff_rate, years_elapsed * 0.1)
-            data.loc[quarter_str, "tariff_rate"] = current_tariff_rate
-
-            # Apply gradual increase until reaching the tariff rate
-            current_foreign_tariff = min(current_tariff_rate, years_elapsed * 0.1)
-            data.loc[quarter_str, "foreign_retaliatory_tariff_rate"] = current_foreign_tariff
-            if quarter_str == true_simend:
-                current_tariff_rate = min(max_tariff_rate, years_elapsed * 0.1)
-                data.loc[quarter_str, "tariff_rate"] = current_tariff_rate
-
-                # Apply gradual increase until reaching the tariff rate
-                current_foreign_tariff = min(current_tariff_rate, years_elapsed * 0.1)
-                data.loc[quarter_str, "foreign_retaliatory_tariff_rate"] = current_foreign_tariff
-            
-        current_tariff_rate = max_tariff_rate
-        data.loc[simend, "tariff_rate"] = current_tariff_rate
-
-        # Apply gradual increase until reaching the tariff rate
-        current_foreign_tariff = max_tariff_rate
-        data.loc[simend, "foreign_retaliatory_tariff_rate"] = current_foreign_tariff
-    # Initialize variables for tracking best replication
+    data.loc[simstart:simend, "dfpsrp"] = 1  
+    data_without_tariff = data.copy() 
     score_replications = {}
     the_best_replication = 0 
     score_replications_without_tariff = {}
@@ -280,6 +282,8 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
         break_the_loop = False
         reward_list = {}
         logger.info(f"Starting training simulation with effective relocation in iteration {rep}")
+        experience_broadcast = []
+        break_the_loop_simulation = False
         while True: 
             if initial_simulation:
                 # Policy settings
@@ -300,27 +304,38 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
 
             if ppo_agent.current_quarter in ppo_agent.economic_states and not initial_simulation:
                 sim_data = ppo_agent.economic_states[ppo_agent.current_quarter]['solutions'] 
-                
+            
             for quarter in pd.date_range(start=ppo_agent.current_quarter, end=simend, freq='Q'):
                 q = (quarter.month - 1) // 3 + 1
                 quarter_str = f"{quarter.year}q{q}".lower()  
                 previous_quarter = pd.Period(quarter_str) - 1
-                if quarter_str.lower() == true_simend.lower() and is_training:
-                    break_the_loop = True
-                    logger.info(f"Reached end of simulation - breaking the loop")
+                prev_previous_quarter = pd.Period(quarter_str) - 2
+
+                experience_broadcast.append(quarter_str) 
+                if quarter_str.lower() == true_simend.lower():
+                    if is_training:
+                        break_the_loop = True
+                        logger.info(f"Reached end of simulation - breaking the loop")
+                    else:
+                        break_the_loop_simulation = True
+                        logger.info(f"Reached end of simulation - breaking the loop")
 
                 # Get current state
                 state = get_state(sim_data, quarter_str)
+
                 # Standard PPO action selection
                 actions, log_probs, state_value = ppo_agent.forward_with_effective_relocation(state) 
+
                 # Federal Reserve PPO action selection
                 federal_reserve_actions, federal_reserve_log_probs, federal_reserve_state_value = federal_reserve_ppo_agent.forward_with_effective_relocation(state) 
+                sim_data_previous = sim_data.copy()
                 # Apply PPO actions to the data
                 sim_data = apply_actions(sim_data, quarter_str, actions)
                 sim_data = federal_reserve_apply_actions(sim_data, quarter_str, federal_reserve_actions)
                 # Run one quarter of simulation
                 try: 
                     sim_data = frbus.solve(quarter_str, quarter_str, sim_data)
+                        
                     if not (1970 <= simstart_year <= 2023) and not is_training:
                         state_without_tariff = get_state(sim_data_without_tariff, quarter_str)
                         # Create a copy of the PPO agent
@@ -328,22 +343,17 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         actions_without_tariff, _, _ = ppo_agent_without_tariff.forward_with_effective_relocation(state_without_tariff)
                         sim_data_without_tariff = apply_actions(sim_data_without_tariff, quarter_str, actions_without_tariff)
                         sim_data_without_tariff = frbus.solve(quarter_str, quarter_str, sim_data_without_tariff)
+                    
                     if initial_simulation: 
                         sim_data_without_rl_with_tariff = original_frbus.solve(quarter_str, quarter_str, sim_data_without_rl_with_tariff)
                         sim_data_without_rl = original_frbus.solve(simstart, simend, sim_data_without_rl) 
-                    initial_simulation = False  
-                    # Send metrics update to API
-                    if not is_training:
-                        await broadcast_metrics_update(
-                            solution=sim_data,
-                            solution_without_tariff=sim_data_without_tariff,
-                            solution_without_rl=sim_data_without_rl,
-                            solution_without_rl_tariff=sim_data_without_rl_with_tariff,
-                            quarter_str=quarter_str.upper(),
-                            targets=targets
-                        )
                         
-                    
+                    initial_simulation = False  
+                    ppo_agent.save_state(state, quarter_str, previous_quarter, sim_data)
+                    ppo_agent.visited_quarters.append(quarter_str)
+                    federal_reserve_ppo_agent.save_state(state, quarter_str, previous_quarter, sim_data)
+                    federal_reserve_ppo_agent.visited_quarters.append(quarter_str) 
+
                     # Store experience for PPO update
                     if is_training: # Calculate reward based on economic outcomes 
                         reward = calculate_reward_policy_v1(sim_data, quarter_str, simend)
@@ -367,10 +377,6 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                             'value': federal_reserve_state_value,
                             'done': quarter_str.lower() == true_simend.lower()
                         }
-                        ppo_agent.save_state(state, quarter_str, previous_quarter, sim_data)
-                        ppo_agent.visited_quarters.append(quarter_str)
-                        federal_reserve_ppo_agent.save_state(state, quarter_str, previous_quarter, sim_data)
-                        federal_reserve_ppo_agent.visited_quarters.append(quarter_str) 
                         experiences.append(experience)  
                         federal_reserve_experiences.append(federal_reserve_experience)
                         reward_list[quarter_str] = total_reward.clone().detach()
@@ -380,41 +386,53 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                         decide_to_relocate = should_relocate or should_relocate_federal_reserve
                         if decide_to_relocate and not(break_the_loop):
                             decided_quarter = target_quarter if ppo_agent.reloc_prob > federal_reserve_ppo_agent.reloc_prob else target_quarter_federal_reserve
-                            ppo_agent.relocate(decided_quarter)
-                            federal_reserve_ppo_agent.relocate(decided_quarter)
-                            total_reward = reward_list[decided_quarter] if decided_quarter in reward_list else 0
-                            logger.info(f"Relocated to {decided_quarter} with total reward {total_reward}")
-                            logger.info(f"Reward list: {reward_list}")
-                            break 
+                            decided_quarter = str(decided_quarter).lower()
+                            if pd.Period(str(decided_quarter)) > pd.Period(str(simstart)):
+                                ppo_agent.relocate(decided_quarter)
+                                federal_reserve_ppo_agent.relocate(decided_quarter)
+                                total_reward = reward_list[decided_quarter] if decided_quarter in reward_list else 0
+                                logger.info(f"Relocated to {decided_quarter} with total reward {total_reward}")
+                                logger.info(f"Reward list: {reward_list}")
+                                break 
+                            else:
+                                logger.info(f"Decided quarter {decided_quarter} is before simulation start {simstart}") 
 
                 except Exception as e:
                     if not is_training:
-                        raise e
+                        logger.error(f"Actions: {actions} | Federal Reserve Actions: {federal_reserve_actions}") 
+                        logger.error(f"Previous quarter: {previous_quarter}, Previous previous quarter: {prev_previous_quarter}")
+                        # decided_quarter = previous_quarter if pd.Period(str(previous_quarter)) >= pd.Period(str(simstart)) else simstart
+                        # logger.info(f"Decided quarter: {decided_quarter} | Type of decided quarter: {type(decided_quarter)} | To String: {str(decided_quarter)}")
+                        # # Remove the quarter from the experience broadcast
+                        # ppo_agent.force_relocate(str(decided_quarter).lower())
+                        # federal_reserve_ppo_agent.force_relocate(str(decided_quarter).lower())
+                        
+                        # # Count the arrays from the last quarter to the decided quarter
+                        # experience_broadcast = experience_broadcast[0:experience_broadcast.index(str(decided_quarter).lower())]
                     if is_training:
-                        prev_previous_quarter = pd.Period(previous_quarter) - 1 
-                        logger.info(f"Previous quarter: {previous_quarter}, Previous previous quarter: {prev_previous_quarter}")
-                        ppo_agent.save_state(state, previous_quarter, prev_previous_quarter, sim_data)
-                        federal_reserve_ppo_agent.save_state(state, previous_quarter, prev_previous_quarter, sim_data)
-                        ppo_agent.visited_quarters.append(previous_quarter)
-                        federal_reserve_ppo_agent.visited_quarters.append(previous_quarter)
-                        reloc_prob, target_quarter =  ppo_agent.forced_relocate(prev_previous_quarter, previous_quarter)
-                        reloc_prob_federal_reserve, target_quarter_federal_reserve =  federal_reserve_ppo_agent.forced_relocate(prev_previous_quarter, previous_quarter)
+                        # # Remove error experience from the experience array
+                        # quarters_to_remove = len(get_quarters_between(str(ppo_agent.current_quarter).lower(), str(previous_quarter).lower()))
+                        # new_experiences = []
+                        # new_federal_reserve_experiences = []
+                        # for i in range(0, len(experiences) - quarters_to_remove): 
+                        #     new_experiences.append(experiences[i])
+                        #     new_federal_reserve_experiences.append(federal_reserve_experiences[i])
+                            
+                        # experiences = new_experiences
+                        # federal_reserve_experiences = new_federal_reserve_experiences
+                        ppo_agent.save_state(state, str(previous_quarter).lower(), prev_previous_quarter, sim_data)
+                        federal_reserve_ppo_agent.save_state(state, str(previous_quarter).lower(), prev_previous_quarter, sim_data)
+                        ppo_agent.visited_quarters.append(str(previous_quarter).lower())
+                        federal_reserve_ppo_agent.visited_quarters.append(str(previous_quarter).lower())
+                        reloc_prob, target_quarter =  ppo_agent.forced_relocate(prev_previous_quarter, str(previous_quarter).lower())
+                        reloc_prob_federal_reserve, target_quarter_federal_reserve =  federal_reserve_ppo_agent.forced_relocate(prev_previous_quarter, str(previous_quarter).lower())
                         decided_quarter = target_quarter if reloc_prob > reloc_prob_federal_reserve else target_quarter_federal_reserve
+                        decided_quarter = str(decided_quarter).lower() if pd.Period(str(decided_quarter)) >= pd.Period(str(simstart)) else simstart 
                         logger.info(f"Decided quarter: {decided_quarter}")
-                        if pd.Period(str(decided_quarter)) >= pd.Period(str(simstart)):
-                            ppo_agent.relocate(decided_quarter)
-                            federal_reserve_ppo_agent.relocate(decided_quarter)
-                            total_reward = reward_list[decided_quarter] if decided_quarter in reward_list else 0
-                            logger.info(f"Relocated to {decided_quarter} with total reward {total_reward}")
-                            logger.info(f"Reward list: {reward_list}")
-                            total_reward = reward_list[decided_quarter] if decided_quarter in reward_list else 0 
-                        else:
-                            ppo_agent.relocate(simstart)
-                            federal_reserve_ppo_agent.relocate(simstart)
-                            total_reward = reward_list[simstart] if simstart in reward_list else 0
-                            logger.info(f"Relocated to {simstart} with total reward {total_reward}")
-                            logger.info(f"Reward list: {reward_list}")
-                            total_reward = reward_list[simstart] if simstart in reward_list else 0 
+                        ppo_agent.relocate(decided_quarter)
+                        federal_reserve_ppo_agent.relocate(decided_quarter)
+                        total_reward = reward_list[decided_quarter] if decided_quarter in reward_list else 0  
+
                         # Save the last checkpoint to the best_checkpoint folder
                         if save_checkpoint_when_stochastic_failure:
                             os.makedirs(f'checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation', exist_ok=True) 
@@ -441,10 +459,24 @@ async def run_the_simulation_effective_relocation_function(ppo_agent: ActiveLear
                     federal_reserve_ppo_agent.clean_up_state()
                 except Exception as e:
                     logger.error(f"Error updating PPO in replication {rep + replication_restart}: {e}")
-                break
+                break 
             
             # Break the loop if not training after running the simulation
-            if not is_training:
+            if not is_training and break_the_loop_simulation:
+                logger.info(f"Starting to send metrics update to API")
+                # Sort out the experience broadcast
+                experience_broadcast = sorted(experience_broadcast) 
+                # Send metrics update to API
+                for quarter_str in experience_broadcast:
+                    # Send metrics update to API  
+                    await broadcast_metrics_update(
+                        solution=sim_data,
+                        solution_without_tariff=sim_data_without_tariff,
+                        solution_without_rl=sim_data_without_rl,
+                        solution_without_rl_tariff=sim_data_without_rl_with_tariff,
+                        quarter_str=quarter_str.upper(),
+                        targets=targets
+                    )
                 break
         if is_training: 
             end_time = time.time()                    
@@ -516,9 +548,9 @@ async def main_training_effective_relocation():
     # Keep the standard agent for the tariff case
     simulation_start = "1970q1"
     simulation_end = "2000q1"
-    simulation_replications = 10
-    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
-    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(federal_reserve_policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
+    simulation_replications = 5
+    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=932, action_dim=len(policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=932, action_dim=len(federal_reserve_policy_vars), current_quarter=simulation_start, hidden_dim=4096, seed=69)
     logger.info("Starting simulation training with effective relocation")
     result = await run_the_simulation_effective_relocation_function(
         ppo_agent, 
@@ -549,11 +581,11 @@ async def main_simulation_effective_relocation(
     key_checkpoint_path = "trump_historical_active_learning_effective_relocation_1970-1999_Federal_Reserve-FTPL"
     checkpoint_path = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/ppo_agent_best_replication_effective_relocation.pt"
     checkpoint_path_federal_reserve = f"checkpoints_{key_checkpoint_path}/best_checkpoint_effective_relocation/federal_reserve_ppo_agent_best_replication_effective_relocation.pt"
-    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    ppo_agent = ActiveLearningEffectiveRelocationPPOAgent(state_dim=932, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent = load_checkpoint(checkpoint_path, ppo_agent)
-    ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    ppo_agent_without_tariff = ActiveLearningEffectiveRelocationPPOAgent(state_dim=932, action_dim=len(policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     ppo_agent_without_tariff = load_checkpoint(checkpoint_path, ppo_agent)
-    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=934, action_dim=len(federal_reserve_policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
+    federal_reserve_ppo_agent = FederalReserveActiveLearningEffectiveRelocationPPOAgent(state_dim=932, action_dim=len(federal_reserve_policy_vars), current_quarter=simstart, hidden_dim=4096, seed=69)
     federal_reserve_ppo_agent = load_checkpoint(checkpoint_path_federal_reserve, federal_reserve_ppo_agent)
     simulation_replications = 1
     logger.info("Starting the simulation with effective relocation")

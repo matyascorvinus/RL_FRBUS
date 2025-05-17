@@ -4123,11 +4123,11 @@ PICXFE = 0.98*ZPICXFE + 0.5*XGAP2 + 0.3*[(GFDBTN/XGDPN - GFDBTN(-1)/XGDPN(-1)) -
                      + y_picxfe_2*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe_1*y_picxfe_3)) 
       </python_equation> -->
       
-      <eviews_equation>picxfe - picxfe_aerr = y_picxfe(3)*zpicxfe
+      <eviews_equation>picxfe - picxfe_aerr = y_picxfe(1)*picxfe(-1) + y_picxfe(3)*zpicxfe
                       + (y_picxfe(4))*xgap2
                       + y_picxfe(5)*((gfdbtn/xgdpn - gfdbtn(-1)/xgdpn(-1)) - (gfsrpn/xgdpn))
       </eviews_equation>
-      <python_equation>picxfe - picxfe_aerr = y_picxfe_3*zpicxfe
+      <python_equation>picxfe - picxfe_aerr = y_picxfe_1*picxfe(-1) + y_picxfe_3*zpicxfe
                      + (y_picxfe_4)*xgap2
                      + y_picxfe_5*((gfdbtn/xgdpn - gfdbtn(-1)/xgdpn(-1)) - (gfsrpn/xgdpn)) 
       </python_equation>
