@@ -6,7 +6,6 @@ setup(
     install_requires=[
         "numpy==1.21.6",
         "swig==4.3.1",
-        "scikit-umfpack==0.3.3",
         "pandas",
         "aiohttp==3.8.6",
         "scipy",
@@ -25,6 +24,7 @@ setup(
         "lxml",
         "networkx",
         "torch",
+        "scikit-umfpack==0.3.2",
     ],
     packages=["pyfrbus"],
 )
