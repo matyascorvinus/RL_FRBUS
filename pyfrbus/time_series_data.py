@@ -308,7 +308,7 @@ def log(x: Union[float, "TimeSeriesOp"]):
         x.tokens = wrap_function_call(x.tokens, "log")
         return x
     else:
-        return numpy.log(x)
+        return numpy.log(max(x, 1e-10))
 
 
 def exp(x: Union[float, "TimeSeriesOp"]):

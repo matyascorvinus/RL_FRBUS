@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__) 
 ACTION_BOUNDS = { 
-    'egfe': (-0.5, 0.5),    # Trend level of federal government expenditures. (trillions of dollars)
+    'egfe': (-0.1, 0.1),    # Trend level of federal government expenditures. (trillions of dollars)
     'trptx': (-0.1, 0.1),    # Personal tax revenues rates (percentage)
     'trcit': (-0.1, 0.1),    # Corporate tax revenues rates (percentage)
 }        
