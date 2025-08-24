@@ -36,8 +36,8 @@ On Windows, you can install these dependencies and run PyFRB/US via the Windows 
 for Linux (WSL). See the PyFRB/US User Guide for further details.
 
 ## Python Version Requirements
-Python version for PyFRB/US: Python 3.7.16
-Python version for Streamlit: Python 3.10.12
+- Python version for PyFRB/US: Python 3.7.16
+- Python version for Streamlit: Python 3.10.12
 
 ## Installation guideline 
 ### PyFRB/US
