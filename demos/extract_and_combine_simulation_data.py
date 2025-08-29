@@ -13,13 +13,8 @@ from pyfrbus.frbus import Frbus
 from pyfrbus.sim_lib import sim_plot
 from pyfrbus.load_data import load_data
 
-
-def extract_and_combine_simulation_data():
-    """
-    Extract specified columns from FTPL and non-FTPL CSV files and combine them.
-    """
-        
-
+def ftpl_simulation():
+    
     # FRB/US FTPL
     # Load data
     data = load_data("../data/LONGBASE.TXT")
@@ -29,17 +24,21 @@ def extract_and_combine_simulation_data():
 
     # Specify dates
     start = pandas.Period("2000Q1")
-    end =  pandas.Period("2024Q1")
+    end =  pandas.Period("2024Q4")
 
     data.loc[:, "dftpl"] = 1
+    data.loc[:, "beta_s_dynamic"] = 1
+    data.loc[:, "beta_i_dynamic"] = 0
+    data.loc[:, "epsilon_s"] = 1
+    data.loc[:, "epsilon_i"] = 0
 
-    # Standard configuration, use surplus ratio targeting
-    data.loc[start:end, "dfpdbt"] = 0
-    data.loc[start:end, "dfpsrp"] = 1
+    # # Standard configuration, use surplus ratio targeting
+    # data.loc[start:end, "dfpdbt"] = 0
+    # data.loc[start:end, "dfpsrp"] = 1
 
-    # Use non-inertial Taylor rule
-    data.loc[start:end, "dmptay"] = 1
-    data.loc[start:end, "dmpintay"] = 0
+    # # Use non-inertial Taylor rule
+    # data.loc[start:end, "dmptay"] = 1
+    # data.loc[start:end, "dmpintay"] = 0
 
     # Enable thresholds
     data.loc[start:end, "dmptrsh"] = 1
@@ -58,10 +57,10 @@ def extract_and_combine_simulation_data():
     sim_ftpl = frbus.solve(start, end, with_adds)
 
     ftpl_data = sim_ftpl.loc[start:end, :] 
-    ftpl_data.to_csv('sim_ftpl.csv', index=False)  
-    
+    ftpl_data.to_csv('sim_ftpl.csv', index=True)  
+    return ftpl_data
+def non_ftpl_simulation():
 
-        
     # FRB/US Baseline
     # Load data
     data = load_data("../data/LONGBASE.TXT")
@@ -71,7 +70,7 @@ def extract_and_combine_simulation_data():
 
     # Specify dates
     start = pandas.Period("2000Q1")
-    end =  pandas.Period("2024Q1")
+    end =  pandas.Period("2024Q4")
 
     # Standard configuration, use surplus ratio targeting
     data.loc[start:end, "dfpdbt"] = 0
@@ -98,7 +97,19 @@ def extract_and_combine_simulation_data():
     sim_non_ftpl = frbus.solve(start, end, with_adds)
 
     non_ftpl_data = sim_non_ftpl.loc[start:end, :] 
-    non_ftpl_data.to_csv('sim_non_ftpl.csv', index=False)  
+    non_ftpl_data.to_csv('sim_non_ftpl.csv', index=True) 
+    return non_ftpl_data
+
+def extract_and_combine_simulation_data():
+    """
+    Extract specified columns from FTPL and non-FTPL CSV files and combine them.
+    """
+        
+
+    ftpl_data = ftpl_simulation()
+    non_ftpl_data = non_ftpl_simulation()
+
+         
     # View results
 
     # Define the mapping from FRB/US variable names to expected column names
@@ -129,8 +140,6 @@ def extract_and_combine_simulation_data():
         'egfe': 'federal_expenditures', # Federal expenditures
         'gtn': 'government_transfer_payments',  # Government transfer payments
         'gfsrpn': 'federal_surplus',    # Federal surplus
-        # Keep pcpi as well for the additional column
-        'pcpi': 'pcpi'
     }
     output_file = '/home/dominus/RL_FRBUS/RL_FRBUS_Frontend/combined_sim_data_ftpl_vs_non_ftpl.csv'
     
