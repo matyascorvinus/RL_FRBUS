@@ -10,7 +10,18 @@ import plotly.express as px
 # Choose between Historical Data and Trump Tariff plan.
 data_source = st.sidebar.radio(
     "Select Data Source", 
-    options=["FRB/US FTPL", "Historical Data FTPL Reserve 2000-2024", "Historical Data FTPL Reserve 1985-2024","Historical Data", "Historical Data 2022-2024", "Stephen Miran Tariff plan 50%", "Trump Tariff plan 10%", "Trump Tariff plan 20%", "Trump Tariff plan 50%", "Trump Tariff plan 100%"],
+    options=[
+        "FRB/US FTPL", 
+        "Historical Data FTPL Reserve 2000-2024", 
+        "Historical Data FTPL Reserve 1985-2024",
+        "Historical Data", 
+        "Historical Data 2022-2024", 
+        "Stephen Miran Tariff plan 50%", 
+        "Trump Tariff plan 10%", 
+        "Trump Tariff plan 20%", 
+        "Trump Tariff plan 50%", 
+        "Trump Tariff plan 100%"
+    ],
     index=0
 )
 # Let the user choose which metric to compare.
@@ -32,6 +43,7 @@ metric_options = [
     "Trade Balance (Billion)",
     "Net Foreign Investment Income (Billion)",
 ]
+
 # Set file path based on the data source selection.
 data_file = "combined_simulation_data_1975_2024.csv" 
 if data_source != "Historical Data":

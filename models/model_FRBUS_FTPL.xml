@@ -6447,7 +6447,7 @@ the prior estimate, if the switch DRSTAR is set to 1.
                    + y_rstar(1) * ((rrff-rstar(-1))*drstar)
       </eviews_equation>
       <python_equation>rstar - rstar_aerr = (1-dftpl)*(rstar(-1) + y_rstar_1 * ((rrff-rstar(-1))*drstar))
-                   + dftpl*(rff + y_rstar_2*(-log(1 + rg10/100)) - (-log(1 + rg10(-1)/100)))
+                   + dftpl*(rff + y_rstar_2*((-log(1 + rg10/100)) - (-log(1 + rg10(-1)/100))))
 </python_equation>
       <coeff>
         <cf_name>y_rstar(1)</cf_name>
@@ -6456,12 +6456,14 @@ the prior estimate, if the switch DRSTAR is set to 1.
       <coeff>
       <!-- y_ftpl_omega -->
         <cf_name>y_rstar(2)</cf_name>
-        <cf_value>.05</cf_value>
+        <cf_value>0.9</cf_value>
       </coeff>
+      <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>drstar</rhs_eq_var>
       <rhs_eq_var>rrff</rhs_eq_var>
-      <rhs_eq_var>rg10</rhs_eq_var>
       <rhs_eq_var>rstar</rhs_eq_var>
+      <rhs_eq_var>rff</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
     </standard_equation>
   </variable> 
   <variable>
@@ -6505,15 +6507,9 @@ the prior estimate, if the switch DRSTAR is set to 1.
       <coeff>
         <cf_name>y_rtb(5)</cf_name>
         <cf_value>-0.6812149063988686</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_rstar(1)</cf_name>
-        <cf_value>.05</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_ftpl_omega</cf_name>
-        <cf_value>0.9</cf_value>  <!-- ω (maturity coefficient) -->
-      </coeff>
+      </coeff>  
+      <rhs_eq_var>rtb</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
       <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>drstar</rhs_eq_var>
       <rhs_eq_var>rrff</rhs_eq_var>
@@ -7418,8 +7414,8 @@ explicit error term (XBTR).
     <definition>Output gap for GDP (100*(actual/potential -1)) with FTPL IS curve</definition>
     <standard_equation>
       <eviews_equation>xgap2 - xgap2_aerr = 100 * (xgdo/xgdpt -1) </eviews_equation>
-      <python_equation>xgap2(-1) - xgap2_aerr(-1) = (1-dftpl)*(100 * (xgdo/xgdpt -1)) 
-                       + dftpl*(xgap2 - y_xgap2_1*(rff - zpicxfe))
+      <python_equation>xgap2 - xgap2_aerr = (1-dftpl)*(100 * (xgdo/xgdpt -1)) 
+                       + dftpl*(zpicxfe - y_xgap2_1*(rff - zpicxfe))
       </python_equation>
       <coeff>
       <!-- y_ftpl_sigma -->
@@ -7431,7 +7427,6 @@ explicit error term (XBTR).
       <rhs_eq_var>xgdpt</rhs_eq_var>
       <rhs_eq_var>rff</rhs_eq_var>
       <rhs_eq_var>zpicxfe</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
     </standard_equation>
   </variable>
   <variable>
@@ -11255,7 +11250,7 @@ estimate the PICXFE and PIECI equations.
                  + y_zpicxfe_20 * log(qpl(-1)/pl(-1))
                  + y_zpicxfe_21 * (hlprdt(-1) - 400*huqpct(-1))
                  +  ( y_zpicxfe_22 * (lur(-1) - lurnat(-1)) +  y_zpicxfe_23 * (lur(-2) - lurnat(-2))))
-                 + dftpl*(picxfe - beta_s_dynamic*epsilon_s - beta_i_dynamic*epsilon_i)
+                 + dftpl*(picxfe - epsilon_s - epsilon_i)
       </python_equation>
       <coeff>
         <cf_name>y_zpicxfe(1)</cf_name>
@@ -11348,16 +11343,15 @@ estimate the PICXFE and PIECI equations.
       <coeff>
         <cf_name>y_zpicxfe(23)</cf_name>
         <cf_value>-0.000695300677346</cf_value>
-      </coeff>      <coeff>
+      </coeff>      
+      <!-- <coeff>
         <cf_name>y_ftpl_beta_s</cf_name>
         <cf_value>0.1</cf_value>
       </coeff>
       <coeff>
         <cf_name>y_ftpl_beta_i</cf_name>
         <cf_value>0.05</cf_value>
-      </coeff>
-      <rhs_eq_var>beta_s_dynamic</rhs_eq_var>
-      <rhs_eq_var>beta_i_dynamic</rhs_eq_var>
+      </coeff> -->
       <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>epsilon_s</rhs_eq_var>
       <rhs_eq_var>epsilon_i</rhs_eq_var>
@@ -11383,42 +11377,6 @@ estimate the PICXFE and PIECI equations.
       <python_equation>zpicxfe - zpicxfe_aerr = picxfe(1) </python_equation>
       <rhs_eq_var>picxfe</rhs_eq_var>
     </mce_equation>
-  </variable>
-  <variable>
-    <name>beta_s_dynamic</name>
-    <equation_type>Identity</equation_type>
-    <sector>FTPL Extensions</sector>
-    <definition>Dynamic fiscal learning parameter from FTPL Python code</definition>
-    <standard_equation>
-      <python_equation>beta_s_dynamic - beta_s_dynamic_aerr = (1-dftpl)*0 
-                       + dftpl*y_beta_s_dynamic_1*(ugfsrp - ugfsrp(-1))/abs(ugfsrp - ugfsrp(-1) + 1e-10)
-      </python_equation>
-      <coeff>
-      <!-- y_ftpl_fraction_inflated -->
-        <cf_name>y_beta_s_dynamic(1)</cf_name>
-        <cf_value>0.4</cf_value>  <!-- fraction_inflated parameter from Python -->
-      </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>ugfsrp</rhs_eq_var>
-    </standard_equation>
-  </variable>
-  <variable>
-    <name>beta_i_dynamic</name>
-    <equation_type>Identity</equation_type>
-    <sector>FTPL Extensions</sector>
-    <definition>Dynamic monetary learning parameter from FTPL Python code</definition>
-    <standard_equation>
-      <python_equation>beta_i_dynamic - beta_i_dynamic_aerr = (1-dftpl)*0 
-                       + dftpl*y_beta_i_dynamic_1*(rff - rff(-1))/abs(rff - rff(-1) + 1e-10)
-      </python_equation>
-      <coeff>
-      <!-- y_ftpl_monetary_response -->
-        <cf_name>y_beta_i_dynamic(1)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- monetary shock response parameter -->
-      </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>rff</rhs_eq_var>
-    </standard_equation>
   </variable>
   <variable>
     <name>zpieci</name>

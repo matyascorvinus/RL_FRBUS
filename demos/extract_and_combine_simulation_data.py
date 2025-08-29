@@ -26,11 +26,9 @@ def ftpl_simulation():
     start = pandas.Period("2000Q1")
     end =  pandas.Period("2024Q4")
 
-    data.loc[:, "dftpl"] = 1
-    data.loc[:, "beta_s_dynamic"] = 1
-    data.loc[:, "beta_i_dynamic"] = 0
+    data.loc[:, "dftpl"] = 1 
     data.loc[:, "epsilon_s"] = 1
-    data.loc[:, "epsilon_i"] = 0
+    data.loc[:, "epsilon_i"] = 1
 
     # # Standard configuration, use surplus ratio targeting
     # data.loc[start:end, "dfpdbt"] = 0
@@ -144,17 +142,13 @@ def extract_and_combine_simulation_data():
     output_file = '/home/dominus/RL_FRBUS/RL_FRBUS_Frontend/combined_sim_data_ftpl_vs_non_ftpl.csv'
     
     print(f"FTPL data shape: {ftpl_data.shape}")
-    print(f"Non-FTPL data shape: {non_ftpl_data.shape}")
-    print(f"FTPL columns: {list(ftpl_data.columns)}")
-    print(f"Non-FTPL columns: {list(non_ftpl_data.columns)}")
+    print(f"Non-FTPL data shape: {non_ftpl_data.shape}") 
     
     # Extract only the columns we need from the mapping
     def extract_columns(df, simulation_type_name):
         """Extract and rename columns according to the mapping"""
-        extracted_data = {}
-        print(f"Columns in df: {df.columns}")
-        # Create quarter column if it doesn't exist (use index)
-        print(f"First element of df: {df.loc[pd.Period('2000Q1')]}")
+        extracted_data = {} 
+        # Create quarter column if it doesn't exist (use index) 
         if 'quarter' not in df.columns and len(df) > 0:
             # Assume data starts from a specific quarter, we'll use a placeholder
             # You might need to adjust this based on the actual data structure
