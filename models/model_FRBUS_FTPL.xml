@@ -695,7 +695,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
     </standard_equation>
     <kfcalc>1</kfcalc>
     <stochastic_type>IS</stochastic_type>
-  </variable> 
+  </variable>
   <variable>
     <name>egfe</name>
     <equation_type>Behavioral</equation_type>
@@ -2288,30 +2288,19 @@ similar equation estimated on U.S. data.
       <rhs_eq_var>fyniln</rhs_eq_var>
     </standard_equation>
   </variable>
-    <variable>
+  <variable>
     <name>gfdbtnp</name>
     <equation_type>Identity</equation_type>
     <sector>Government</sector>
-    <definition>Federal government debt stock held by the public with FTPL dynamics</definition>
+    <definition>Federal government debt stock held by the public, current $</definition>
     <standard_equation>
       <eviews_equation>gfdbtnp - gfdbtnp_aerr = ugfdbtp*(gfdbtnp(-1) - .25*gfsrpn)
       </eviews_equation>
-      <python_equation>gfdbtnp - gfdbtnp_aerr = (1-dftpl)*(ugfdbtp*(gfdbtnp(-1) - .25*gfsrpn))
-                       + dftpl*(y_gfdbtnp_1*gfdbtnp(-1) + rstar*xgdpn - picxfe*xgdpn - ugfsrp*xgdpn)
+      <python_equation>gfdbtnp - gfdbtnp_aerr = ugfdbtp*(gfdbtnp(-1) - .25*gfsrpn)
       </python_equation>
-      <coeff>
-      <!-- y_ftpl_rho -->
-        <cf_name>y_gfdbtnp(1)</cf_name>
-        <cf_value>0.99</cf_value>  <!-- ρ (discount factor for debt) -->
-      </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>gfdbtnp</rhs_eq_var>
       <rhs_eq_var>ugfdbtp</rhs_eq_var>
       <rhs_eq_var>gfsrpn</rhs_eq_var>
-      <rhs_eq_var>rstar</rhs_eq_var>
-      <rhs_eq_var>xgdpn</rhs_eq_var>
-      <rhs_eq_var>picxfe</rhs_eq_var>
-      <rhs_eq_var>ugfsrp</rhs_eq_var>
     </standard_equation>
   </variable>
   <variable>
@@ -2330,50 +2319,45 @@ similar equation estimated on U.S. data.
   </variable>
   <variable>
     <name>ugfdbtp</name>
-    <equation_type>Exogenous</equation_type>
-    <definition>Federal government debt ratio</definition>
-    <exogenous_projection>2</exogenous_projection>
-  </variable>
-  <variable>
-    <name>ugfsrp</name>
-    <equation_type>Behavioral</equation_type>
+    <equation_type>Behavioral</equation_type>    <!-- CHANGED FROM EXOGENOUS -->
     <sector>Government</sector>
-    <definition>Federal Government budget surplus, residual</definition>
-    <description/>
+    <definition>Federal government debt ratio - FTPL enhanced</definition>
+    <description>Debt-to-GDP ratio evolution following FTPL debt dynamics</description>
     <standard_equation>
-      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
-	  </eviews_equation>
-    <python_equation>ugfsrp - ugfsrp_aerr = (1-dftpl)*(y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1))
-                     + dftpl*(y_ugfsrp_3*zpicxfe + y_ugfsrp_4*xgap2 + y_ugfsrp_5*(gfdbtnp(-1)/xgdpn(-1)))
-	  </python_equation>
-            <coeff>
-        <cf_name>y_ugfsrp(1)</cf_name>
-        <cf_value>0.065666</cf_value>
+      <eviews_equation>ugfdbtp - ugfdbtp_aerr = y_ugfdbtp(1)*ugfdbtp(-1) 
+                                              + y_ugfdbtp(2)*rgfint(-1) 
+                                              - y_ugfdbtp(3)*zpicxfe 
+                                              + y_ugfdbtp(4)*((xgdp - xgdp(-1))/xgdp(-1)*100) 
+                                              - y_ugfdbtp(5)*ugfsrp</eviews_equation>
+      <python_equation>ugfdbtp - ugfdbtp_aerr = y_ugfdbtp_1*ugfdbtp(-1) 
+                                               + y_ugfdbtp_2*rgfint(-1) 
+                                               - y_ugfdbtp_3*zpicxfe 
+                                               + y_ugfdbtp_4*((xgdp - xgdp(-1))/xgdp(-1)*100) 
+                                               - y_ugfdbtp_5*ugfsrp</python_equation>
+      <coeff>
+        <cf_name>y_ugfdbtp(1)</cf_name>
+        <cf_value>0.95</cf_value>    <!-- ρ parameter: ≈ 0.95-0.99 -->
       </coeff>
       <coeff>
-        <cf_name>y_ugfsrp(2)</cf_name>
-        <cf_value>0.947688</cf_value>
+        <cf_name>y_ugfdbtp(2)</cf_name>
+        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Interest increases debt -->
       </coeff>
       <coeff>
-      <!-- y_ftpl_theta_spi -->
-        <cf_name>y_ugfsrp(3)</cf_name>
-        <cf_value>0.25</cf_value>  
+        <cf_name>y_ugfdbtp(3)</cf_name>
+        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Inflation reduces real debt -->
       </coeff>
       <coeff>
-      <!-- y_ftpl_theta_sx -->
-        <cf_name>y_ugfsrp(4)</cf_name>
-        <cf_value>1.0</cf_value>
+        <cf_name>y_ugfdbtp(4)</cf_name>
+        <cf_value>-1.05</cf_value>   <!-- -1/ρ ≈ -1.05: Growth reduces debt/GDP ratio -->
       </coeff>
       <coeff>
-      <!-- y_ftpl_alpha -->
-        <cf_name>y_ugfsrp(5)</cf_name>
-        <cf_value>0.2</cf_value>
+        <cf_name>y_ugfdbtp(5)</cf_name>
+        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Surplus pays down debt -->
       </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
+      <rhs_eq_var>ugfdbtp</rhs_eq_var>
+      <rhs_eq_var>rgfint</rhs_eq_var>
       <rhs_eq_var>zpicxfe</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
-      <rhs_eq_var>gfdbtnp</rhs_eq_var>
-      <rhs_eq_var>xgdpn</rhs_eq_var>
+      <rhs_eq_var>xgdp</rhs_eq_var>
       <rhs_eq_var>ugfsrp</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
@@ -2440,6 +2424,75 @@ similar equation estimated on U.S. data.
       <rhs_eq_var>xgdpn</rhs_eq_var>
     </standard_equation>
   </variable>
+  <!-- <variable>
+    <name>ugfsrp</name>
+    <equation_type>Behavioral</equation_type>
+    <sector>Government</sector>
+    <definition>Federal Government budget surplus, residual</definition>
+    <description/>
+    <standard_equation>
+      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
+	 </eviews_equation>
+      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
+	 </python_equation>
+      <coeff>
+        <cf_name>y_ugfsrp(1)</cf_name>
+        <cf_value>0.065666</cf_value>
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(2)</cf_name>
+        <cf_value>0.947688</cf_value>
+      </coeff>
+      <rhs_eq_var>ugfsrp</rhs_eq_var>
+    </standard_equation>
+    <stochastic_type>NO</stochastic_type>
+  </variable> -->
+  <variable>
+    <name>ugfsrp</name>
+    <equation_type>Behavioral</equation_type>
+    <sector>Government</sector>
+    <definition>Federal Government budget surplus, residual - FTPL enhanced</definition>
+    <description>Enhanced for active fiscal policy regime with economic reactions but no automatic debt stabilization</description>
+    <standard_equation>
+      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
+                                             + y_ugfsrp(3)*xgap2 + y_ugfsrp(4)*xgap2(-1) 
+                                             + y_ugfsrp(6)*picxfe</eviews_equation>
+      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
+                                              + y_ugfsrp_3*xgap2 + y_ugfsrp_4*xgap2(-1)
+                                              + y_ugfsrp_6*picxfe</python_equation>
+      <coeff>
+        <cf_name>y_ugfsrp(1)</cf_name>
+        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(2)</cf_name>
+        <cf_value>0.85</cf_value>  <!-- Persistence parameter -->
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(3)</cf_name>
+        <cf_value>1.2</cf_value>   <!-- Output gap reaction (procyclical) -->
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(4)</cf_name>
+        <cf_value>0.8</cf_value>   <!-- Lagged output gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(5)</cf_name>
+        <cf_value>0.6</cf_value>   <!-- Unemployment gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_ugfsrp(6)</cf_name>
+        <cf_value>0.3</cf_value>   <!-- Inflation reaction -->
+      </coeff>
+      <rhs_eq_var>ugfsrp</rhs_eq_var>
+      <rhs_eq_var>xgap2</rhs_eq_var>
+      <rhs_eq_var>lur</rhs_eq_var>
+      <rhs_eq_var>lurnat</rhs_eq_var>
+      <rhs_eq_var>picxfe</rhs_eq_var>
+    </standard_equation>
+    <stochastic_type>NO</stochastic_type>
+  </variable>
+  
   <variable>
     <name>gfsrpn</name>
     <equation_type>Identity</equation_type>
@@ -4157,14 +4210,13 @@ equations is available &lt;a href="price_wage_sector_083013.pdf"&gt;here&lt;/a&g
                      + y_picxfe(3)*zpicxfe
                      + (1-y_picxfe(3))*(1-y_picxfe(1))*ptr(-1)
                      + y_picxfe(2)*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe(1)*y_picxfe(3))
-      </eviews_equation>
-      <python_equation>picxfe - picxfe_aerr = (1-dftpl)*((y_picxfe_1*picxfe(-1)
+</eviews_equation>
+      <python_equation>picxfe - picxfe_aerr = (y_picxfe_1*picxfe(-1)
                      + y_picxfe_3*zpicxfe
                      + (1-y_picxfe_3)*(1-y_picxfe_1)*ptr(-1)
-                     + y_picxfe_2*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe_1*y_picxfe_3))
-                     + dftpl*(y_picxfe_4*zpicxfe + y_picxfe_5*xgap2)
-      </python_equation>
-            <coeff>
+                     + y_picxfe_2*400*log(qpcnia(-1)/pcnia(-1))) / (1+y_picxfe_1*y_picxfe_3)
+</python_equation>
+      <coeff>
         <cf_name>y_picxfe(1)</cf_name>
         <cf_value>0.671147437396</cf_value>
       </coeff>
@@ -4174,24 +4226,13 @@ equations is available &lt;a href="price_wage_sector_083013.pdf"&gt;here&lt;/a&g
       </coeff>
       <coeff>
         <cf_name>y_picxfe(3)</cf_name>
-        <cf_value>0.2</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_picxfe(4)</cf_name>
-        <cf_value>0.8</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_picxfe(5)</cf_name>
-        <cf_value>0.5</cf_value>
+        <cf_value>0.98</cf_value>
       </coeff>
       <rhs_eq_var>pcnia</rhs_eq_var>
       <rhs_eq_var>picxfe</rhs_eq_var>
       <rhs_eq_var>ptr</rhs_eq_var>
       <rhs_eq_var>qpcnia</rhs_eq_var>
       <rhs_eq_var>zpicxfe</rhs_eq_var>
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>gfdbtnp</rhs_eq_var>
-      <rhs_eq_var>xgdpn</rhs_eq_var>
       <estimation_statistics>
         <estimation_date>2017</estimation_date>
         <sample_end>-</sample_end>
@@ -4200,12 +4241,6 @@ equations is available &lt;a href="price_wage_sector_083013.pdf"&gt;here&lt;/a&g
     </standard_equation>
     <kfcalc>1</kfcalc>
     <stochastic_type>PR</stochastic_type>
-  </variable>
-  <variable>
-    <name>dftpl</name>
-    <equation_type>Exogenous</equation_type>
-    <definition>FTPL switch: 1 for fiscal theory effects on inflation, 0 for standard</definition>
-    <exogenous_projection>2</exogenous_projection>
   </variable>
   <variable>
     <name>pieci</name>
@@ -5571,13 +5606,10 @@ set according to the policy rule chosen by RFFRULE.
     <standard_equation>
       <eviews_equation>rff - rff_aerr = (1-dmptrsh) * (@recode((rffrule)&gt;( rffmin),rffrule, rffmin))
       + dmptrsh * (@recode(((dmptr(-1)*rffrule + (1-dmptr(-1))*rffmin))&gt;( rffmin),(dmptr(-1)*rffrule + (1-dmptr(-1))*rffmin), rffmin))
-      </eviews_equation>
-      <python_equation>rff - rff_aerr = (1-dmptrsh) * (max((rffrule + dftpl*0.5*(gfdbtnp(-1)/xgdpn(-1) - 0.6)*100),( rffmin)))
+</eviews_equation>
+      <python_equation>rff - rff_aerr = (1-dmptrsh) * (max((rffrule),( rffmin)))
       + dmptrsh * (max(((dmptr(-1)*rffrule + (1-dmptr(-1))*rffmin)),( rffmin)))
-      </python_equation>      
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>gfdbtnp</rhs_eq_var>
-      <rhs_eq_var>xgdpn</rhs_eq_var>
+</python_equation>
       <rhs_eq_var>dmptr</rhs_eq_var>
       <rhs_eq_var>dmptrsh</rhs_eq_var>
       <rhs_eq_var>rffmin</rhs_eq_var>
@@ -5755,13 +5787,12 @@ output from potential (XGAP2).
                      +  ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4
                      + y_rfftay(1) * ( ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4 -pitarg)
                      + y_rfftay(2) * xgap2
-      </eviews_equation>
+</eviews_equation>
       <python_equation>rfftay - rfftay_aerr = rstar
                      +  ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4
                      + y_rfftay_1 * ( ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4 -pitarg)
                      + y_rfftay_2 * xgap2
-                     + dftpl*(y_rfftay_3 * picxfe + y_rfftay_4 * xgap2)
-      </python_equation>
+</python_equation>
       <coeff>
         <cf_name>y_rfftay(1)</cf_name>
         <cf_value>0.5</cf_value>
@@ -5770,15 +5801,6 @@ output from potential (XGAP2).
         <cf_name>y_rfftay(2)</cf_name>
         <cf_value>1.0</cf_value>
       </coeff>
-      <coeff>
-        <cf_name>y_rfftay(3)</cf_name>
-        <cf_value>0.8</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_rfftay(4)</cf_name>
-        <cf_value>0.5</cf_value>
-      </coeff>      
-      <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>picxfe</rhs_eq_var>
       <rhs_eq_var>pitarg</rhs_eq_var>
       <rhs_eq_var>rstar</rhs_eq_var>
@@ -6445,27 +6467,19 @@ the prior estimate, if the switch DRSTAR is set to 1.
     <standard_equation>
       <eviews_equation>rstar - rstar_aerr = rstar(-1)
                    + y_rstar(1) * ((rrff-rstar(-1))*drstar)
-      </eviews_equation>
-      <python_equation>rstar - rstar_aerr = (1-dftpl)*(rstar(-1) + y_rstar_1 * ((rrff-rstar(-1))*drstar))
-                   + dftpl*(rff + y_rstar_2*((-log(1 + rg10/100)) - (-log(1 + rg10(-1)/100))))
+</eviews_equation>
+      <python_equation>rstar - rstar_aerr = rstar(-1)
+                   + y_rstar_1 * ((rrff-rstar(-1))*drstar)
 </python_equation>
       <coeff>
         <cf_name>y_rstar(1)</cf_name>
         <cf_value>.05</cf_value>
       </coeff>
-      <coeff>
-      <!-- y_ftpl_omega -->
-        <cf_name>y_rstar(2)</cf_name>
-        <cf_value>0.9</cf_value>
-      </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
       <rhs_eq_var>drstar</rhs_eq_var>
       <rhs_eq_var>rrff</rhs_eq_var>
       <rhs_eq_var>rstar</rhs_eq_var>
-      <rhs_eq_var>rff</rhs_eq_var>
-      <rhs_eq_var>rg10</rhs_eq_var>
     </standard_equation>
-  </variable> 
+  </variable>
   <variable>
     <name>rtb</name>
     <equation_type>Identity</equation_type>
@@ -6507,14 +6521,9 @@ the prior estimate, if the switch DRSTAR is set to 1.
       <coeff>
         <cf_name>y_rtb(5)</cf_name>
         <cf_value>-0.6812149063988686</cf_value>
-      </coeff>  
-      <rhs_eq_var>rtb</rhs_eq_var>
-      <rhs_eq_var>rg10</rhs_eq_var>
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>drstar</rhs_eq_var>
-      <rhs_eq_var>rrff</rhs_eq_var>
-      <rhs_eq_var>rstar</rhs_eq_var>
+      </coeff>
       <rhs_eq_var>rff</rhs_eq_var>
+      <rhs_eq_var>rtb</rhs_eq_var>
       <estimation_statistics>
         <F_statistic>8466.769390385325</F_statistic>
         <adjusted_r_squared>0.9917604865346919</adjusted_r_squared>
@@ -6821,7 +6830,7 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
     <name>trptx</name>
     <equation_type>Exogenous</equation_type>
     <definition>Average tax rate for personal income tax, trend, policy setting</definition>
-    <exogenous_projection>2</exogenous_projection> 
+    <exogenous_projection>2</exogenous_projection>
   </variable>
   <variable>
     <name>trspp</name>
@@ -7407,26 +7416,16 @@ explicit error term (XBTR).
       <rhs_eq_var>xbt</rhs_eq_var>
     </standard_equation>
   </variable>
-    <variable>
+  <variable>
     <name>xgap2</name>
     <equation_type>Identity</equation_type>
     <sector>Aggregate Output Identities</sector>
-    <definition>Output gap for GDP (100*(actual/potential -1)) with FTPL IS curve</definition>
+    <definition>Output gap for GDP (100*(actual/potential -1)</definition>
     <standard_equation>
       <eviews_equation>xgap2 - xgap2_aerr = 100 * (xgdo/xgdpt -1) </eviews_equation>
-      <python_equation>xgap2 - xgap2_aerr = (1-dftpl)*(100 * (xgdo/xgdpt -1)) 
-                       + dftpl*(zpicxfe - y_xgap2_1*(rff - zpicxfe))
-      </python_equation>
-      <coeff>
-      <!-- y_ftpl_sigma -->
-        <cf_name>y_xgap2(1)</cf_name>
-        <cf_value>0.5</cf_value>  <!-- σ (intertemporal elasticity) -->
-      </coeff>
-      <rhs_eq_var>dftpl</rhs_eq_var>
+      <python_equation>xgap2 - xgap2_aerr = 100 * (xgdo/xgdpt -1) </python_equation>
       <rhs_eq_var>xgdo</rhs_eq_var>
       <rhs_eq_var>xgdpt</rhs_eq_var>
-      <rhs_eq_var>rff</rhs_eq_var>
-      <rhs_eq_var>zpicxfe</rhs_eq_var>
     </standard_equation>
   </variable>
   <variable>
@@ -11205,19 +11204,6 @@ measured eight quarters in the future.
       <rhs_eq_var>pic4</rhs_eq_var>
     </mce_equation>
   </variable>
-  
-  <variable>
-    <name>epsilon_s</name>
-    <equation_type>Exogenous</equation_type>
-    <definition>Fiscal policy shock for FTPL learning</definition>
-    <exogenous_projection>2</exogenous_projection>
-  </variable>
-  <variable>
-    <name>epsilon_i</name>
-    <equation_type>Exogenous</equation_type>
-    <definition>Monetary policy shock for FTPL learning</definition>
-    <exogenous_projection>2</exogenous_projection>
-  </variable>
   <variable>
     <name>zpicxfe</name>
     <equation_type>Identity</equation_type>
@@ -11240,7 +11226,7 @@ estimate the PICXFE and PIECI equations.
                  + y_zpicxfe(21) * (hlprdt(-1) - 400*huqpct(-1))
                  +  ( y_zpicxfe(22) * (lur(-1) - lurnat(-1)) +  y_zpicxfe(23) * (lur(-2) - lurnat(-2)))
 </eviews_equation>
-      <python_equation>zpicxfe-zpicxfe_aerr = (1-dftpl)*( ( y_zpicxfe_1 *  picxfe(-1) +  y_zpicxfe_2 *  picxfe(-2) +  y_zpicxfe_3 *  picxfe(-3) +  y_zpicxfe_4 *  picxfe(-4))
+      <python_equation>zpicxfe-zpicxfe_aerr =  ( y_zpicxfe_1 *  picxfe(-1) +  y_zpicxfe_2 *  picxfe(-2) +  y_zpicxfe_3 *  picxfe(-3) +  y_zpicxfe_4 *  picxfe(-4))
                  +  ( y_zpicxfe_5 *  pieci(-1) +  y_zpicxfe_6 *  pieci(-2) +  y_zpicxfe_7 *  pieci(-3) +  y_zpicxfe_8 *  pieci(-4))
                  +  ( y_zpicxfe_9 *  rff(-1) +  y_zpicxfe_10 *  rff(-2) +  y_zpicxfe_11 *  rff(-3) +  y_zpicxfe_12 *  rff(-4))
                  +  ( y_zpicxfe_13 *  xgap2(-1) +  y_zpicxfe_14 *  xgap2(-2) +  y_zpicxfe_15 *  xgap2(-3) +  y_zpicxfe_16 *  xgap2(-4))
@@ -11249,9 +11235,8 @@ estimate the PICXFE and PIECI equations.
                  + y_zpicxfe_19 * log(qpcnia(-1)/pcnia(-1))
                  + y_zpicxfe_20 * log(qpl(-1)/pl(-1))
                  + y_zpicxfe_21 * (hlprdt(-1) - 400*huqpct(-1))
-                 +  ( y_zpicxfe_22 * (lur(-1) - lurnat(-1)) +  y_zpicxfe_23 * (lur(-2) - lurnat(-2))))
-                 + dftpl*(picxfe - epsilon_s - epsilon_i)
-      </python_equation>
+                 +  ( y_zpicxfe_22 * (lur(-1) - lurnat(-1)) +  y_zpicxfe_23 * (lur(-2) - lurnat(-2)))
+</python_equation>
       <coeff>
         <cf_name>y_zpicxfe(1)</cf_name>
         <cf_value>0.380818884672</cf_value>
@@ -11343,18 +11328,7 @@ estimate the PICXFE and PIECI equations.
       <coeff>
         <cf_name>y_zpicxfe(23)</cf_name>
         <cf_value>-0.000695300677346</cf_value>
-      </coeff>      
-      <!-- <coeff>
-        <cf_name>y_ftpl_beta_s</cf_name>
-        <cf_value>0.1</cf_value>
       </coeff>
-      <coeff>
-        <cf_name>y_ftpl_beta_i</cf_name>
-        <cf_value>0.05</cf_value>
-      </coeff> -->
-      <rhs_eq_var>dftpl</rhs_eq_var>
-      <rhs_eq_var>epsilon_s</rhs_eq_var>
-      <rhs_eq_var>epsilon_i</rhs_eq_var>
       <rhs_eq_var>hlprdt</rhs_eq_var>
       <rhs_eq_var>huqpct</rhs_eq_var>
       <rhs_eq_var>lur</rhs_eq_var>
