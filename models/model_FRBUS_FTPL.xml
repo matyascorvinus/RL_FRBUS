@@ -2319,45 +2319,29 @@ similar equation estimated on U.S. data.
   </variable>
   <variable>
     <name>ugfdbtp</name>
-    <equation_type>Behavioral</equation_type>    <!-- CHANGED FROM EXOGENOUS -->
+    <equation_type>Exogenous</equation_type>
+    <definition>Federal government debt ratio</definition>
+    <exogenous_projection>2</exogenous_projection>
+  </variable>
+  <variable>
+    <name>ugfsrp</name>
+    <equation_type>Behavioral</equation_type>
     <sector>Government</sector>
-    <definition>Federal government debt ratio - FTPL enhanced</definition>
-    <description>Debt-to-GDP ratio evolution following FTPL debt dynamics</description>
+    <definition>Federal Government budget surplus, residual</definition>
+    <description/>
     <standard_equation>
-      <eviews_equation>ugfdbtp - ugfdbtp_aerr = y_ugfdbtp(1)*ugfdbtp(-1) 
-                                              + y_ugfdbtp(2)*rgfint(-1) 
-                                              - y_ugfdbtp(3)*zpicxfe 
-                                              + y_ugfdbtp(4)*((xgdp - xgdp(-1))/xgdp(-1)*100) 
-                                              - y_ugfdbtp(5)*ugfsrp</eviews_equation>
-      <python_equation>ugfdbtp - ugfdbtp_aerr = y_ugfdbtp_1*ugfdbtp(-1) 
-                                               + y_ugfdbtp_2*rgfint(-1) 
-                                               - y_ugfdbtp_3*zpicxfe 
-                                               + y_ugfdbtp_4*((xgdp - xgdp(-1))/xgdp(-1)*100) 
-                                               - y_ugfdbtp_5*ugfsrp</python_equation>
+      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
+	 </eviews_equation>
+      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
+	 </python_equation>
       <coeff>
-        <cf_name>y_ugfdbtp(1)</cf_name>
-        <cf_value>0.95</cf_value>    <!-- ρ parameter: ≈ 0.95-0.99 -->
+        <cf_name>y_ugfsrp(1)</cf_name>
+        <cf_value>0.065666</cf_value>
       </coeff>
       <coeff>
-        <cf_name>y_ugfdbtp(2)</cf_name>
-        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Interest increases debt -->
+        <cf_name>y_ugfsrp(2)</cf_name>
+        <cf_value>0.947688</cf_value>
       </coeff>
-      <coeff>
-        <cf_name>y_ugfdbtp(3)</cf_name>
-        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Inflation reduces real debt -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfdbtp(4)</cf_name>
-        <cf_value>-1.05</cf_value>   <!-- -1/ρ ≈ -1.05: Growth reduces debt/GDP ratio -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfdbtp(5)</cf_name>
-        <cf_value>1.05</cf_value>    <!-- 1/ρ ≈ 1.05: Surplus pays down debt -->
-      </coeff>
-      <rhs_eq_var>ugfdbtp</rhs_eq_var>
-      <rhs_eq_var>rgfint</rhs_eq_var>
-      <rhs_eq_var>zpicxfe</rhs_eq_var>
-      <rhs_eq_var>xgdp</rhs_eq_var>
       <rhs_eq_var>ugfsrp</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
@@ -2424,75 +2408,6 @@ similar equation estimated on U.S. data.
       <rhs_eq_var>xgdpn</rhs_eq_var>
     </standard_equation>
   </variable>
-  <!-- <variable>
-    <name>ugfsrp</name>
-    <equation_type>Behavioral</equation_type>
-    <sector>Government</sector>
-    <definition>Federal Government budget surplus, residual</definition>
-    <description/>
-    <standard_equation>
-      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
-	 </eviews_equation>
-      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
-	 </python_equation>
-      <coeff>
-        <cf_name>y_ugfsrp(1)</cf_name>
-        <cf_value>0.065666</cf_value>
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(2)</cf_name>
-        <cf_value>0.947688</cf_value>
-      </coeff>
-      <rhs_eq_var>ugfsrp</rhs_eq_var>
-    </standard_equation>
-    <stochastic_type>NO</stochastic_type>
-  </variable> -->
-  <variable>
-    <name>ugfsrp</name>
-    <equation_type>Behavioral</equation_type>
-    <sector>Government</sector>
-    <definition>Federal Government budget surplus, residual - FTPL enhanced</definition>
-    <description>Enhanced for active fiscal policy regime with economic reactions but no automatic debt stabilization</description>
-    <standard_equation>
-      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
-                                             + y_ugfsrp(3)*xgap2 + y_ugfsrp(4)*xgap2(-1) 
-                                             + y_ugfsrp(6)*picxfe</eviews_equation>
-      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
-                                              + y_ugfsrp_3*xgap2 + y_ugfsrp_4*xgap2(-1)
-                                              + y_ugfsrp_6*picxfe</python_equation>
-      <coeff>
-        <cf_name>y_ugfsrp(1)</cf_name>
-        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(2)</cf_name>
-        <cf_value>0.85</cf_value>  <!-- Persistence parameter -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(3)</cf_name>
-        <cf_value>1.2</cf_value>   <!-- Output gap reaction (procyclical) -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(4)</cf_name>
-        <cf_value>0.8</cf_value>   <!-- Lagged output gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(5)</cf_name>
-        <cf_value>0.6</cf_value>   <!-- Unemployment gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(6)</cf_name>
-        <cf_value>0.3</cf_value>   <!-- Inflation reaction -->
-      </coeff>
-      <rhs_eq_var>ugfsrp</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
-      <rhs_eq_var>lur</rhs_eq_var>
-      <rhs_eq_var>lurnat</rhs_eq_var>
-      <rhs_eq_var>picxfe</rhs_eq_var>
-    </standard_equation>
-    <stochastic_type>NO</stochastic_type>
-  </variable>
-  
   <variable>
     <name>gfsrpn</name>
     <equation_type>Identity</equation_type>
@@ -6704,9 +6619,47 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
   </variable>
   <variable>
     <name>trcit</name>
-    <equation_type>Exogenous</equation_type>
+    <equation_type>Behavioral</equation_type>
+    <sector>Government</sector>
     <definition>Government corporate income tax rate, trend</definition>
-    <exogenous_projection>2</exogenous_projection>
+    <standard_equation>
+      <eviews_equation>trcit - trcit_aerr = y_trcit(1)*(1-y_trcit(2)) + y_trcit(2)*trcit(-1)
+                                             + y_trcit(3)*xgap2 + y_trcit(4)*xgap2(-1) 
+                                             + y_trcit(6)*picxfe</eviews_equation>
+      <python_equation>trcit - trcit_aerr = y_trcit_1*(1-y_trcit_2) + y_trcit_2*trcit(-1)
+                                              + y_trcit_3*xgap2 + y_trcit_4*xgap2(-1)
+                                              + y_trcit_6*picxfe</python_equation>
+      <coeff>
+        <cf_name>y_trcit(1)</cf_name>
+        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trcit(2)</cf_name>
+        <cf_value>0.1</cf_value>  <!-- Persistence parameter -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trcit(3)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Output gap reaction (procyclical) -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trcit(4)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Lagged output gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trcit(5)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Unemployment gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trcit(6)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Inflation reaction -->
+      </coeff>
+      <rhs_eq_var>trcit</rhs_eq_var>
+      <rhs_eq_var>xgap2</rhs_eq_var>
+      <rhs_eq_var>lur</rhs_eq_var>
+      <rhs_eq_var>lurnat</rhs_eq_var>
+      <rhs_eq_var>picxfe</rhs_eq_var>
+    </standard_equation>
+    <stochastic_type>NO</stochastic_type>
   </variable>
   <variable>
     <name>trfcim</name>
@@ -6828,9 +6781,47 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
   </variable>
   <variable>
     <name>trptx</name>
-    <equation_type>Exogenous</equation_type>
+    <equation_type>Behavioral</equation_type>
+    <sector>Government</sector>
     <definition>Average tax rate for personal income tax, trend, policy setting</definition>
-    <exogenous_projection>2</exogenous_projection>
+    <standard_equation>
+      <eviews_equation>trptx - trptx_aerr = y_trptx(1)*(1-y_trptx(2)) + y_trptx(2)*trptx(-1)
+                                             + y_trptx(3)*xgap2 + y_trptx(4)*xgap2(-1) 
+                                             + y_trptx(6)*picxfe</eviews_equation>
+      <python_equation>trptx - trptx_aerr = y_trptx_1*(1-y_trptx_2) + y_trptx_2*trptx(-1)
+                                              + y_trptx_3*xgap2 + y_trptx_4*xgap2(-1)
+                                              + y_trptx_6*picxfe</python_equation>
+      <coeff>
+        <cf_name>y_trptx(1)</cf_name>
+        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trptx(2)</cf_name>
+        <cf_value>0.1</cf_value>  <!-- Persistence parameter -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trptx(3)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Output gap reaction (procyclical) -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trptx(4)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Lagged output gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trptx(5)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Unemployment gap reaction -->
+      </coeff>
+      <coeff>
+        <cf_name>y_trptx(6)</cf_name>
+        <cf_value>0.1</cf_value>   <!-- Inflation reaction -->
+      </coeff>
+      <rhs_eq_var>trptx</rhs_eq_var>
+      <rhs_eq_var>xgap2</rhs_eq_var>
+      <rhs_eq_var>lur</rhs_eq_var>
+      <rhs_eq_var>lurnat</rhs_eq_var>
+      <rhs_eq_var>picxfe</rhs_eq_var>
+    </standard_equation>
+    <stochastic_type>NO</stochastic_type>
   </variable>
   <variable>
     <name>trspp</name>

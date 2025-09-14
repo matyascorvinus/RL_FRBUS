@@ -24,8 +24,9 @@ def ftpl_simulation():
 
     # Specify dates 
     start = "2000Q1"
-    init_start = "1999Q4"
+    init_start = "2000Q1"
     end =  "2024Q4"  
+    end_1 =  "2025Q1"  
     start_period = pandas.Period(start)
     end_period = pandas.Period(end) 
 
@@ -34,6 +35,9 @@ def ftpl_simulation():
     data.loc[start:end, "dfpdbt"] = 0
     data.loc[start:end, "dfpsrp"] = 0
 
+    # Enable customize fiscal policy
+    data.loc[start:end, "dfpex"] = 1
+
     # Disable non-inertial Taylor rule
     data.loc[start:end, "dmptay"] = 0
     data.loc[start:end, "dmpintay"] = 0
@@ -41,7 +45,7 @@ def ftpl_simulation():
 
     # For pure FTPL, consider using interest rate peg instead
     data.loc[start:end, "dmptay"] = 0      # Disable Taylor rule
-    data.loc[start:end, "dmpex"] = 1       # Use exogenous funds rate  
+    # data.loc[start:end, "dmpex"] = 1       # Use exogenous funds rate  
     # data.loc[start:end, "rfffix"] = 5.0    # Fixed interest rate
     
     # Enable thresholds
@@ -51,7 +55,8 @@ def ftpl_simulation():
     data.loc[start:end, "pitrsh"] = 3.0
     sim_ftpl = data.copy()
     sim_ftpl = frbus.init_trac(init_start, end_period, sim_ftpl)
-
+    sim_ftpl.loc[init_start, "trptx"] = 0.137738886015378
+    sim_ftpl.loc[init_start, "trcit"] = 0.344613522605853
     frbus_to_expected_mapping = { 
         # Core economic indicators
         'ugfdbtp': 'debt_to_gdp',
@@ -80,15 +85,17 @@ def ftpl_simulation():
     }
 
     # Run simulation
-    for current_quarter in pd.date_range(start=start, end=end, freq='Q'):
+    for current_quarter in pd.date_range(start=start, end=end_1, freq='Q'):
         try:
             array_values = []
             q = (current_quarter.month - 1) // 3 + 1
             quarter_str = f"{current_quarter.year}q{q}".lower()  
             previous_quarter = pd.Period(quarter_str) - 1 
 
-            # print('\nBefore solve: \n')
-            # print('='*100)
+            print(f'\nBefore solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
+            print(f'\nBefore solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
+            
+            print('='*100) 
             # for var in frbus_to_expected_mapping.keys():
             #     if var == 'quarter':
             #         continue
@@ -105,6 +112,11 @@ def ftpl_simulation():
             #         continue
             #     array_values.append(f'Quarter: {quarter_str} | {var}: {sim_ftpl.loc[quarter_str, var]}') 
             # print(', '.join(array_values))
+
+            
+            print(f'\nAfter solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
+            print(f'\nAfter solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
+            print('='*100) 
         except Exception as e:
             print(f"Error: {e}")
             print(f"Quarter: {quarter_str}")
@@ -183,7 +195,9 @@ def calculate_error_metrics(ftpl_data, non_ftpl_data):
         'rrff',        # Real federal funds rate
         'ugfdbtp',     # Government debt ratio
         'egfe',       # Government expenditures
-        'egfet',       # Government expenditures trend
+        'egfet',       # Government expenditures trend,
+        'trcit',       # Corporate tax rates
+        'trptx',       # Personal tax rates
     ]
     
     results = {}
