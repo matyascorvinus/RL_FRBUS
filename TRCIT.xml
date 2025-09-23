@@ -13,7 +13,7 @@
                                             + y_trcit_3*xgap2 + y_trcit_4*xgap2(-1)
                                             + y_trcit_5*picxfe
                                             + y_trcit_6*gfdrt
-                                            + y_trcit_7*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</python_equation>
+                                            + (rfrs10 + 0.5)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</python_equation>
     <coeff>
       <cf_name>y_trcit(1)</cf_name>
       <cf_value>0.25</cf_value>  <!-- Base tax rate -->
@@ -48,6 +48,7 @@
     <rhs_eq_var>gfdrt</rhs_eq_var>
     <rhs_eq_var>gfdbtnp</rhs_eq_var>
     <rhs_eq_var>xgdpn</rhs_eq_var>
+    <rhs_eq_var>rfrs10</rhs_eq_var>
   </standard_equation>
   <stochastic_type>NO</stochastic_type>
 </variable>

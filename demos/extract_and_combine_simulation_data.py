@@ -13,6 +13,54 @@ from pyfrbus.frbus import Frbus
 from pyfrbus.sim_lib import sim_plot
 from pyfrbus.load_data import load_data
 
+Federal_Fund_Rate_Rule_in_FRB_US = """
+<variable>
+    <name>rffrule</name>
+    <equation_type>Behavioral</equation_type>
+    <sector>Financial Sector</sector>
+    <definition>Federal funds rate</definition>
+    <description>The RFFRULE equation combines the seven basic options for setting
+the federal funds rate in a form that yields the outcome for the funds
+rate under the chosen option.  The funds rate is exogenous in nominal
+terms when DMPEX is one and the other policy switches are zero.  The
+funds rate is exogenous in real terms when DMPRR is one.  Other
+settings select one of the policy reaction functions.
+</description>
+    <standard_equation>
+      <eviews_equation>rffrule - rffrule_aerr =  dmpex * rfffix
+                       + dmprr  * (rrfix +  ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4 )
+                       + dmptay * rfftay
+                       + dmptlr * rfftlr
+                       + dmpintay * rffintay
+                       + dmpalt * rffalt
+</eviews_equation>
+      <python_equation>rffrule - rffrule_aerr =  dmpex * rfffix
+                       + dmprr  * (rrfix +  ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3))  / 4 )
+                       + dmptay * rfftay
+                       + dmptlr * rfftlr
+                       + dmpintay * rffintay
+                       + dmpalt * rffalt
+</python_equation>
+      <rhs_eq_var>dmpalt</rhs_eq_var>
+      <rhs_eq_var>dmpex</rhs_eq_var>
+      <rhs_eq_var>dmpgen</rhs_eq_var>
+      <rhs_eq_var>dmpintay</rhs_eq_var>
+      <rhs_eq_var>dmprr</rhs_eq_var>
+      <rhs_eq_var>dmptay</rhs_eq_var>
+      <rhs_eq_var>dmptlr</rhs_eq_var>
+      <rhs_eq_var>picxfe</rhs_eq_var>
+      <rhs_eq_var>rffalt</rhs_eq_var>
+      <rhs_eq_var>rfffix</rhs_eq_var>
+      <rhs_eq_var>rffgen</rhs_eq_var>
+      <rhs_eq_var>rffintay</rhs_eq_var>
+      <rhs_eq_var>rfftay</rhs_eq_var>
+      <rhs_eq_var>rfftlr</rhs_eq_var>
+      <rhs_eq_var>rrfix</rhs_eq_var>
+    </standard_equation>
+  </variable>
+"""
+
+
 def ftpl_simulation():
     
     # FRB/US FTPL
@@ -39,14 +87,13 @@ def ftpl_simulation():
     data.loc[start:end, "dfpex"] = 1
 
     # Disable non-inertial Taylor rule
-    data.loc[start:end, "dmptay"] = 0
+    # dmptlr == 1
+    data.loc[start:end, "dmptlr"] = 1
     data.loc[start:end, "dmpintay"] = 0
-    data.loc[start:end, "dmpintay"] = 0
-
-    # For pure FTPL, consider using interest rate peg instead
+    data.loc[start:end, "dmprr"] = 0
+    data.loc[start:end, "dmpex"] = 0
+    data.loc[start:end, "dmpalt"] = 0 
     data.loc[start:end, "dmptay"] = 0      # Disable Taylor rule
-    # data.loc[start:end, "dmpex"] = 1       # Use exogenous funds rate  
-    # data.loc[start:end, "rfffix"] = 5.0    # Fixed interest rate
     
     # Enable thresholds
     data.loc[start:end, "dmptrsh"] = 1
@@ -149,8 +196,12 @@ def non_ftpl_simulation():
     data_non_ftpl.loc[start:end, "dfpsrp"] = 0
 
     # Use non-inertial Taylor rule
-    data_non_ftpl.loc[start:end, "dmptay"] = 1
+    data_non_ftpl.loc[start:end, "dmptlr"] = 1
     data_non_ftpl.loc[start:end, "dmpintay"] = 0
+    data_non_ftpl.loc[start:end, "dmprr"] = 0
+    data_non_ftpl.loc[start:end, "dmpex"] = 0
+    data_non_ftpl.loc[start:end, "dmpalt"] = 0 
+    data_non_ftpl.loc[start:end, "dmptay"] = 0      # Disable Taylor rule
 
     # Enable thresholds
     data_non_ftpl.loc[start:end, "dmptrsh"] = 1
