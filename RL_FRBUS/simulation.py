@@ -1101,3 +1101,8 @@ async def get_quarter_metrics(quarter: str):
     if quarter not in latest_metrics:
         raise HTTPException(status_code=404, detail=f"No data for quarter {quarter}")
     return latest_metrics[quarter]
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=9999)

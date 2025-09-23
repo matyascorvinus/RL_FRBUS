@@ -108,9 +108,9 @@ def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=
     # Create dataframe for visualization
     metric_names = [
         'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
-        'Personal Tax', 'Corporate Tax', 'Exports', 'Imports', 'Debt to GDP',
+        'Personal Income Tax', 'Corporate Income Tax', 'Exports', 'Imports', 'Debt to GDP',
         'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
-        'Personal Tax Rates', 'Corporate Tax Rates', 'Government Transfer Payments', 
+        'Personal Income Tax Rates', 'Corporate Income Tax Rates', 'Government Transfer Payments', 
         'Federal Surplus'
     ]
     
@@ -273,9 +273,9 @@ def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year
     # Create dataframe for visualization
     metric_names = [
         'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
-        'Personal Tax', 'Corporate Tax', 'Exports', 'Imports', 'Debt to GDP',
+        'Personal Income Tax', 'Corporate Income Tax', 'Exports', 'Imports', 'Debt to GDP',
         'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
-        'Personal Tax Rates', 'Corporate Tax Rates', 'Government Transfer Payments', 
+        'Personal Income Tax Rates', 'Corporate Income Tax Rates', 'Government Transfer Payments', 
         'Federal Surplus'
     ]
     
@@ -440,9 +440,9 @@ def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_r
     # Create dataframe for visualization
     metric_names = [
         'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
-        'Personal Tax', 'Corporate Tax', 'Exports', 'Imports', 'Debt to GDP',
+        'Personal Income Tax', 'Corporate Income Tax', 'Exports', 'Imports', 'Debt to GDP',
         'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
-        'Personal Tax Rates', 'Corporate Tax Rates', 'Government Transfer Payments', 
+        'Personal Income Tax Rates', 'Corporate Income Tax Rates', 'Government Transfer Payments', 
         'Federal Surplus'
     ]
     
@@ -551,13 +551,13 @@ def render_actions_charts(df, title):
     
     fig.add_trace(
         go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], 
-                  name='Personal Tax Revenues Rates', line=dict(color=MUTED_REDS['bright'], dash='dash')),
+                  name='Personal Income Tax Revenues Rates', line=dict(color=MUTED_REDS['bright'], dash='dash')),
         row=2, col=1
     )
     
     fig.add_trace(
         go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], 
-                  name='Corporate Tax Revenues Rates', line=dict(color=MUTED_REDS['lightest'], dash='dash')),
+                  name='Corporate Income Tax Revenues Rates', line=dict(color=MUTED_REDS['lightest'], dash='dash')),
         row=2, col=1
     )
 
@@ -625,8 +625,8 @@ def render_tax_charts(df, title):
     fig = go.Figure()
     
     # Add tax components
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax'], name='Personal Tax', line=dict(color=MUTED_REDS['dark'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax'], name='Corporate Tax', line=dict(color=MUTED_REDS['light'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax'], name='Personal Income Tax', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax'], name='Corporate Income Tax', line=dict(color=MUTED_REDS['light'])))
     
     fig.update_layout(
         title=title,
@@ -727,8 +727,8 @@ def render_overview_tax_rates_charts(df, title):
     fig = go.Figure()
     
     # Add traces for main economic indicators
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Tax Rates', line=dict(color=MUTED_REDS['dark'])))
-    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Tax Rates', line=dict(color=MUTED_REDS['bright'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['personal_tax_rates'], name='Personal Income Tax Rates', line=dict(color=MUTED_REDS['dark'])))
+    fig.add_trace(go.Scatter(x=df['quarter'], y=df['corporate_tax_rates'], name='Corporate Income Tax Rates', line=dict(color=MUTED_REDS['bright'])))
     
     fig.update_layout(
         title=title,
@@ -1047,24 +1047,24 @@ def render_personal_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_ba
     
     # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['personal_tax'], 
-                        name='Personal Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
+                        name='Personal Income Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['personal_tax'], 
-                        name=f'Personal Tax ({historical_label_or_hypothetical_label})', marker_color=MUTED_REDS['bright'],
+                        name=f'Personal Income Tax ({historical_label_or_hypothetical_label})', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['personal_tax'], 
-                        name='Personal Tax (FRB/US)', marker_color=MUTED_REDS['light'],
+                        name='Personal Income Tax (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width)) 
     
     fig.update_layout(
-        title='Personal Tax Components Comparison',
+        title='Personal Income Tax Components Comparison',
         xaxis_title='Quarter',
         yaxis_title='Value',
         barmode='overlay',
@@ -1088,24 +1088,24 @@ def render_corporate_tax_charts_comparison(df_rl_tariff, df_without_tariff, df_b
     
     # Add GDP components for RL-FRB/US Agent
     fig.add_trace(go.Bar(x=df_rl_tariff['quarter'], y=df_rl_tariff['corporate_tax'], 
-                        name='Corporate Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
+                        name='Corporate Income Tax (RL-FRB/US Agent)', marker_color=MUTED_REDS['dark'],
                         width=bar_width,
                         offset=-bar_width)) 
     
     # Add GDP components for Without Tariff
     fig.add_trace(go.Bar(x=df_without_tariff['quarter'], y=df_without_tariff['corporate_tax'], 
-                        name=f'Corporate Tax ({historical_label_or_hypothetical_label})', marker_color=MUTED_REDS['bright'],
+                        name=f'Corporate Income Tax ({historical_label_or_hypothetical_label})', marker_color=MUTED_REDS['bright'],
                         width=bar_width,
                         offset=0)) 
     
     # Add GDP components for FRB/US
     fig.add_trace(go.Bar(x=df_base_simulation['quarter'], y=df_base_simulation['corporate_tax'], 
-                        name='Corporate Tax (FRB/US)', marker_color=MUTED_REDS['light'],
+                        name='Corporate Income Tax (FRB/US)', marker_color=MUTED_REDS['light'],
                         width=bar_width,
                         offset=bar_width))
     
     fig.update_layout(
-        title='Corporate Tax Components Comparison',
+        title='Corporate Income Tax Components Comparison',
         xaxis_title='Quarter',
         yaxis_title='Value',
         barmode='overlay',
@@ -1336,7 +1336,7 @@ class EconomicStream:
     def __init__(self, placeholder):
         self.placeholder = placeholder
         self.lock = threading.Lock()
-        self.url = "ws://localhost:8000/ws/metrics" 
+        self.url = "ws://localhost:9999/ws/metrics" 
         columns = ['quarter', 'gdp_growth', 'inflation', 'unemployment',
             'real_gdp', 'nominal_gdp', 'personal_tax', 'corporate_tax',
             'exports', 'imports', 'debt_to_gdp', 'interest_rate', 'pcpi', 'transfer_payments_ratio', 
@@ -1698,7 +1698,7 @@ def clear_simulation_data():
 with col0: 
     if st.button('Effective Training', use_container_width=True):
         # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8000/run_simulation_training_effective_relocation')
+        response = requests.get('http://localhost:9999/run_simulation_training_effective_relocation')
         if response.status_code == 200:
             simulation_status.success("Effective training started")
         else:
@@ -1706,7 +1706,7 @@ with col0:
 with col1:
     if st.button('Training', use_container_width=True):
         # Run simulation by calling the API endpoint
-        response = requests.get('http://localhost:8000/run_simulation_training')
+        response = requests.get('http://localhost:9999/run_simulation_training')
         if response.status_code == 200:
             simulation_status.success("Training completed")
         else:
@@ -1731,7 +1731,7 @@ with col3:
 #     thread.start()
     
 #     # Build URL with parameters
-#     base_url = 'http://localhost:8000/run_simulation'
+#     base_url = 'http://localhost:9999/run_simulation'
 #     params = {
 #         'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
 #         'start_year': start_year,
@@ -1755,7 +1755,7 @@ with col3:
 #     thread.start()
     
 #     # Build URL with parameters
-#     base_url = 'http://localhost:8000/run_simulation'
+#     base_url = 'http://localhost:9999/run_simulation'
 #     params = {
 #         'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
 #         'start_year': start_year,
@@ -1780,7 +1780,7 @@ if st.sidebar.button('Start Simulation Effective Relocation', use_container_widt
     thread.start()
     
     # Build URL with parameters
-    base_url = 'http://localhost:8000/run_simulation_effective_relocation'
+    base_url = 'http://localhost:9999/run_simulation_effective_relocation'
     params = {
         'simulation_type': 'historical' if st.session_state.simulation_type == "Historical Simulation" else 'hypothetical',
         'start_year': start_year,
@@ -2024,12 +2024,12 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         st.plotly_chart(render_tax_charts(df_base_simulation_with_tariff, "Tax Revenue Components - FRB/US - With Tariff"), use_container_width=True)
         st.plotly_chart(render_comparison_chart(
             df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff,
-            'personal_tax', 'Personal Tax', 'Value'
+            'personal_tax', 'Personal Income Tax', 'Value'
         ), use_container_width=True)
         
         st.plotly_chart(render_comparison_chart(
             df, df_without_tariff, df_base_simulation, df_base_simulation_with_tariff,
-            'corporate_tax', 'Corporate Tax', 'Value'
+            'corporate_tax', 'Corporate Income Tax', 'Value'
         ), use_container_width=True)
         
         st.plotly_chart(render_comparison_chart(
@@ -2057,42 +2057,42 @@ if hasattr(st.session_state.stream, 'metrics_history_rl_tariff') and not st.sess
         try:
             with col1:
                 st.metric(
-                    "Personal Tax Revenue - RL-FRB/US Agent",
+                    "Personal Income Tax Revenue - RL-FRB/US Agent",
                     f"${df['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df['personal_tax'].iloc[-1] - df['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    f"Personal Tax Revenue - {historical_label_or_hypothetical_label}",
+                    f"Personal Income Tax Revenue - {historical_label_or_hypothetical_label}",
                     f"${df_without_tariff['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['personal_tax'].iloc[-1] - df_without_tariff['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Personal Tax Revenue - FRB/US",
+                    "Personal Income Tax Revenue - FRB/US",
                     f"${df_base_simulation['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['personal_tax'].iloc[-1] - df_base_simulation['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Personal Tax Revenue - FRB/US - With Tariff",
+                    "Personal Income Tax Revenue - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['personal_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['personal_tax'].iloc[-1] - df_base_simulation_with_tariff['personal_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - RL-FRB/US Agent",
+                    "Corporate Income Tax Revenue - RL-FRB/US Agent",
                     f"${df['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df['corporate_tax'].iloc[-1] - df['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    f"Corporate Tax Revenue - {historical_label_or_hypothetical_label}",
+                    f"Corporate Income Tax Revenue - {historical_label_or_hypothetical_label}",
                     f"${df_without_tariff['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_without_tariff['corporate_tax'].iloc[-1] - df_without_tariff['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - FRB/US",
+                    "Corporate Income Tax Revenue - FRB/US",
                     f"${df_base_simulation['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation['corporate_tax'].iloc[-1] - df_base_simulation['corporate_tax'].iloc[-2]):,.2f}B"
                 )
                 st.metric(
-                    "Corporate Tax Revenue - FRB/US - With Tariff",
+                    "Corporate Income Tax Revenue - FRB/US - With Tariff",
                     f"${df_base_simulation_with_tariff['corporate_tax'].iloc[-1]:,.2f}B",
                     f"{(df_base_simulation_with_tariff['corporate_tax'].iloc[-1] - df_base_simulation_with_tariff['corporate_tax'].iloc[-2]):,.2f}B"
                 )

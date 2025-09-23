@@ -3,6 +3,513 @@ import pandas as pd
 import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
+import numpy as np
+
+# Color scheme for charts
+MUTED_REDS = {
+    'dark': '#B22222',    # Firebrick
+    'light': '#CD5C5C'    # Indian Red
+}
+
+def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
+    # Helper function to calculate mean absolute error
+    
+    # Filter by year range if provided
+    if year_range is not None:
+        min_year, max_year = year_range
+        
+        # Extract year from quarter string (e.g., "2020Q1" -> 2020)
+        def extract_year(quarter_str):
+            # Handle both formats: "2020Q1" and "2020q1"
+            return int(quarter_str.split('q')[0].split('Q')[0])
+        
+        # Create year columns for filtering
+        df_years = df['quarter'].apply(extract_year)
+        df_without_tariff_years = df_without_tariff['quarter'].apply(extract_year)
+        df_without_rl_years = df_without_rl['quarter'].apply(extract_year)
+        
+        # Filter dataframes
+        df_filtered = df[df_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_tariff_filtered = df_without_tariff[df_without_tariff_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_rl_filtered = df_without_rl[df_without_rl_years.between(min_year, max_year)].reset_index(drop=True)
+    else:
+        # Use all data if no year range specified
+        df_filtered = df
+        df_without_tariff_filtered = df_without_tariff
+        df_without_rl_filtered = df_without_rl
+    
+    def calculate_mae(df, df_without_tariff, df_without_rl):
+        mae_rl = []
+        mae_tariff = [] 
+
+        mae_rl_gdp_growth = np.abs(df['gdp_growth'] - df_without_tariff['gdp_growth']) 
+        mae_rl_inflation = np.abs(df['inflation'] - df_without_tariff['inflation']) 
+        mae_rl_unemployment = np.abs(df['unemployment'] - df_without_tariff['unemployment']) 
+        mae_rl_real_gdp = np.abs(df['real_gdp'] - df_without_tariff['real_gdp']) 
+        mae_rl_nominal_gdp = np.abs(df['nominal_gdp'] - df_without_tariff['nominal_gdp']) 
+        mae_rl_personal_tax = np.abs(df['personal_tax'] - df_without_tariff['personal_tax']) 
+        mae_rl_corporate_tax = np.abs(df['corporate_tax'] - df_without_tariff['corporate_tax']) 
+        mae_rl_exports = np.abs(df['exports'] - df_without_tariff['exports']) 
+        mae_rl_imports = np.abs(df['imports'] - df_without_tariff['imports'])  
+        mae_rl_debt_to_gdp = np.abs(df['debt_to_gdp'] - df_without_tariff['debt_to_gdp']) 
+        mae_rl_interest_rate = np.abs(df['interest_rate'] - df_without_tariff['interest_rate']) 
+        mae_rl_pcpi = np.abs(df['pcpi'] - df_without_tariff['pcpi']) 
+        mae_rl_transfer_payments_ratio = np.abs(df['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio']) 
+        mae_rl_federal_expenditures = np.abs(df['federal_expenditures'] - df_without_tariff['federal_expenditures']) 
+        mae_rl_personal_tax_rates = np.abs(df['personal_tax_rates'] - df_without_tariff['personal_tax_rates']) 
+        mae_rl_corporate_tax_rates = np.abs(df['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates']) 
+        mae_rl_government_transfer_payments = np.abs(df['government_transfer_payments'] - df_without_tariff['government_transfer_payments']) 
+        mae_rl_federal_surplus = np.abs(df['federal_surplus'] - df_without_tariff['federal_surplus']) 
+
+        mae_tariff_gdp_growth = np.abs(df_without_rl['gdp_growth'] - df_without_tariff['gdp_growth']) 
+        mae_tariff_inflation = np.abs(df_without_rl['inflation'] - df_without_tariff['inflation']) 
+        mae_tariff_unemployment = np.abs(df_without_rl['unemployment'] - df_without_tariff['unemployment']) 
+        mae_tariff_real_gdp = np.abs(df_without_rl['real_gdp'] - df_without_tariff['real_gdp']) 
+        mae_tariff_nominal_gdp = np.abs(df_without_rl['nominal_gdp'] - df_without_tariff['nominal_gdp']) 
+        mae_tariff_personal_tax = np.abs(df_without_rl['personal_tax'] - df_without_tariff['personal_tax']) 
+        mae_tariff_corporate_tax = np.abs(df_without_rl['corporate_tax'] - df_without_tariff['corporate_tax']) 
+        mae_tariff_exports = np.abs(df_without_rl['exports'] - df_without_tariff['exports'])  
+        mae_tariff_imports = np.abs(df_without_rl['imports'] - df_without_tariff['imports']) 
+        mae_tariff_debt_to_gdp = np.abs(df_without_rl['debt_to_gdp'] - df_without_tariff['debt_to_gdp']) 
+        mae_tariff_interest_rate = np.abs(df_without_rl['interest_rate'] - df_without_tariff['interest_rate']) 
+        mae_tariff_pcpi = np.abs(df_without_rl['pcpi'] - df_without_tariff['pcpi']) 
+        mae_tariff_transfer_payments_ratio = np.abs(df_without_rl['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio']) 
+        mae_tariff_federal_expenditures = np.abs(df_without_rl['federal_expenditures'] - df_without_tariff['federal_expenditures']) 
+        mae_tariff_personal_tax_rates = np.abs(df_without_rl['personal_tax_rates'] - df_without_tariff['personal_tax_rates']) 
+        mae_tariff_corporate_tax_rates = np.abs(df_without_rl['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates']) 
+        mae_tariff_government_transfer_payments = np.abs(df_without_rl['government_transfer_payments'] - df_without_tariff['government_transfer_payments']) 
+        mae_tariff_federal_surplus = np.abs(df_without_rl['federal_surplus'] - df_without_tariff['federal_surplus']) 
+        
+        
+        mae_tariff = [mae_tariff_gdp_growth, mae_tariff_inflation, mae_tariff_unemployment, mae_tariff_real_gdp, mae_tariff_nominal_gdp, mae_tariff_personal_tax, mae_tariff_corporate_tax, mae_tariff_exports, mae_tariff_imports, mae_tariff_debt_to_gdp, mae_tariff_interest_rate, mae_tariff_pcpi, mae_tariff_transfer_payments_ratio, mae_tariff_federal_expenditures, mae_tariff_personal_tax_rates, mae_tariff_corporate_tax_rates, mae_tariff_government_transfer_payments, mae_tariff_federal_surplus]
+        mae_rl = [mae_rl_gdp_growth, mae_rl_inflation, mae_rl_unemployment, mae_rl_real_gdp, mae_rl_nominal_gdp, mae_rl_personal_tax, mae_rl_corporate_tax, mae_rl_exports, mae_rl_imports, mae_rl_debt_to_gdp, mae_rl_interest_rate, mae_rl_pcpi, mae_rl_transfer_payments_ratio, mae_rl_federal_expenditures, mae_rl_personal_tax_rates, mae_rl_corporate_tax_rates, mae_rl_government_transfer_payments, mae_rl_federal_surplus]
+        return mae_tariff, mae_rl
+    
+    # Use filtered data for MAE calculation
+    mae_tariff, mae_rl = calculate_mae(df_filtered, df_without_tariff_filtered, df_without_rl_filtered)
+    
+    # Create dataframe for visualization
+    metric_names = [
+        'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
+        'Personal Income Tax Revenue', 'Corporate Income Tax Revenue', 'Exports', 'Imports', 'Debt to GDP',
+        'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
+        'Personal Income Tax Rates', 'Corporate Income Tax Rates', 'Government Transfer Payments', 
+        'Federal Surplus'
+    ]
+    
+    # Calculate mean MAE for each series
+    mae_rl_means = [round(np.mean(series), 2)  for series in mae_rl]
+    mae_tariff_means = [round(np.mean(series), 2)  for series in mae_tariff]
+    if not small_value:
+        mae_rl_valid_indices = [i for i, series in enumerate(mae_rl_means) if series > 1.0 and mae_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in mae_rl_valid_indices]
+        mae_rl_means = [mae_rl_means[i] for i in mae_rl_valid_indices]
+        mae_tariff_means = [mae_tariff_means[i] for i in mae_rl_valid_indices] 
+    if small_value:
+        mae_rl_valid_indices = [i for i, series in enumerate(mae_rl_means) if series <= 1.0 and mae_tariff_means[i] <= 1.0]
+        metric_names = [metric_names[i] for i in mae_rl_valid_indices]
+        mae_rl_means = [mae_rl_means[i] for i in mae_rl_valid_indices]
+        mae_tariff_means = [mae_tariff_means[i] for i in mae_rl_valid_indices] 
+    # Create dataframe for plotting
+    mae_df = pd.DataFrame({
+        'Metric': metric_names,
+        'RL - FRBUS vs Historical Data': mae_rl_means,
+        'FRB/US model vs Historical Data': mae_tariff_means
+    })
+    
+    # Add year range to title if provided
+    title_with_year = title
+    if year_range:
+        title_with_year = f"{title} ({min_year}-{max_year})"
+    
+    # Create grouped bar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=mae_df['Metric'],
+        y=mae_df['RL - FRBUS vs Historical Data'],
+        name='RL - FRBUS vs Historical Data',
+        marker_color=MUTED_REDS['dark']
+    ))
+    
+    fig.add_trace(go.Bar(
+        x=mae_df['Metric'],
+        y=mae_df['FRB/US model vs Historical Data'],
+        name='FRB/US model vs Historical Data',
+        marker_color=MUTED_REDS['light']
+    ))
+    
+    # Update layout
+    fig.update_layout(
+        title=f'Mean Absolute Error Comparison: {title_with_year}',
+        xaxis_title='Economic Metrics',
+        yaxis_title='Mean Absolute Error',
+        # Font for y axis title
+        yaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        barmode='group',
+        hovermode='x unified',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=20)
+        )
+    )
+    
+    
+    # Improve readability of x-axis labels
+    fig.update_xaxes(
+        tickangle=45,
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    
+    fig.update_yaxes(
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    
+    return fig  
+
+def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
+    
+    # Filter by year range if provided
+    if year_range is not None:
+        min_year, max_year = year_range
+        
+        # Extract year from quarter string (e.g., "2020Q1" -> 2020)
+        def extract_year(quarter_str):
+            # Handle both formats: "2020Q1" and "2020q1"
+            return int(quarter_str.split('q')[0].split('Q')[0])
+        
+        # Create year columns for filtering
+        df_years = df['quarter'].apply(extract_year)
+        df_without_tariff_years = df_without_tariff['quarter'].apply(extract_year)
+        df_without_rl_years = df_without_rl['quarter'].apply(extract_year)
+        
+        # Filter dataframes
+        df_filtered = df[df_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_tariff_filtered = df_without_tariff[df_without_tariff_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_rl_filtered = df_without_rl[df_without_rl_years.between(min_year, max_year)].reset_index(drop=True)
+    else:
+        # Use all data if no year range specified
+        df_filtered = df
+        df_without_tariff_filtered = df_without_tariff
+        df_without_rl_filtered = df_without_rl
+    
+    def calculate_rmse(df, df_without_tariff, df_without_rl):
+        rmse_rl = []
+        rmse_tariff = [] 
+
+        rmse_rl_gdp_growth = (np.abs(df['gdp_growth'] - df_without_tariff['gdp_growth'])**2)
+        rmse_rl_inflation = (np.abs(df['inflation'] - df_without_tariff['inflation'])**2)
+        rmse_rl_unemployment = (np.abs(df['unemployment'] - df_without_tariff['unemployment'])**2)
+        rmse_rl_real_gdp = (np.abs(df['real_gdp'] - df_without_tariff['real_gdp'])**2)
+        rmse_rl_nominal_gdp = (np.abs(df['nominal_gdp'] - df_without_tariff['nominal_gdp'])**2)
+        rmse_rl_personal_tax = (np.abs(df['personal_tax'] - df_without_tariff['personal_tax'])**2)
+        rmse_rl_corporate_tax = (np.abs(df['corporate_tax'] - df_without_tariff['corporate_tax'])**2)
+        rmse_rl_exports = (np.abs(df['exports'] - df_without_tariff['exports'])**2)
+        rmse_rl_imports = (np.abs(df['imports'] - df_without_tariff['imports'])**2)
+        rmse_rl_debt_to_gdp = (np.abs(df['debt_to_gdp'] - df_without_tariff['debt_to_gdp'])**2)
+        rmse_rl_interest_rate = (np.abs(df['interest_rate'] - df_without_tariff['interest_rate'])**2)
+        rmse_rl_pcpi = (np.abs(df['pcpi'] - df_without_tariff['pcpi'])**2)
+        rmse_rl_transfer_payments_ratio = (np.abs(df['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio'])**2)
+        rmse_rl_federal_expenditures = (np.abs(df['federal_expenditures'] - df_without_tariff['federal_expenditures'])**2)
+        rmse_rl_personal_tax_rates = (np.abs(df['personal_tax_rates'] - df_without_tariff['personal_tax_rates'])**2)
+        rmse_rl_corporate_tax_rates = (np.abs(df['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates'])**2)
+        rmse_rl_government_transfer_payments = (np.abs(df['government_transfer_payments'] - df_without_tariff['government_transfer_payments'])**2)
+        rmse_rl_federal_surplus = (np.abs(df['federal_surplus'] - df_without_tariff['federal_surplus'])**2)
+
+        rmse_tariff_gdp_growth = (np.abs(df_without_rl['gdp_growth'] - df_without_tariff['gdp_growth'])**2)
+        rmse_tariff_inflation = (np.abs(df_without_rl['inflation'] - df_without_tariff['inflation'])**2)
+        rmse_tariff_unemployment = (np.abs(df_without_rl['unemployment'] - df_without_tariff['unemployment'])**2)
+        rmse_tariff_real_gdp = (np.abs(df_without_rl['real_gdp'] - df_without_tariff['real_gdp'])**2)
+        rmse_tariff_nominal_gdp = (np.abs(df_without_rl['nominal_gdp'] - df_without_tariff['nominal_gdp'])**2)
+        rmse_tariff_personal_tax = (np.abs(df_without_rl['personal_tax'] - df_without_tariff['personal_tax'])**2)
+        rmse_tariff_corporate_tax = (np.abs(df_without_rl['corporate_tax'] - df_without_tariff['corporate_tax'])**2)
+        rmse_tariff_exports = (np.abs(df_without_rl['exports'] - df_without_tariff['exports'])**2)
+        rmse_tariff_imports = (np.abs(df_without_rl['imports'] - df_without_tariff['imports'])**2)
+        rmse_tariff_debt_to_gdp = (np.abs(df_without_rl['debt_to_gdp'] - df_without_tariff['debt_to_gdp'])**2)
+        rmse_tariff_interest_rate = (np.abs(df_without_rl['interest_rate'] - df_without_tariff['interest_rate'])**2)
+        rmse_tariff_pcpi = (np.abs(df_without_rl['pcpi'] - df_without_tariff['pcpi'])**2)
+        rmse_tariff_transfer_payments_ratio = (np.abs(df_without_rl['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio'])**2)
+        rmse_tariff_federal_expenditures = (np.abs(df_without_rl['federal_expenditures'] - df_without_tariff['federal_expenditures'])**2)
+        rmse_tariff_personal_tax_rates = (np.abs(df_without_rl['personal_tax_rates'] - df_without_tariff['personal_tax_rates'])**2)
+        rmse_tariff_corporate_tax_rates = (np.abs(df_without_rl['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates'])**2)
+        rmse_tariff_government_transfer_payments = (np.abs(df_without_rl['government_transfer_payments'] - df_without_tariff['government_transfer_payments'])**2)
+        rmse_tariff_federal_surplus = (np.abs(df_without_rl['federal_surplus'] - df_without_tariff['federal_surplus'])**2)
+        
+        
+        rmse_tariff = [rmse_tariff_gdp_growth, rmse_tariff_inflation, rmse_tariff_unemployment, rmse_tariff_real_gdp, rmse_tariff_nominal_gdp, rmse_tariff_personal_tax, rmse_tariff_corporate_tax, rmse_tariff_exports, rmse_tariff_imports, rmse_tariff_debt_to_gdp, rmse_tariff_interest_rate, rmse_tariff_pcpi, rmse_tariff_transfer_payments_ratio, rmse_tariff_federal_expenditures, rmse_tariff_personal_tax_rates, rmse_tariff_corporate_tax_rates, rmse_tariff_government_transfer_payments, rmse_tariff_federal_surplus]
+        rmse_rl = [rmse_rl_gdp_growth, rmse_rl_inflation, rmse_rl_unemployment, rmse_rl_real_gdp, rmse_rl_nominal_gdp, rmse_rl_personal_tax, rmse_rl_corporate_tax, rmse_rl_exports, rmse_rl_imports, rmse_rl_debt_to_gdp, rmse_rl_interest_rate, rmse_rl_pcpi, rmse_rl_transfer_payments_ratio, rmse_rl_federal_expenditures, rmse_rl_personal_tax_rates, rmse_rl_corporate_tax_rates, rmse_rl_government_transfer_payments, rmse_rl_federal_surplus]
+        return rmse_tariff, rmse_rl
+    
+    # Use filtered data for MAE calculation
+    rmse_tariff, rmse_rl = calculate_rmse(df_filtered, df_without_tariff_filtered, df_without_rl_filtered)
+    
+    # Create dataframe for visualization
+    metric_names = [
+        'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
+        'Personal Tax', 'Corporate Tax', 'Exports', 'Imports', 'Debt to GDP',
+        'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
+        'Personal Tax Rates', 'Corporate Tax Rates', 'Government Transfer Payments', 
+        'Federal Surplus'
+    ]
+    
+    # Calculate mean MAE for each series
+    rmse_rl_means = [round(np.sqrt(np.mean(series)), 2) for series in rmse_rl]
+    rmse_tariff_means = [round(np.sqrt(np.mean(series)), 2) for series in rmse_tariff]
+    if not small_value:
+        rmse_rl_valid_indices = [i for i, series in enumerate(rmse_rl_means) if series > 1.0 and rmse_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in rmse_rl_valid_indices]
+        rmse_rl_means = [rmse_rl_means[i] for i in rmse_rl_valid_indices]
+        rmse_tariff_means = [rmse_tariff_means[i] for i in rmse_rl_valid_indices] 
+
+    if small_value:
+        rmse_rl_valid_indices = [i for i, series in enumerate(rmse_rl_means) if series <= 1.0 and rmse_tariff_means[i] <= 1.0]
+        metric_names = [metric_names[i] for i in rmse_rl_valid_indices]
+        rmse_rl_means = [rmse_rl_means[i] for i in rmse_rl_valid_indices]
+        rmse_tariff_means = [rmse_tariff_means[i] for i in rmse_rl_valid_indices] 
+    # Create dataframe for plotting
+    rmse_df = pd.DataFrame({
+        'Metric': metric_names,
+        'RL - FRBUS vs Historical Data': rmse_rl_means,
+        'FRB/US model vs Historical Data': rmse_tariff_means
+    })
+    
+    # Add year range to title if provided
+    title_with_year = title
+    if year_range:
+        title_with_year = f"{title} ({min_year}-{max_year})"
+    
+    # Create grouped bar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=rmse_df['Metric'],
+        y=rmse_df['RL - FRBUS vs Historical Data'],
+        name='RL - FRBUS vs Historical Data',
+        marker_color=MUTED_REDS['dark']
+    ))
+    
+    fig.add_trace(go.Bar(
+        x=rmse_df['Metric'],
+        y=rmse_df['FRB/US model vs Historical Data'],
+        name='FRB/US model vs Historical Data',
+        marker_color=MUTED_REDS['light']
+    ))
+    
+    # Update layout
+    fig.update_layout(
+        title=f'Root Mean Square Error Comparison: {title_with_year}',
+        xaxis_title='Economic Metrics',
+        yaxis_title='Root Mean Square Error',
+        # Font for y axis title
+        yaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        barmode='group',
+        hovermode='x unified',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=20)
+        )
+    )
+    
+    
+    # Improve readability of x-axis labels
+    fig.update_xaxes(
+        tickangle=45,
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    
+    fig.update_yaxes(
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    
+    return fig 
+
+def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
+
+    # Filter by year range if provided
+    if year_range is not None:
+        min_year, max_year = year_range
+        
+        # Extract year from quarter string (e.g., "2020Q1" -> 2020)
+        def extract_year(quarter_str):
+            # Handle both formats: "2020Q1" and "2020q1"
+            return int(quarter_str.split('q')[0].split('Q')[0])
+        
+        # Create year columns for filtering
+        df_years = df['quarter'].apply(extract_year)
+        df_without_tariff_years = df_without_tariff['quarter'].apply(extract_year)
+        df_without_rl_years = df_without_rl['quarter'].apply(extract_year)
+        
+        # Filter dataframes
+        df_filtered = df[df_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_tariff_filtered = df_without_tariff[df_without_tariff_years.between(min_year, max_year)].reset_index(drop=True)
+        df_without_rl_filtered = df_without_rl[df_without_rl_years.between(min_year, max_year)].reset_index(drop=True)
+    else:
+        # Use all data if no year range specified
+        df_filtered = df
+        df_without_tariff_filtered = df_without_tariff
+        df_without_rl_filtered = df_without_rl
+    
+    def calculate_smape(df, df_without_tariff, df_without_rl):
+        smape_rl = []
+        smape_tariff = [] 
+
+        smape_rl_gdp_growth = 100 * (np.abs(df['gdp_growth'] - df_without_tariff['gdp_growth']) / (np.abs(df['gdp_growth']) + np.abs(df_without_tariff['gdp_growth']) * 2))
+        smape_rl_inflation = 100 * (np.abs(df['inflation'] - df_without_tariff['inflation']) / (np.abs(df['inflation']) + np.abs(df_without_tariff['inflation']) * 2))
+        smape_rl_unemployment = 100 * (np.abs(df['unemployment'] - df_without_tariff['unemployment']) / (np.abs(df['unemployment']) + np.abs(df_without_tariff['unemployment']) * 2))
+        smape_rl_real_gdp = 100 * (np.abs(df['real_gdp'] - df_without_tariff['real_gdp']) / (np.abs(df['real_gdp']) + np.abs(df_without_tariff['real_gdp']) * 2))
+        smape_rl_nominal_gdp = 100 * (np.abs(df['nominal_gdp'] - df_without_tariff['nominal_gdp']) / (np.abs(df['nominal_gdp']) + np.abs(df_without_tariff['nominal_gdp']) * 2))
+        smape_rl_personal_tax = 100 * (np.abs(df['personal_tax'] - df_without_tariff['personal_tax']) / (np.abs(df['personal_tax']) + np.abs(df_without_tariff['personal_tax']) * 2))
+        smape_rl_corporate_tax = 100 * (np.abs(df['corporate_tax'] - df_without_tariff['corporate_tax']) / (np.abs(df['corporate_tax']) + np.abs(df_without_tariff['corporate_tax']) * 2))
+        smape_rl_exports = 100 * (np.abs(df['exports'] - df_without_tariff['exports']) / (np.abs(df['exports']) + np.abs(df_without_tariff['exports']) * 2))
+        smape_rl_imports = 100 * (np.abs(df['imports'] - df_without_tariff['imports']) / (np.abs(df['imports']) + np.abs(df_without_tariff['imports']) * 2))
+        smape_rl_debt_to_gdp = 100 * (np.abs(df['debt_to_gdp'] - df_without_tariff['debt_to_gdp']) / (np.abs(df['debt_to_gdp']) + np.abs(df_without_tariff['debt_to_gdp']) * 2))
+        smape_rl_interest_rate = 100 * (np.abs(df['interest_rate'] - df_without_tariff['interest_rate']) / (np.abs(df['interest_rate']) + np.abs(df_without_tariff['interest_rate']) * 2))
+        smape_rl_pcpi = 100 * (np.abs(df['pcpi'] - df_without_tariff['pcpi']) / (np.abs(df['pcpi']) + np.abs(df_without_tariff['pcpi']) * 2))
+        smape_rl_transfer_payments_ratio = 100 * (np.abs(df['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio']) / (np.abs(df['transfer_payments_ratio']) + np.abs(df_without_tariff['transfer_payments_ratio']) * 2))
+        smape_rl_federal_expenditures = 100 * (np.abs(df['federal_expenditures'] - df_without_tariff['federal_expenditures']) / (np.abs(df['federal_expenditures']) + np.abs(df_without_tariff['federal_expenditures']) * 2))
+        smape_rl_personal_tax_rates = 100 * (np.abs(df['personal_tax_rates'] - df_without_tariff['personal_tax_rates']) / (np.abs(df['personal_tax_rates']) + np.abs(df_without_tariff['personal_tax_rates']) * 2))
+        smape_rl_corporate_tax_rates = 100 * (np.abs(df['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates']) / (np.abs(df['corporate_tax_rates']) + np.abs(df_without_tariff['corporate_tax_rates']) * 2))
+        smape_rl_government_transfer_payments = 100 * (np.abs(df['government_transfer_payments'] - df_without_tariff['government_transfer_payments']) / (np.abs(df['government_transfer_payments']) + np.abs(df_without_tariff['government_transfer_payments']) * 2))
+        smape_rl_federal_surplus = 100 * (np.abs(df['federal_surplus'] - df_without_tariff['federal_surplus']) / (np.abs(df['federal_surplus']) + np.abs(df_without_tariff['federal_surplus']) * 2))
+
+        smape_tariff_gdp_growth = 100 * (np.abs(df_without_rl['gdp_growth'] - df_without_tariff['gdp_growth']) / (np.abs(df_without_rl['gdp_growth']) + np.abs(df_without_tariff['gdp_growth']) * 2))
+        smape_tariff_inflation = 100 * (np.abs(df_without_rl['inflation'] - df_without_tariff['inflation']) / (np.abs(df_without_rl['inflation']) + np.abs(df_without_tariff['inflation']) * 2))
+        smape_tariff_unemployment = 100 * (np.abs(df_without_rl['unemployment'] - df_without_tariff['unemployment']) / (np.abs(df_without_rl['unemployment']) + np.abs(df_without_tariff['unemployment']) * 2))
+        smape_tariff_real_gdp = 100 * (np.abs(df_without_rl['real_gdp'] - df_without_tariff['real_gdp']) / (np.abs(df_without_rl['real_gdp']) + np.abs(df_without_tariff['real_gdp']) * 2))
+        smape_tariff_nominal_gdp = 100 * (np.abs(df_without_rl['nominal_gdp'] - df_without_tariff['nominal_gdp']) / (np.abs(df_without_rl['nominal_gdp']) + np.abs(df_without_tariff['nominal_gdp']) * 2))
+        smape_tariff_personal_tax = 100 * (np.abs(df_without_rl['personal_tax'] - df_without_tariff['personal_tax']) / (np.abs(df_without_rl['personal_tax']) + np.abs(df_without_tariff['personal_tax']) * 2))
+        smape_tariff_corporate_tax = 100 * (np.abs(df_without_rl['corporate_tax'] - df_without_tariff['corporate_tax']) / (np.abs(df_without_rl['corporate_tax']) + np.abs(df_without_tariff['corporate_tax']) * 2))
+        smape_tariff_exports = 100 * (np.abs(df_without_rl['exports'] - df_without_tariff['exports']) / (np.abs(df_without_rl['exports']) + np.abs(df_without_tariff['exports']) * 2))
+        smape_tariff_imports = 100 * (np.abs(df_without_rl['imports'] - df_without_tariff['imports']) / (np.abs(df_without_rl['imports']) + np.abs(df_without_tariff['imports']) * 2))
+        smape_tariff_debt_to_gdp = 100 * (np.abs(df_without_rl['debt_to_gdp'] - df_without_tariff['debt_to_gdp']) / (np.abs(df_without_rl['debt_to_gdp']) + np.abs(df_without_tariff['debt_to_gdp']) * 2))
+        smape_tariff_interest_rate = 100 * (np.abs(df_without_rl['interest_rate'] - df_without_tariff['interest_rate']) / (np.abs(df_without_rl['interest_rate']) + np.abs(df_without_tariff['interest_rate']) * 2))
+        smape_tariff_pcpi = 100 * (np.abs(df_without_rl['pcpi'] - df_without_tariff['pcpi']) / (np.abs(df_without_rl['pcpi']) + np.abs(df_without_tariff['pcpi']) * 2))
+        smape_tariff_transfer_payments_ratio = 100 * (np.abs(df_without_rl['transfer_payments_ratio'] - df_without_tariff['transfer_payments_ratio']) / (np.abs(df_without_rl['transfer_payments_ratio']) + np.abs(df_without_tariff['transfer_payments_ratio']) * 2))
+        smape_tariff_federal_expenditures = 100 * (np.abs(df_without_rl['federal_expenditures'] - df_without_tariff['federal_expenditures']) / (np.abs(df_without_rl['federal_expenditures']) + np.abs(df_without_tariff['federal_expenditures']) * 2))
+        smape_tariff_personal_tax_rates = 100 * (np.abs(df_without_rl['personal_tax_rates'] - df_without_tariff['personal_tax_rates']) / (np.abs(df_without_rl['personal_tax_rates']) + np.abs(df_without_tariff['personal_tax_rates']) * 2))
+        smape_tariff_corporate_tax_rates = 100 * (np.abs(df_without_rl['corporate_tax_rates'] - df_without_tariff['corporate_tax_rates']) / (np.abs(df_without_rl['corporate_tax_rates']) + np.abs(df_without_tariff['corporate_tax_rates']) * 2))
+        smape_tariff_government_transfer_payments = 100 * (np.abs(df_without_rl['government_transfer_payments'] - df_without_tariff['government_transfer_payments']) / (np.abs(df_without_rl['government_transfer_payments']) + np.abs(df_without_tariff['government_transfer_payments']) * 2))
+        smape_tariff_federal_surplus = 100 * (np.abs(df_without_rl['federal_surplus'] - df_without_tariff['federal_surplus']) / (np.abs(df_without_rl['federal_surplus']) + np.abs(df_without_tariff['federal_surplus']) * 2))
+        
+        
+        smape_tariff = [smape_tariff_gdp_growth, smape_tariff_inflation, smape_tariff_unemployment, smape_tariff_real_gdp, smape_tariff_nominal_gdp, smape_tariff_personal_tax, smape_tariff_corporate_tax, smape_tariff_exports, smape_tariff_imports, smape_tariff_debt_to_gdp, smape_tariff_interest_rate, smape_tariff_pcpi, smape_tariff_transfer_payments_ratio, smape_tariff_federal_expenditures, smape_tariff_personal_tax_rates, smape_tariff_corporate_tax_rates, smape_tariff_government_transfer_payments, smape_tariff_federal_surplus]
+        smape_rl = [smape_rl_gdp_growth, smape_rl_inflation, smape_rl_unemployment, smape_rl_real_gdp, smape_rl_nominal_gdp, smape_rl_personal_tax, smape_rl_corporate_tax, smape_rl_exports, smape_rl_imports, smape_rl_debt_to_gdp, smape_rl_interest_rate, smape_rl_pcpi, smape_rl_transfer_payments_ratio, smape_rl_federal_expenditures, smape_rl_personal_tax_rates, smape_rl_corporate_tax_rates, smape_rl_government_transfer_payments, smape_rl_federal_surplus]
+        return smape_tariff, smape_rl
+    
+    # Use filtered data for MAE calculation
+    smape_tariff, smape_rl = calculate_smape(df_filtered, df_without_tariff_filtered, df_without_rl_filtered)
+    
+    # Create dataframe for visualization
+    metric_names = [
+        'GDP Growth', 'Inflation', 'Unemployment', 'Real GDP', 'Nominal GDP', 
+        'Personal Tax', 'Corporate Tax', 'Exports', 'Imports', 'Debt to GDP',
+        'Interest Rate', 'PCPI', 'Transfer Payments Ratio', 'Federal Expenditures',
+        'Personal Tax Rates', 'Corporate Tax Rates', 'Government Transfer Payments', 
+        'Federal Surplus'
+    ]
+    
+    # Calculate mean MAE for each series
+    smape_rl_means = [round(np.mean(series), 2) for series in smape_rl]
+    smape_tariff_means = [round(np.mean(series), 2) for series in smape_tariff]
+    if not small_value:
+        smape_rl_valid_indices = [i for i, series in enumerate(smape_rl_means) if series > 1.0 and smape_tariff_means[i] > 1.0]
+        metric_names = [metric_names[i] for i in smape_rl_valid_indices]
+        smape_rl_means = [smape_rl_means[i] for i in smape_rl_valid_indices]
+        smape_tariff_means = [smape_tariff_means[i] for i in smape_rl_valid_indices] 
+
+    if small_value:
+        smape_rl_valid_indices = [i for i, series in enumerate(smape_rl_means) if series <= 1.0 and smape_tariff_means[i] <= 1.0]
+        metric_names = [metric_names[i] for i in smape_rl_valid_indices]
+        smape_rl_means = [smape_rl_means[i] for i in smape_rl_valid_indices]
+        smape_tariff_means = [smape_tariff_means[i] for i in smape_rl_valid_indices] 
+    
+    # Create dataframe for plotting
+    smape_df = pd.DataFrame({
+        'Metric': metric_names,
+        'RL - FRBUS vs Historical Data': smape_rl_means,
+        'FRB/US model vs Historical Data': smape_tariff_means
+    })
+    
+    # Add year range to title if provided
+    title_with_year = title
+    if year_range:
+        title_with_year = f"{title} ({min_year}-{max_year})"
+    
+    # Create grouped bar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=smape_df['Metric'],
+        y=smape_df['RL - FRBUS vs Historical Data'],
+        name='RL - FRBUS vs Historical Data',
+        marker_color=MUTED_REDS['dark'],
+        textfont=dict(size=15, color='black' if not dark_mode else 'white')
+    ))
+    
+    fig.add_trace(go.Bar(
+        x=smape_df['Metric'],
+        y=smape_df['FRB/US model vs Historical Data'],
+        name='FRB/US model vs Historical Data',
+        marker_color=MUTED_REDS['light'],
+        textfont=dict(size=15, color='black' if not dark_mode else 'white')
+    ))
+    # Update layout
+    fig.update_layout(
+        title=f'Symmetric mean absolute percentage error Comparison: {title_with_year}',
+        xaxis_title='Economic Metrics',
+        yaxis_title='Symmetric mean absolute percentage error',
+        title_font_color='black' if not dark_mode else 'white',
+        # Font for y axis title
+        yaxis_title_font=dict(size=15, color='black' if not dark_mode else 'white'),
+        # Font for x axis title
+        xaxis_title_font=dict(size=20, color='black' if not dark_mode else 'white'),
+        barmode='group',
+        hovermode='x unified',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=20)
+        )
+    )
+    
+    
+    # Improve readability of x-axis labels
+    fig.update_xaxes(
+        tickangle=45,
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Increased from 10 to 18
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    
+    fig.update_yaxes(
+        tickfont=dict(size=18, color='black' if not dark_mode else 'white'),  # Added explicit font size for y-axis
+        gridcolor='black' if not dark_mode else 'white',
+        zerolinecolor='#303030'
+    )
+    return fig 
 
 # ---------------------------
 # Sidebar: Select Data Source
@@ -32,8 +539,8 @@ metric_options = [
     "Real GDP (Billion)",
     "Nominal GDP (Billion)",
     "Federal Expenditures (in Billions)",
-    "Personal Tax (Billion)",
-    "Corporate Tax (Billion)",
+    "Personal Income Tax Revenue (Billion)",
+    "Corporate Income Tax Revenue (Billion)",
     "Exports (Billion)",
     "Imports (Billion)",
     "Debt",
@@ -90,8 +597,8 @@ def load_data(file_path):
         "unemployment": "Unemployment Rate (%)",
         "real_gdp": "Real GDP (Billion)",
         "nominal_gdp": "Nominal GDP (Billion)",
-        "personal_tax": "Personal Tax (Billion)",
-        "corporate_tax": "Corporate Tax (Billion)",
+        "personal_tax": "Personal Income Tax Revenue (Billion)",
+        "corporate_tax": "Corporate Income Tax Revenue (Billion)",
         "exports": "Exports (Billion)",
         "imports": "Imports (Billion)",
         "debt_to_gdp": "Debt",
@@ -99,8 +606,8 @@ def load_data(file_path):
         "pcpi": "PCPI",
         "transfer_payments_ratio": "Transfer Payments Ratio",
         "federal_expenditures": "Federal Expenditures (in Billions)",
-        "personal_tax_rates": "Personal Tax Rates",
-        "corporate_tax_rates": "Corporate Tax Rates",
+        "personal_tax_rates": "Personal Income Tax Rates (%)",
+        "corporate_tax_rates": "Corporate Income Tax Rates (%)",
         "government_transfer_payments": "Government Transfer Payments (Billion)",
         "federal_surplus": "Federal Surplus (Billion)",
         "simulation_type": "Simulation Type",

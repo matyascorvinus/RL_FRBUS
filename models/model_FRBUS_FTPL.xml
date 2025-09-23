@@ -705,7 +705,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
     <standard_equation>
       <eviews_equation>d( log(egfe), 0, 1 )  - egfe_aerr =
            y_egfe(1)
-          + y_egfe(2) * log(egfe(-1)/egfet(-1))
+                      + y_egfe(2) * log(egfe(-1)/egfet(-1))
           + y_egfe(3) *  d( log(egfe(-1)), 0, 1 )
           + y_egfe(4) *  d( log(egfe(-2)), 0, 1 )
           + y_egfe(5) * d( log(egfet), 0, 1 )
@@ -717,8 +717,10 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
           + y_egfe_3 *  ( log(egfe(-1)) - ( log(egfe(-2))))
           + y_egfe_4 *  ( log(egfe(-2)) - ( log(egfe(-3))))
           + y_egfe_5 * ( log(egfet) - ( log(egfet(-1))))
-          + y_egfe_6 *  xgap2
-          + y_egfe_7 *  xgap2(-1)</python_equation>
+          + y_egfe_6 * xgap2
+          + y_egfe_7 * xgap2(-1)
+          + y_egfe_8 * gfdrt
+          + y_egfe_9 * ((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</python_equation>
       <coeff>
         <cf_name>y_egfe(1)</cf_name>
         <cf_value>-0.0008045327442607825</cf_value>
@@ -754,6 +756,17 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
         <cf_value>0.0007256812123007961</cf_value>
         <t_stat>0.3302663605113349</t_stat>
       </coeff>
+    <coeff>
+      <cf_name>y_egfe(8)</cf_name>
+      <cf_value>-0.12</cf_value>  <!-- Stronger reduction in capital spending -->
+    </coeff>
+    <coeff>
+      <cf_name>y_egfe(9)</cf_name>
+      <cf_value>0.0</cf_value>    <!-- No response to debt deviations -->
+    </coeff>
+    <rhs_eq_var>gfdrt</rhs_eq_var>
+    <rhs_eq_var>gfdbtnp</rhs_eq_var>
+    <rhs_eq_var>xgdpn</rhs_eq_var>
       <rhs_eq_var>egfe</rhs_eq_var>
       <rhs_eq_var>egfet</rhs_eq_var>
       <rhs_eq_var>xgap2</rhs_eq_var>
@@ -6618,49 +6631,58 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
     <stochastic_type>GV</stochastic_type>
   </variable>
   <variable>
-    <name>trcit</name>
-    <equation_type>Behavioral</equation_type>
-    <sector>Government</sector>
-    <definition>Government corporate income tax rate, trend</definition>
-    <standard_equation>
-      <eviews_equation>trcit - trcit_aerr = y_trcit(1)*(1-y_trcit(2)) + y_trcit(2)*trcit(-1)
-                                             + y_trcit(3)*xgap2 + y_trcit(4)*xgap2(-1) 
-                                             + y_trcit(6)*picxfe</eviews_equation>
-      <python_equation>trcit - trcit_aerr = y_trcit_1*(1-y_trcit_2) + y_trcit_2*trcit(-1)
-                                              + y_trcit_3*xgap2 + y_trcit_4*xgap2(-1)
-                                              + y_trcit_6*picxfe</python_equation>
-      <coeff>
-        <cf_name>y_trcit(1)</cf_name>
-        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trcit(2)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- Persistence parameter -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trcit(3)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Output gap reaction (procyclical) -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trcit(4)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Lagged output gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trcit(5)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Unemployment gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trcit(6)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Inflation reaction -->
-      </coeff>
-      <rhs_eq_var>trcit</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
-      <rhs_eq_var>lur</rhs_eq_var>
-      <rhs_eq_var>lurnat</rhs_eq_var>
-      <rhs_eq_var>picxfe</rhs_eq_var>
-    </standard_equation>
-    <stochastic_type>NO</stochastic_type>
-  </variable>
+  <name>trcit</name>
+  <equation_type>Behavioral</equation_type>
+  <sector>Government</sector>
+  <definition>Government corporate income tax rate, trend</definition>
+  <standard_equation>
+    <eviews_equation>trcit - trcit_aerr = y_trcit(1)*(1-y_trcit(2)) + y_trcit(2)*trcit(-1)
+                                           + y_trcit(3)*xgap2 + y_trcit(4)*xgap2(-1) 
+                                           + y_trcit(5)*picxfe
+                                           + y_trcit(6)*gfdrt
+                                           + y_trcit(7)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</eviews_equation>
+    <python_equation>trcit - trcit_aerr = y_trcit_1*(1-y_trcit_2) + y_trcit_2*trcit(-1)
+                                            + y_trcit_3*xgap2 + y_trcit_4*xgap2(-1)
+                                            + y_trcit_5*picxfe
+                                            + y_trcit_6*gfdrt
+                                            + y_trcit_7*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</python_equation>
+    <coeff>
+      <cf_name>y_trcit(1)</cf_name>
+      <cf_value>0.25</cf_value>  <!-- Base tax rate -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(2)</cf_name>
+      <cf_value>0.8</cf_value>   <!-- Persistence parameter -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(3)</cf_name>
+      <cf_value>0.05</cf_value>  <!-- Output gap reaction (procyclical) -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(4)</cf_name>
+      <cf_value>0.03</cf_value>  <!-- Lagged output gap reaction -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(5)</cf_name>
+      <cf_value>0.02</cf_value>  <!-- Inflation reaction -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(6)</cf_name>
+      <cf_value>0.15</cf_value>  <!-- Target debt response (a > r, Cochrane's condition) -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trcit(7)</cf_name>
+      <cf_value>0.0</cf_value>   <!-- Debt deviation response (b = 0, active fiscal) -->
+    </coeff>
+    <rhs_eq_var>trcit</rhs_eq_var>
+    <rhs_eq_var>xgap2</rhs_eq_var>
+    <rhs_eq_var>picxfe</rhs_eq_var>
+    <rhs_eq_var>gfdrt</rhs_eq_var>
+    <rhs_eq_var>gfdbtnp</rhs_eq_var>
+    <rhs_eq_var>xgdpn</rhs_eq_var>
+  </standard_equation>
+  <stochastic_type>NO</stochastic_type>
+</variable>
   <variable>
     <name>trfcim</name>
     <equation_type>Exogenous</equation_type>
@@ -6780,49 +6802,58 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
     <stochastic_type>NO</stochastic_type>
   </variable>
   <variable>
-    <name>trptx</name>
-    <equation_type>Behavioral</equation_type>
-    <sector>Government</sector>
-    <definition>Average tax rate for personal income tax, trend, policy setting</definition>
-    <standard_equation>
-      <eviews_equation>trptx - trptx_aerr = y_trptx(1)*(1-y_trptx(2)) + y_trptx(2)*trptx(-1)
-                                             + y_trptx(3)*xgap2 + y_trptx(4)*xgap2(-1) 
-                                             + y_trptx(6)*picxfe</eviews_equation>
-      <python_equation>trptx - trptx_aerr = y_trptx_1*(1-y_trptx_2) + y_trptx_2*trptx(-1)
-                                              + y_trptx_3*xgap2 + y_trptx_4*xgap2(-1)
-                                              + y_trptx_6*picxfe</python_equation>
-      <coeff>
-        <cf_name>y_trptx(1)</cf_name>
-        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trptx(2)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- Persistence parameter -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trptx(3)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Output gap reaction (procyclical) -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trptx(4)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Lagged output gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trptx(5)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Unemployment gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_trptx(6)</cf_name>
-        <cf_value>0.1</cf_value>   <!-- Inflation reaction -->
-      </coeff>
-      <rhs_eq_var>trptx</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
-      <rhs_eq_var>lur</rhs_eq_var>
-      <rhs_eq_var>lurnat</rhs_eq_var>
-      <rhs_eq_var>picxfe</rhs_eq_var>
-    </standard_equation>
-    <stochastic_type>NO</stochastic_type>
-  </variable>
+  <name>trptx</name>
+  <equation_type>Behavioral</equation_type>
+  <sector>Government</sector>
+  <definition>Average tax rate for personal income tax, trend, policy setting</definition>
+  <standard_equation>
+    <eviews_equation>trptx - trptx_aerr = y_trptx(1)*(1-y_trptx(2)) + y_trptx(2)*trptx(-1)
+                                           + y_trptx(3)*xgap2 + y_trptx(4)*xgap2(-1) 
+                                           + y_trptx(5)*picxfe
+                                           + y_trptx(6)*gfdrt
+                                           + y_trptx(7)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</eviews_equation>
+    <python_equation>trptx - trptx_aerr = y_trptx_1*(1-y_trptx_2) + y_trptx_2*trptx(-1)
+                                            + y_trptx_3*xgap2 + y_trptx_4*xgap2(-1)
+                                            + y_trptx_5*picxfe
+                                            + y_trptx_6*gfdrt
+                                            + y_trptx_7*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1))</python_equation>
+    <coeff>
+      <cf_name>y_trptx(1)</cf_name>
+      <cf_value>0.15</cf_value>  <!-- Base tax rate -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(2)</cf_name>
+      <cf_value>0.8</cf_value>   <!-- Persistence parameter -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(3)</cf_name>
+      <cf_value>0.08</cf_value>  <!-- Output gap reaction (procyclical) -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(4)</cf_name>
+      <cf_value>0.05</cf_value>  <!-- Lagged output gap reaction -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(5)</cf_name>
+      <cf_value>0.03</cf_value>  <!-- Inflation reaction -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(6)</cf_name>
+      <cf_value>0.12</cf_value>  <!-- Target debt response (a > r) -->
+    </coeff>
+    <coeff>
+      <cf_name>y_trptx(7)</cf_name>
+      <cf_value>0.0</cf_value>   <!-- Debt deviation response (b = 0) -->
+    </coeff>
+    <rhs_eq_var>trptx</rhs_eq_var>
+    <rhs_eq_var>xgap2</rhs_eq_var>
+    <rhs_eq_var>picxfe</rhs_eq_var>
+    <rhs_eq_var>gfdrt</rhs_eq_var>
+    <rhs_eq_var>gfdbtnp</rhs_eq_var>
+    <rhs_eq_var>xgdpn</rhs_eq_var>
+  </standard_equation>
+  <stochastic_type>NO</stochastic_type>
+</variable>
   <variable>
     <name>trspp</name>
     <equation_type>Exogenous</equation_type>
