@@ -139,10 +139,10 @@ def ftpl_simulation():
             quarter_str = f"{current_quarter.year}q{q}".lower()  
             previous_quarter = pd.Period(quarter_str) - 1 
 
-            print(f'\nBefore solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
-            print(f'\nBefore solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
+            # print(f'\nBefore solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
+            # print(f'\nBefore solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
             
-            print('='*100) 
+            # print('='*100) 
             # for var in frbus_to_expected_mapping.keys():
             #     if var == 'quarter':
             #         continue
@@ -161,9 +161,9 @@ def ftpl_simulation():
             # print(', '.join(array_values))
 
             
-            print(f'\nAfter solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
-            print(f'\nAfter solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
-            print('='*100) 
+            # print(f'\nAfter solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
+            # print(f'\nAfter solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
+            # print('='*100) 
         except Exception as e:
             print(f"Error: {e}")
             print(f"Quarter: {quarter_str}")
