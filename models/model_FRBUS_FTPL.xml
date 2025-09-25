@@ -710,7 +710,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
                       + y_egfe(5) * d(log(egfet), 0, 1)
                       + y_egfe(6) * xgap2
                       + y_egfe(7) * xgap2(-1)
-                      - (rfrs10 + y_egfe(8)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+                      - (rg10 + y_egfe(8)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
                       - y_egfe(9) * ((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</eviews_equation>
       <python_equation>( log(egfe) - ( log(egfe(-1))))  - egfe_aerr =
            y_egfe_1
@@ -720,7 +720,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
           + y_egfe_5 * ( log(egfet) - ( log(egfet(-1))))
           + y_egfe_6 * xgap2
           + y_egfe_7 * xgap2(-1)
-          - (rfrs10 + y_egfe_8) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+          - (rg10 + y_egfe_8) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
           - y_egfe_9 * ((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</python_equation>
       <coeff>
         <cf_name>y_egfe(1)</cf_name>
@@ -770,6 +770,7 @@ see &lt;a href="pac_basics.pdf"&gt;PAC Basics&lt;/a&gt;.
     <rhs_eq_var>xgdpn</rhs_eq_var>
       <rhs_eq_var>egfe</rhs_eq_var>
       <rhs_eq_var>egfet</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
       <rhs_eq_var>xgap2</rhs_eq_var>
       <estimation_statistics>
         <F_statistic>11.12218670733286</F_statistic>
@@ -6640,12 +6641,12 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       <eviews_equation>trcit - trcit_aerr = y_trcit(1)*(1-y_trcit(2)) + y_trcit(2)*trcit(-1)
                                             + y_trcit(3)*xgap2 + y_trcit(4)*xgap2(-1) 
                                             + y_trcit(5)*picxfe
-                                            + (rfrs10 + y_trcit(6)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+                                            + (rg10 + y_trcit(6)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
                                             + y_trcit(7)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</eviews_equation>
       <python_equation>trcit - trcit_aerr = y_trcit_1*(1-y_trcit_2) + y_trcit_2*trcit(-1)
                                               + y_trcit_3*xgap2 + y_trcit_4*xgap2(-1)
                                               + y_trcit_5*picxfe
-                                              + (rfrs10 + y_trcit_6) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+                                              + (rg10 + y_trcit_6) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
                                               + y_trcit_7*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</python_equation>
       <coeff>
         <cf_name>y_trcit(1)</cf_name>
@@ -6669,7 +6670,7 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       </coeff>
       <coeff>
         <cf_name>y_trcit(6)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- Target debt response (a > r, Cochrane's condition) -->
+        <cf_value>0.01</cf_value>  <!-- Target debt response (a > r, Cochrane's condition) -->
       </coeff>
       <coeff>
         <cf_name>y_trcit(7)</cf_name>
@@ -6681,7 +6682,7 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       <rhs_eq_var>gfdrt</rhs_eq_var>
       <rhs_eq_var>gfdbtnp</rhs_eq_var>
       <rhs_eq_var>xgdpn</rhs_eq_var>
-      <rhs_eq_var>rfrs10</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
   </variable>
@@ -6812,12 +6813,12 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       <eviews_equation>trptx - trptx_aerr = y_trptx(1)*(1-y_trptx(2)) + y_trptx(2)*trptx(-1)
                                             + y_trptx(3)*xgap2 + y_trptx(4)*xgap2(-1) 
                                             + y_trptx(5)*picxfe
-                                            + (rfrs10 + y_trptx(6)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+                                            + (rg10 + y_trptx(6)) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
                                             + y_trptx(7)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</eviews_equation>
       <python_equation>trptx - trptx_aerr = y_trptx_1*(1-y_trptx_2) + y_trptx_2*trptx(-1)
                                               + y_trptx_3*xgap2 + y_trptx_4*xgap2(-1)
                                               + y_trptx_5*picxfe
-                                              + (rfrs10 + y_trptx_6) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
+                                              + (rg10 + y_trptx_6) * (gfdbtnp(-1)/xgdpn(-1) - gfdrt(-1))
                                               + (y_trptx_7)*((gfdbtnp(-1)/xgdpn(-1)) - gfdrt(-1) - (gfdbtnp(-2)/xgdpn(-2) - gfdrt(-2)))</python_equation>
       <coeff>
         <cf_name>y_trptx(1)</cf_name>
@@ -6841,7 +6842,7 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       </coeff>
       <coeff>
         <cf_name>y_trptx(6)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- Target debt response (a > r) -->
+        <cf_value>0.01</cf_value>  <!-- Target debt response (a > r) -->
       </coeff>
       <coeff>
         <cf_name>y_trptx(7)</cf_name>
@@ -6852,7 +6853,7 @@ Blue Chip Survey.  Prior to that, RTR = PTR + 2.0.
       <rhs_eq_var>picxfe</rhs_eq_var>
       <rhs_eq_var>gfdrt</rhs_eq_var>
       <rhs_eq_var>gfdbtnp</rhs_eq_var>
-      <rhs_eq_var>rfrs10</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
       <rhs_eq_var>xgdpn</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
