@@ -1,4 +1,5 @@
-<variable>
+
+  <variable>
     <name>egfe</name>
     <equation_type>Behavioral</equation_type>
     <sector>Government</sector>
@@ -72,6 +73,7 @@
     <rhs_eq_var>xgdpn</rhs_eq_var>
       <rhs_eq_var>egfe</rhs_eq_var>
       <rhs_eq_var>egfet</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
       <rhs_eq_var>xgap2</rhs_eq_var>
       <estimation_statistics>
         <F_statistic>11.12218670733286</F_statistic>

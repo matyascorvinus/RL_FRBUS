@@ -138,32 +138,7 @@ def ftpl_simulation():
             q = (current_quarter.month - 1) // 3 + 1
             quarter_str = f"{current_quarter.year}q{q}".lower()  
             previous_quarter = pd.Period(quarter_str) - 1 
-
-            # print(f'\nBefore solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
-            # print(f'\nBefore solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
-            
-            # print('='*100) 
-            # for var in frbus_to_expected_mapping.keys():
-            #     if var == 'quarter':
-            #         continue
-            #     array_values.append(f'Quarter: {quarter_str} | {var}: {sim_ftpl.loc[quarter_str, var]}') 
-            # print(', '.join(array_values))
-
             sim_ftpl = frbus.solve(previous_quarter, quarter_str, sim_ftpl)
-
-            # array_values = []
-            # print('\nAfter solve: \n')
-            # print('='*100)
-            # for var in frbus_to_expected_mapping.keys():
-            #     if var == 'quarter':
-            #         continue
-            #     array_values.append(f'Quarter: {quarter_str} | {var}: {sim_ftpl.loc[quarter_str, var]}') 
-            # print(', '.join(array_values))
-
-            
-            # print(f'\nAfter solve Personal Income Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trptx"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trptx"]}')
-            # print(f'\nAfter solve Corporate Tax Rates: Previous Quarter {previous_quarter}: {sim_ftpl.loc[previous_quarter, "trcit"]} | Quarter {quarter_str} {sim_ftpl.loc[quarter_str, "trcit"]}')
-            # print('='*100) 
         except Exception as e:
             print(f"Error: {e}")
             print(f"Quarter: {quarter_str}")

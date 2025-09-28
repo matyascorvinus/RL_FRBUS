@@ -1,4 +1,5 @@
-<variable>
+
+  <variable>
     <name>trcit</name>
     <equation_type>Behavioral</equation_type>
     <sector>Government</sector>
@@ -36,7 +37,7 @@
       </coeff>
       <coeff>
         <cf_name>y_trcit(6)</cf_name>
-        <cf_value>0.1</cf_value>  <!-- Target debt response (a > r, Cochrane's condition) -->
+        <cf_value>0.01</cf_value>  <!-- Target debt response (a > r, Cochrane's condition) -->
       </coeff>
       <coeff>
         <cf_name>y_trcit(7)</cf_name>
@@ -48,7 +49,7 @@
       <rhs_eq_var>gfdrt</rhs_eq_var>
       <rhs_eq_var>gfdbtnp</rhs_eq_var>
       <rhs_eq_var>xgdpn</rhs_eq_var>
-      <rhs_eq_var>rfrs10</rhs_eq_var>
+      <rhs_eq_var>rg10</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
   </variable>
