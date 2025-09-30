@@ -100,10 +100,12 @@ def ftpl_simulation():
     # Arbitrary threshold values
     data.loc[start:end, "lurtrsh"] = 6.0
     data.loc[start:end, "pitrsh"] = 3.0
+    data.loc[:, "vstar"] = data.loc[:, "gfdbtnp"] / data.loc[:, "xgdpn"]
     sim_ftpl = data.copy()
     sim_ftpl = frbus.init_trac(init_start, end_period, sim_ftpl)
     sim_ftpl.loc[init_start, "trptx"] = 0.137738886015378
     sim_ftpl.loc[init_start, "trcit"] = 0.344613522605853
+    sim_ftpl.loc[init_start, "vstar"] = sim_ftpl.loc[init_start, "gfdbtnp"] / sim_ftpl.loc[init_start, "xgdpn"]
     frbus_to_expected_mapping = { 
         # Core economic indicators
         'ugfdbtp': 'debt_to_gdp',
@@ -129,6 +131,7 @@ def ftpl_simulation():
         'egfe': 'federal_expenditures', # Federal expenditures
         'gtn': 'government_transfer_payments',  # Government transfer payments
         'gfsrpn': 'federal_surplus',    # Federal surplus
+        'vstar': 'debt_to_gdp_target', # Debt to GDP target
     }
 
     # Run simulation
