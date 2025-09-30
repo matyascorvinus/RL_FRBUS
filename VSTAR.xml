@@ -1,0 +1,27 @@
+<variable>
+  <name>vstar</name>
+  <equation_type>Identity</equation_type>
+  <sector>Government</sector>
+  <definition>Latent debt-to-GDP ratio for active fiscal policy (v* variable)</definition>
+  <description>Evolves with inflation target rather than actual inflation. Used in fiscal rules to respond to fundamental debt from past deficits, not inflation surprises.</description>
+  <standard_equation>
+    <eviews_equation>vstar = (1/y_vstar(1)) * (vstar(-1) + rg10 / 400 - y_vstar(2) - (gfsrpn + gfintn) / gfdbtnp(-1))</eviews_equation>
+    <python_equation>vstar = (1/y_vstar_1) * (vstar(-1) + rg10 / 400 - y_vstar_2 - (gfsrpn + gfintn) / gfdbtnp(-1))</python_equation>
+  </standard_equation>
+    <coeff>
+      <cf_name>y_vstar(1)</cf_name>
+      <cf_value>1.0</cf_value>
+      <description>Discount factor (1.0 for simplicity)</description>
+    </coeff>
+    <coeff>
+      <cf_name>y_vstar(2)</cf_name>
+      <cf_value>0.005</cf_value>
+      <description>Fed's implicit inflation target, quarterly rate (2% annual = 0.5% quarterly)</description>
+    </coeff>
+    <rhs_eq_var>vstar</rhs_eq_var>
+    <rhs_eq_var>rg10</rhs_eq_var>
+    <rhs_eq_var>gfsrpn</rhs_eq_var>
+    <rhs_eq_var>gfintn</rhs_eq_var>
+    <rhs_eq_var>gfdbtnp</rhs_eq_var>
+  <stochastic_type>NO</stochastic_type>
+</variable>
