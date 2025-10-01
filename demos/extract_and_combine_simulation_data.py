@@ -227,6 +227,7 @@ def calculate_error_metrics(ftpl_data, non_ftpl_data):
         'egfet',       # Government expenditures trend,
         'trcit',       # Corporate tax rates
         'trptx',       # Personal tax rates
+        'rg10',        # Ten-year Treasury bond rate
     ]
     
     results = {}
@@ -354,6 +355,7 @@ def extract_and_combine_simulation_data():
         'egfe': 'federal_expenditures', # Federal expenditures
         'gtn': 'government_transfer_payments',  # Government transfer payments
         'gfsrpn': 'federal_surplus',    # Federal surplus
+        'rg10': 'ten_year_treasury_bond_rate', # Ten-year Treasury bond rate
     }
     output_file = '/home/dominus/RL_FRBUS/RL_FRBUS_Frontend/combined_sim_data_ftpl_vs_non_ftpl.csv'
     

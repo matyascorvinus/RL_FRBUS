@@ -3,44 +3,20 @@
     <name>ugfsrp</name>
     <equation_type>Behavioral</equation_type>
     <sector>Government</sector>
-    <definition>Federal Government budget surplus, residual - FTPL enhanced</definition>
-    <description>Enhanced for active fiscal policy regime with economic reactions but no automatic debt stabilization</description>
+    <definition>Federal Government budget surplus, residual</definition>
+    <description/>
     <standard_equation>
-      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)
-                                             + y_ugfsrp(3)*xgap2 + y_ugfsrp(4)*xgap2(-1) 
-                                             + y_ugfsrp(6)*picxfe</eviews_equation>
-      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)
-                                              + y_ugfsrp_3*xgap2 + y_ugfsrp_4*xgap2(-1)
-                                              + y_ugfsrp_6*picxfe</python_equation>
+      <eviews_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp(1)*(1-y_ugfsrp(2)) + y_ugfsrp(2)*ugfsrp(-1)</eviews_equation>
+      <python_equation>ugfsrp - ugfsrp_aerr = y_ugfsrp_1*(1-y_ugfsrp_2) + y_ugfsrp_2*ugfsrp(-1)</python_equation>
       <coeff>
         <cf_name>y_ugfsrp(1)</cf_name>
-        <cf_value>0.02</cf_value>  <!-- Reduced intercept -->
+        <cf_value>0.065666</cf_value>
       </coeff>
       <coeff>
         <cf_name>y_ugfsrp(2)</cf_name>
-        <cf_value>0.85</cf_value>  <!-- Persistence parameter -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(3)</cf_name>
-        <cf_value>1.2</cf_value>   <!-- Output gap reaction (procyclical) -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(4)</cf_name>
-        <cf_value>0.8</cf_value>   <!-- Lagged output gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(5)</cf_name>
-        <cf_value>0.6</cf_value>   <!-- Unemployment gap reaction -->
-      </coeff>
-      <coeff>
-        <cf_name>y_ugfsrp(6)</cf_name>
-        <cf_value>0.3</cf_value>   <!-- Inflation reaction -->
+        <cf_value>0.947688</cf_value>
       </coeff>
       <rhs_eq_var>ugfsrp</rhs_eq_var>
-      <rhs_eq_var>xgap2</rhs_eq_var>
-      <rhs_eq_var>lur</rhs_eq_var>
-      <rhs_eq_var>lurnat</rhs_eq_var>
-      <rhs_eq_var>picxfe</rhs_eq_var>
     </standard_equation>
     <stochastic_type>NO</stochastic_type>
   </variable>
