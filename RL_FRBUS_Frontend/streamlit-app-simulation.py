@@ -4,12 +4,39 @@ import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
+import io
+import base64
+from datetime import datetime
 
 # Color scheme for charts
 MUTED_REDS = {
     'dark': '#B22222',    # Firebrick
     'light': '#CD5C5C'    # Indian Red
 }
+
+def export_plot_as_png(fig, filename_prefix="plot"):
+    """
+    Export a Plotly figure as PNG and return the download link.
+    
+    Args:
+        fig: Plotly figure object
+        filename_prefix: Prefix for the filename
+    
+    Returns:
+        HTML download link for the PNG file
+    """
+    # Generate timestamp for unique filenames
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.png"
+    
+    # Convert plot to PNG bytes
+    img_bytes = fig.to_image(format="png", width=2400, height=800, scale=2)
+    
+    # Create download link
+    b64 = base64.b64encode(img_bytes).decode()
+    href = f'<a href="data:image/png;base64,{b64}" download="{filename}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Download PNG</a>'
+    
+    return href
 
 def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
     # Helper function to calculate mean absolute error
@@ -177,6 +204,19 @@ def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=
     
     return fig  
 
+def mean_absolute_error_with_export(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False, show_export_button=True):
+    """
+    Enhanced version of mean_absolute_error with PNG export functionality.
+    """
+    fig = mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
+    
+    if show_export_button:
+        # Add export button
+        export_link = export_plot_as_png(fig, "mae_comparison")
+        st.markdown(export_link, unsafe_allow_html=True)
+    
+    return fig
+
 def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
     
     # Filter by year range if provided
@@ -342,6 +382,19 @@ def root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year
     )
     
     return fig 
+
+def root_mean_square_deviation_with_export(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False, show_export_button=True):
+    """
+    Enhanced version of root_mean_square_deviation with PNG export functionality.
+    """
+    fig = root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
+    
+    if show_export_button:
+        # Add export button
+        export_link = export_plot_as_png(fig, "rmse_comparison")
+        st.markdown(export_link, unsafe_allow_html=True)
+    
+    return fig
 
 def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
 
@@ -511,6 +564,19 @@ def symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_r
     )
     return fig 
 
+def symmetric_mean_absolute_percentage_error_with_export(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False, show_export_button=True):
+    """
+    Enhanced version of symmetric_mean_absolute_percentage_error with PNG export functionality.
+    """
+    fig = symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
+    
+    if show_export_button:
+        # Add export button
+        export_link = export_plot_as_png(fig, "smape_comparison")
+        st.markdown(export_link, unsafe_allow_html=True)
+    
+    return fig
+
 # ---------------------------
 # Sidebar: Select Data Source
 # ---------------------------
@@ -530,6 +596,17 @@ data_source = st.sidebar.radio(
         "Trump Tariff plan 100%"
     ],
     index=0
+)
+
+# ---------------------------
+# Sidebar: PNG Export Options
+# ---------------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Export Options")
+enable_png_export = st.sidebar.checkbox(
+    "Enable PNG Export", 
+    value=True, 
+    help="Enable download buttons for exporting charts as PNG files"
 )
 # Let the user choose which metric to compare.
 metric_options = [
@@ -786,15 +863,54 @@ def render_component_comparison(dataframe, sim_types, metric):
     )
     return fig
 
+def render_component_comparison_with_export(dataframe, sim_types, metric, show_export_button=True):
+    """
+    Enhanced version of render_component_comparison with PNG export functionality.
+    """
+    fig = render_component_comparison(dataframe, sim_types, metric)
+    
+    if show_export_button:
+        # Add export button
+        export_link = export_plot_as_png(fig, f"component_comparison_{metric.replace(' ', '_').replace('(', '').replace(')', '').replace('%', 'percent')}")
+        st.markdown(export_link, unsafe_allow_html=True)
+    
+    return fig
+
 # Use the simulation types that the user selected in the sidebar.
 sim_types = selected_types
 
 if not final_filtered_data.empty and len(sim_types) > 0:
     st.markdown("---")
     st.subheader(f"{component_metric} Components Comparison")
-    comp_fig = render_component_comparison(final_filtered_data, sim_types, component_metric)
+    comp_fig = render_component_comparison_with_export(final_filtered_data, sim_types, component_metric, enable_png_export)
     st.plotly_chart(comp_fig, use_container_width=True)
 else:
     st.markdown("---")
     st.write("Some required datasets for the Component Comparison chart are missing.")
+
+# ---------------------------
+# PNG Export Functions Demo
+# ---------------------------
+if enable_png_export:
+    st.markdown("---")
+    st.subheader("📊 PNG Export Functions Demo")
+    st.markdown("""
+    The following enhanced functions are now available with PNG export functionality:
+    - `mean_absolute_error_with_export()` - MAE comparison with PNG export
+    - `root_mean_square_deviation_with_export()` - RMSE comparison with PNG export  
+    - `symmetric_mean_absolute_percentage_error_with_export()` - SMAPE comparison with PNG export
+    - `render_component_comparison_with_export()` - Component comparison with PNG export
+    """)
+    
+    # Example usage section
+    st.markdown("### Example Usage")
+    st.code("""
+# Example: Using the enhanced functions with PNG export
+fig = mean_absolute_error_with_export(
+    df, df_without_tariff, df_without_rl, 
+    title="MAE Comparison", 
+    show_export_button=True
+)
+st.plotly_chart(fig)
+    """, language="python")
  
