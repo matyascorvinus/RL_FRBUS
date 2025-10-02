@@ -7,6 +7,8 @@ import numpy as np
 import io
 import base64
 from datetime import datetime
+import zipfile
+from io import BytesIO
 
 # Color scheme for charts
 MUTED_REDS = {
@@ -14,29 +16,54 @@ MUTED_REDS = {
     'light': '#CD5C5C'    # Indian Red
 }
 
+# Global list to store all figures for batch download
+all_figures = []
+
 def export_plot_as_png(fig, filename_prefix="plot"):
     """
-    Export a Plotly figure as PNG and return the download link.
+    Export a Plotly figure as PNG bytes.
     
     Args:
         fig: Plotly figure object
         filename_prefix: Prefix for the filename
     
     Returns:
-        HTML download link for the PNG file
+        PNG bytes
     """
-    # Generate timestamp for unique filenames
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{filename_prefix}_{timestamp}.png"
-    
     # Convert plot to PNG bytes
     img_bytes = fig.to_image(format="png", width=2400, height=800, scale=2)
+    return img_bytes
+
+def add_figure_to_collection(fig, filename):
+    """
+    Add a figure to the global collection for batch download.
     
-    # Create download link
-    b64 = base64.b64encode(img_bytes).decode()
-    href = f'<a href="data:image/png;base64,{b64}" download="{filename}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Download PNG</a>'
+    Args:
+        fig: Plotly figure object
+        filename: Name for the file (without extension)
+    """
+    global all_figures
+    all_figures.append({
+        'figure': fig,
+        'filename': f"{filename}.png"
+    })
+
+def create_zip_of_all_figures():
+    """
+    Create a ZIP file containing all collected figures as PNG files.
     
-    return href
+    Returns:
+        BytesIO object containing the ZIP file
+    """
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for item in all_figures:
+            png_bytes = export_plot_as_png(item['figure'], item['filename'])
+            zip_file.writestr(item['filename'], png_bytes)
+    
+    zip_buffer.seek(0)
+    return zip_buffer
 
 def mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range=None, small_value=False, dark_mode=False):
     # Helper function to calculate mean absolute error
@@ -211,9 +238,9 @@ def mean_absolute_error_with_export(df, df_without_tariff, df_without_rl, title,
     fig = mean_absolute_error(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
     
     if show_export_button:
-        # Add export button
-        export_link = export_plot_as_png(fig, "mae_comparison")
-        st.markdown(export_link, unsafe_allow_html=True)
+        # Add to collection for batch download
+        year_suffix = f"_{year_range[0]}_{year_range[1]}" if year_range else ""
+        add_figure_to_collection(fig, f"mae_comparison{year_suffix}")
     
     return fig
 
@@ -390,9 +417,9 @@ def root_mean_square_deviation_with_export(df, df_without_tariff, df_without_rl,
     fig = root_mean_square_deviation(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
     
     if show_export_button:
-        # Add export button
-        export_link = export_plot_as_png(fig, "rmse_comparison")
-        st.markdown(export_link, unsafe_allow_html=True)
+        # Add to collection for batch download
+        year_suffix = f"_{year_range[0]}_{year_range[1]}" if year_range else ""
+        add_figure_to_collection(fig, f"rmse_comparison{year_suffix}")
     
     return fig
 
@@ -571,9 +598,9 @@ def symmetric_mean_absolute_percentage_error_with_export(df, df_without_tariff, 
     fig = symmetric_mean_absolute_percentage_error(df, df_without_tariff, df_without_rl, title, year_range, small_value, dark_mode)
     
     if show_export_button:
-        # Add export button
-        export_link = export_plot_as_png(fig, "smape_comparison")
-        st.markdown(export_link, unsafe_allow_html=True)
+        # Add to collection for batch download
+        year_suffix = f"_{year_range[0]}_{year_range[1]}" if year_range else ""
+        add_figure_to_collection(fig, f"smape_comparison{year_suffix}")
     
     return fig
 
@@ -602,12 +629,28 @@ data_source = st.sidebar.radio(
 # Sidebar: PNG Export Options
 # ---------------------------
 st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Export Options")
+st.sidebar.subheader("📥 Download All Figures")
 enable_png_export = st.sidebar.checkbox(
-    "Enable PNG Export", 
+    "Collect Figures for Download", 
     value=True, 
-    help="Enable download buttons for exporting charts as PNG files"
+    help="Automatically collect all displayed figures for batch download as PNG files"
 )
+
+st.sidebar.markdown("""
+**Export Settings:**
+- **Format**: PNG (High Resolution)
+- **Resolution**: 2400x800 pixels @ 2x scale
+- **Packaging**: All figures in a single ZIP file
+
+**Auto-Generation Feature:**
+When enabled, the app automatically generates charts for **ALL metrics** 
+(not just the selected one), so you get every possible chart in one download!
+""")
+
+# Add download button at the end of the page (will be shown in sidebar)
+# We'll add a placeholder here and populate it later
+download_placeholder = st.sidebar.empty()
+
 # Let the user choose which metric to compare.
 metric_options = [
     "GDP Growth (%)",
@@ -748,22 +791,75 @@ st.subheader("Comparison Chart Across Simulation Types")
 
 selected_metric = st.selectbox("Select Metric for Comparison", metric_options)
 st.write(f"Selected Metric: {selected_metric}")
-# Create an Altair line chart using the filtered data.
-# In this chart, the x-axis uses the quarter_numeric value (for proper ordering)
-# and the tooltip shows the original 'Quarter' string.
 
-chart = alt.Chart(filtered_data).mark_line(point=True).encode(
-    x=alt.X("quarter_numeric:Q", title="Quarter", axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor='black', labelColor='black')),
-    y=alt.Y(f"{selected_metric}:Q", title=selected_metric, axis=alt.Axis(titleFontSize=18, labelFontSize=18, titleColor ='black', labelColor='black')),
-    color=alt.Color("Simulation Type:N", title="Simulation Type", legend=alt.Legend(titleFontSize=18, labelFontSize=18, titleColor='black', labelColor='black')),
-    tooltip=["Quarter", f"{selected_metric}", "Simulation Type"]
-).properties(
-    width=700,
-    height=400,
-    title=f"{selected_metric} Comparison Across Simulation Types"
-).interactive()
+def create_comparison_chart(data, metric):
+    """Create a comparison chart for a specific metric."""
+    fig = go.Figure()
+    
+    # Get unique simulation types
+    unique_sim_types = data["Simulation Type"].unique()
+    
+    # Add a line trace for each simulation type
+    for sim_type in unique_sim_types:
+        sim_data = data[data["Simulation Type"] == sim_type]
+        fig.add_trace(go.Scatter(
+            x=sim_data["Quarter"],
+            y=sim_data[metric],
+            mode='lines+markers',
+            name=sim_type,
+            hovertemplate='<b>%{fullData.name}</b><br>Quarter: %{x}<br>' + metric + ': %{y}<extra></extra>'
+        ))
+    
+    # Update layout
+    fig.update_layout(
+        title=f"{metric} Comparison Across Simulation Types",
+        xaxis_title="Quarter",
+        yaxis_title=metric,
+        plot_bgcolor='rgba(255,255,255,1)',
+        paper_bgcolor='rgba(255,255,255,1)',
+        font=dict(color='#000000'),
+        yaxis_title_font=dict(size=20, color='black'),
+        xaxis_title_font=dict(size=20, color='black'),
+        hovermode='x unified',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=18)
+        )
+    )
+    
+    fig.update_xaxes(
+        tickangle=45,
+        tickfont=dict(size=16, color='black'),
+        gridcolor='#cccccc',
+        zerolinecolor='#cccccc'
+    )
+    
+    fig.update_yaxes(
+        tickfont=dict(size=16, color='black'),
+        gridcolor='#cccccc',
+        zerolinecolor='#cccccc'
+    )
+    
+    return fig
 
-st.altair_chart(chart, use_container_width=True)
+# Create and display the selected metric chart
+comparison_fig = create_comparison_chart(filtered_data, selected_metric)
+st.plotly_chart(comparison_fig, use_container_width=True)
+
+# Generate charts for ALL metrics if export is enabled
+if enable_png_export:
+    progress_text = f"Generating {len(metric_options)} comparison charts for all metrics..."
+    progress_bar = st.progress(0, text=progress_text)
+    for idx, metric in enumerate(metric_options):
+        fig = create_comparison_chart(filtered_data, metric)
+        clean_metric_name = metric.replace(' ', '_').replace('(', '').replace(')', '').replace('%', 'percent')
+        add_figure_to_collection(fig, f"comparison_{clean_metric_name}")
+        progress_bar.progress((idx + 1) / len(metric_options), text=f"Generated {idx + 1}/{len(metric_options)} comparison charts")
+    progress_bar.empty()  # Remove progress bar when done
 
 # Add bar chart for comparison of key metrics across simulation types
 st.subheader("Bar Chart Comparison of Key Metrics Across Simulation Types")
@@ -863,18 +959,6 @@ def render_component_comparison(dataframe, sim_types, metric):
     )
     return fig
 
-def render_component_comparison_with_export(dataframe, sim_types, metric, show_export_button=True):
-    """
-    Enhanced version of render_component_comparison with PNG export functionality.
-    """
-    fig = render_component_comparison(dataframe, sim_types, metric)
-    
-    if show_export_button:
-        # Add export button
-        export_link = export_plot_as_png(fig, f"component_comparison_{metric.replace(' ', '_').replace('(', '').replace(')', '').replace('%', 'percent')}")
-        st.markdown(export_link, unsafe_allow_html=True)
-    
-    return fig
 
 # Use the simulation types that the user selected in the sidebar.
 sim_types = selected_types
@@ -882,35 +966,93 @@ sim_types = selected_types
 if not final_filtered_data.empty and len(sim_types) > 0:
     st.markdown("---")
     st.subheader(f"{component_metric} Components Comparison")
-    comp_fig = render_component_comparison_with_export(final_filtered_data, sim_types, component_metric, enable_png_export)
+    
+    # Display the selected component metric chart
+    comp_fig = render_component_comparison(final_filtered_data, sim_types, component_metric)
     st.plotly_chart(comp_fig, use_container_width=True)
+    
+    # Generate component comparison charts for ALL metrics if export is enabled
+    if enable_png_export:
+        progress_text_comp = f"Generating {len(metric_options)} component comparison charts for all metrics..."
+        progress_bar_comp = st.progress(0, text=progress_text_comp)
+        for idx, metric in enumerate(metric_options):
+            fig = render_component_comparison(final_filtered_data, sim_types, metric)
+            clean_metric_name = metric.replace(' ', '_').replace('(', '').replace(')', '').replace('%', 'percent')
+            add_figure_to_collection(fig, f"component_comparison_{clean_metric_name}")
+            progress_bar_comp.progress((idx + 1) / len(metric_options), text=f"Generated {idx + 1}/{len(metric_options)} component comparison charts")
+        progress_bar_comp.empty()  # Remove progress bar when done
 else:
     st.markdown("---")
     st.write("Some required datasets for the Component Comparison chart are missing.")
 
 # ---------------------------
-# PNG Export Functions Demo
+# Download All Figures Button
 # ---------------------------
-if enable_png_export:
+if enable_png_export and len(all_figures) > 0:
     st.markdown("---")
-    st.subheader("📊 PNG Export Functions Demo")
-    st.markdown("""
-    The following enhanced functions are now available with PNG export functionality:
-    - `mean_absolute_error_with_export()` - MAE comparison with PNG export
-    - `root_mean_square_deviation_with_export()` - RMSE comparison with PNG export  
-    - `symmetric_mean_absolute_percentage_error_with_export()` - SMAPE comparison with PNG export
-    - `render_component_comparison_with_export()` - Component comparison with PNG export
-    """)
+    st.subheader("📥 Download All Figures")
     
-    # Example usage section
-    st.markdown("### Example Usage")
-    st.code("""
-# Example: Using the enhanced functions with PNG export
-fig = mean_absolute_error_with_export(
-    df, df_without_tariff, df_without_rl, 
-    title="MAE Comparison", 
-    show_export_button=True
-)
-st.plotly_chart(fig)
-    """, language="python")
+    # Show count of collected figures
+    st.info(f"✅ Collected {len(all_figures)} figure(s) for download")
+    
+    # Categorize figures
+    comparison_figs = [f for f in all_figures if f['filename'].startswith('comparison_') and not f['filename'].startswith('component_comparison_')]
+    component_figs = [f for f in all_figures if f['filename'].startswith('component_comparison_')]
+    other_figs = [f for f in all_figures if not f['filename'].startswith('comparison_') and not f['filename'].startswith('component_comparison_')]
+    
+    # List all collected figures  
+    with st.expander("📋 View collected figures"):
+        st.markdown("**Comparison Charts (Line):**")
+        for item in comparison_figs:
+            st.write(f"  • {item['filename']}")
+        
+        st.markdown("**Component Comparison Charts (Bar):**")
+        for item in component_figs:
+            st.write(f"  • {item['filename']}")
+        
+        if other_figs:
+            st.markdown("**Other Charts:**")
+            for item in other_figs:
+                st.write(f"  • {item['filename']}")
+    
+    # Generate timestamp for the ZIP file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    zip_filename = f"all_figures_{timestamp}.zip"
+    
+    # Create the ZIP file
+    zip_buffer = create_zip_of_all_figures()
+    
+    # Add download button in both main area and sidebar
+    st.download_button(
+        label="⬇️ Download All Figures as ZIP",
+        data=zip_buffer,
+        file_name=zip_filename,
+        mime="application/zip",
+        help=f"Download all {len(all_figures)} figures as high-resolution PNG files in a ZIP archive"
+    )
+    
+    # Also add to sidebar using the placeholder
+    download_placeholder.download_button(
+        label="⬇️ Download All Figures",
+        data=zip_buffer,
+        file_name=zip_filename,
+        mime="application/zip",
+        help=f"Download {len(all_figures)} PNG files"
+    )
+    
+    st.markdown(f"""
+    **What's included:**
+    - **{len(comparison_figs)} Comparison Line Charts** - One for each metric
+    - **{len(component_figs)} Component Comparison Bar Charts** - One for each metric
+    {f"- **{len(other_figs)} Other Charts** - Additional analysis charts" if other_figs else ""}
+    
+    **Technical Details:**
+    - Resolution: 2400x800 pixels at 2x scale
+    - Format: PNG (suitable for publications and presentations)
+    - All metrics automatically generated (no need to select each one!)
+    - Packaged in a single ZIP file for easy download
+    """)
+elif enable_png_export:
+    st.markdown("---")
+    st.info("📊 No figures collected yet. View charts above to collect them for download.")
  

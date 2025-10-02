@@ -1,0 +1,46 @@
+<variable>
+    <name>rfftlr</name>
+    <equation_type>Behavioral</equation_type>
+    <sector>Financial Sector</sector>
+    <definition>Value of eff. federal funds rate given by the Taylor rule with unemployment gap</definition>
+    <description>RFFTLR is a version of the Taylor Rule.  According to the equation,
+the nominal funds rate equals the sum of the equilibrium real funds
+rate as perceived by policymakers (RSTAR) and a four-quarter moving
+average of actual inflation.  This value is then adjusted in response
+to deviations of actual inflation from the target rate of inflation
+(PITARG) and deviations of the unemployment rate from the natural rate
+of unemployment.
+
+</description>
+    <standard_equation>
+      <eviews_equation>rfftlr - rfftlr_aerr = rstar
+                       + y_rfftlr(1) * pitarg
+                       + y_rfftlr(2) * ( ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3)) )
+                       + y_rfftlr(3) * (lurnat + deuc * leuc - lur)
+</eviews_equation>
+      <python_equation>rfftlr - rfftlr_aerr = rstar
+                       + y_rfftlr_1 * pitarg
+                       + y_rfftlr_2 * ( ( picxfe +  picxfe(-1) +  picxfe(-2) +  picxfe(-3)) )
+                       + y_rfftlr_3 * (lurnat + deuc * leuc - lur)
+</python_equation>
+      <coeff>
+        <cf_name>y_rfftlr(1)</cf_name>
+        <cf_value>-0.5</cf_value>
+      </coeff>
+      <coeff>
+        <cf_name>y_rfftlr(2)</cf_name>
+        <cf_value>.375</cf_value>
+      </coeff>
+      <coeff>
+        <cf_name>y_rfftlr(3)</cf_name>
+        <cf_value>1.1</cf_value>
+      </coeff>
+      <rhs_eq_var>deuc</rhs_eq_var>
+      <rhs_eq_var>leuc</rhs_eq_var>
+      <rhs_eq_var>lur</rhs_eq_var>
+      <rhs_eq_var>lurnat</rhs_eq_var>
+      <rhs_eq_var>picxfe</rhs_eq_var>
+      <rhs_eq_var>pitarg</rhs_eq_var>
+      <rhs_eq_var>rstar</rhs_eq_var>
+    </standard_equation>
+  </variable>
